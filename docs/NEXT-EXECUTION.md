@@ -122,3 +122,6 @@ Older sections below describe historical continuation stages; they **do not auth
 
 ## Owner-controlled signing workspace (engineering, not owner commissioning)
 - Review/accept scripts/fdroid_key_custody.py and docs/FDROID-KEY-CUSTODY.md only after green source tests; real owner key never enters public CI, tests use local dummy bytes and simulated different volumes. Actual persistent key generation/storage, encrypted separate offline medium, restore/sign test and independently pinned F-Droid public index remain unresolved external real-world gates.
+
+## WinGet postcondition gate
+- Verify exact hosted acceptance of windows_client/installed_state.py and Windows GUI: official WinGet export JSON pre/post operation, no downgrade on installed version, no false success on mismatched version, no private device data upload. Complete actual owner-approved package mapping/signature and consented install/update when genuine provenance and permissions exist. Production Windows signing and all other gaps remain.

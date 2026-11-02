@@ -153,3 +153,6 @@ All seven main checks for `eb08797a42fdde5cfacd0f6542ee0100d02bb680` now complet
 
 ## Isolated F-Droid key-custody tooling (implementation pending real CI)
 - Proposed offline owner-only command creates and verifies a no-overwrite 0600 keystore backup on a separate mounted filesystem, refuses symlinks/checkout paths, and does not expose material to public GitHub. POSIX dummy fixture tests do NOT prove real owner keys are backed up, physically offline or restorable. Check actual PR workflow and merge SHA.
+
+## Windows package installed-state gate (implementation awaiting CI)
+- New independent WinGet export JSON readback checks exact approved package ID and installed version before/after interactive WinGet; rejects downgrades, ambiguity and mismatch; user-visible UI no longer equates exit=0 to installed package confirmation. Source tests use synthetic Windows package inventory. No actual approved software has been installed, no Authenticode production signer is registered, and no owner desktop changes were attempted.

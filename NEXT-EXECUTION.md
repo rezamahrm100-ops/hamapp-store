@@ -41,3 +41,6 @@ Inspect `feature/integrated-technical-closure-20261102` PR, diff, source checks 
 
 ## Offline F-Droid signing custody follow-up
 Inspect the actual PR implementing scripts/fdroid_key_custody.py, review its tests/hosted CI, then distinguish working owner-only backup tooling from physically secured persistent owner signing keys and a truly signed published index. Complete all other engineerable gaps in docs/INTEGRATED-GAP-MATRIX.md without waiting for keys.
+
+## Windows installed-state verification follow-up
+Check PR `feature/windows-postcondition-verification-20261102` on live GitHub and only merge on successful Linux/Windows CI, CodeQL and hosted native Windows preview. Actual WinGet export readback on the owner's interactive system remains unaccepted until a legitimately approved package exists. Do not confuse this with Authenticode signer validation.

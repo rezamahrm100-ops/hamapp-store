@@ -29,3 +29,8 @@ python run_windows_client.py
 
 Microsoft official winget command documentation: https://learn.microsoft.com/en-us/windows/package-manager/winget/install
 PyInstaller upstream: https://pyinstaller.org/en/latest/usage.html
+
+## Exact WinGet installed-version readback (2026-11-02 pending CI)
+- Approved WinGet install/upgrade now preflights actual registered package version via `winget export --source winget --include-versions --output <private temp JSON> --disable-interactivity`, refuses unsafe or ambiguous current versions and downgrades, then executes the requested exact interactive WinGet command.
+- After WinGet exits zero, HamApp runs a **second** export, parses the official `Sources[].SourceDetails.Name == winget` and `Packages[].PackageIdentifier/Version` schema, and only reports an actual installed-version readback when the exact target version matches. Temporary system inventory is deleted; no app list is sent to GitHub.
+- This is independent **WinGet package-registry readback**, not independent Authenticode installer validation, OS file-integrity attestation or real owner-device install acceptance. The public WinGet map remains empty. PR tests use a synthetic injected export; real installation cannot be accepted without owner-reviewed package identity and approval.
