@@ -42,9 +42,11 @@ def validate_trust_registry(registry):
         if not isinstance(p, dict) or set(p) != {"app_id", "source_repo", "platform", "certificate_sha256", "package_id"}:
             raise PublisherError("invalid publisher schema")
         app_id = p["app_id"]
-        if not isinstance(app_id, str) or not release_integrity.ID.fullmatch(app_id) or app_id in seen:
-            raise PublisherError("invalid/duplicate app_id")
-        seen.add(app_id)
+        key = (app_id, p["platform"])
+        if (not isinstance(app_id, str) or not release_integrity.ID.fullmatch(app_id)
+                or p["platform"] not in ("android", "windows") or key in seen):
+            raise PublisherError("invalid/duplicate app_id-platform")
+        seen.add(key)
         if not isinstance(p["source_repo"], str) or not release_integrity.ID.fullmatch(p["source_repo"]):
             raise PublisherError("invalid publisher source repo")
         if p["platform"] not in ("android", "windows"):
