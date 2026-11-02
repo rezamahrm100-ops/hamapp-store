@@ -8,3 +8,7 @@
 /catalog/apps.json @rezamahrm100-ops
 /scripts/validate_catalog.py @rezamahrm100-ops
 /docs/CATALOG-RELEASE-GATE.md @rezamahrm100-ops
+
+/catalog/winget_packages.json @rezamahrm100-ops
+/windows_client/ @rezamahrm100-ops
+/.github/workflows/windows-client-preview.yml @rezamahrm100-ops

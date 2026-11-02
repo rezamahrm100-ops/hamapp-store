@@ -73,3 +73,7 @@ See [release history and rollback protections](docs/RELEASE-HISTORY.md). This is
 ## Public-download admission policy
 
 [Catalogue release approval gate](docs/CATALOG-RELEASE-GATE.md) refuses unapproved Android/Windows download buttons even when a HTTPS link is present. It cross-checks independently reviewed publisher and history metadata, but cannot replace actual signature/provenance/device verification. Web-app release policy remains a separate workstream.
+
+## Native Windows client preview
+
+The [Windows desktop client](docs/WINDOWS-CLIENT.md) uses Tkinter + Microsoft's winget and is built as a short-lived unsigned preview EXE on GitHub-hosted Windows. Its source lives under `windows_client/`; the preapproved package map `catalog/winget_packages.json` starts empty, and download/install buttons cannot be enabled without independent publisher, version, and package mapping review. This is not an installed or signed production app.
