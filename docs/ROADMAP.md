@@ -29,3 +29,8 @@
 ## Scope / cost
 
 Bootstrap creates one public storefront repository to use GitHub Free public Pages and public Actions. Proprietary app source stays in existing private repos. Hosted GitHub Actions limits, traffic conditions and external storage prices must be monitored. A registered Windows runner for this new repository is separate from runners used by other private repositories.
+
+## V1 implementation checkpoint (2026-11-02)
+
+- Implemented: fail-closed signer allowlist, candidate hash and signature gate, Android package/version identity check, Windows Authenticode validation, offline upstream F-Droid staging, negative tests on hosted Windows/Linux.
+- Not yet accepted: real publisher identities, verified source-to-binary provenance, production F-Droid key + index + offline backup, signed installer files, malware review, independent install/update testing and public deployment.

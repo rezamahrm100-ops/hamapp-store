@@ -1,16 +1,12 @@
 name: HamApp Owner Windows QA
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/release_integrity.py'
 permissions:
   contents: read
 jobs:
   owner-validation:
-    # Trusted main branch only; never runs on pull requests or PR head code.
-    if: github.repository == 'rezamahrm100-ops/hamapp-store' && github.ref == 'refs/heads/main'
+    # Opt-in only: new isolated repo-scoped runner label; never runs on pull requests.
+    if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, Windows, X64, hamapp-windows]
     timeout-minutes: 15
     steps:

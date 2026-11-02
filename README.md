@@ -55,3 +55,7 @@ A `released` catalogue item requires a semver-like `version` and HTTPS `download
 - [Threat model](docs/SECURITY.md)
 - [F-Droid upstream integration](docs/F-DROID-INTEGRATION.md)
 - [Agent execution contract](docs/AGENT-IMPLEMENTATION.md)
+
+## V1 publisher-verification foundation
+
+The new [publisher pipeline](docs/PUBLISHER-PIPELINE.md) integrates `apksigner`, `aapt`, Windows Authenticode and upstream `fdroidserver` for owner-controlled **offline release candidate intake**. The trusted signer registry is deliberately empty. This tooling does not authorize public releases, prove build-source provenance, create signing keys or deploy APKs. Real signed artifacts and device acceptance are still required.

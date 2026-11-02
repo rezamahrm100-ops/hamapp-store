@@ -9,3 +9,7 @@
 - **Dependency safety:** upstream tooling versions and licenses should be pinned and reviewed before production; auto-merging Dependabot PRs is disabled.
 - **Production release:** signed binaries, hashes, attestations, provenance, malware scanning, failure rollback, backups, and full installation tests are required before marking an item released.
 - **Initial state:** no user accounts, telemetry, downloads or updater. Initial catalogue is demonstrative, not a claim that specific apps are installable.
+
+## Candidate intake trust boundary
+
+The new publisher gate accepts only exact owner-approved signing certificate fingerprints and fails closed when unregistered. Signing keys and offline F-Droid configuration never belong in this repository or on CI runners. A verified candidate receipt is not permission to publish, and declared source commit SHA is **not verified provenance**. See `docs/PUBLISHER-PIPELINE.md`.
