@@ -115,3 +115,7 @@ Older sections below describe historical continuation stages; they **do not auth
 6. Independently verify exact deployed immutable web content and redirect/TLS/provenance details before filling either empty web trust registry. The new metadata guard alone does NOT validate live bytes.
 7. Only after genuine release gates and any legally necessary authorization, atomically promote an approved catalogue entry; no fake releases or automatic paid marketplace/portal rollout. Continue truly unfinished source provenance, publisher review, portal/access and UI work via small independently reviewable secure PRs.
 8. Keep root NEXT-EXECUTION.md, AGENTS.md and ENGINEERING-STATE.md current with exact SHAs and workflow outcomes. Prefer GitHub-hosted tools and reused upstream software; ask the owner ONLY for actual key custody, private release authorization, or consented physical-device actions.
+
+## Current integrated cross-platform batch
+- Validate actual CI/CodeQL/Android/Windows results on `feature/integrated-technical-closure-20261102`. Check that the web offline snapshot never carries released binaries, a Windows operator sees only WinGet completion rather than fake install success, and production provenance requires a real pinned `gh attestation verify`.
+- After merging, finish remaining tasks in `docs/INTEGRATED-GAP-MATRIX.md` as far as real tools permit. Do not claim whole-project engineering PASS while a real technical gap remains.

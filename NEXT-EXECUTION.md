@@ -35,3 +35,6 @@ Work through Android, Windows, publisher/release/trust pipeline, web/PWA, securi
 > پروژهٔ هَماپ را طبق AGENTS.md و NEXT-EXECUTION.md از آخرین وضعیت واقعی GitHub ادامه بده؛ همهٔ کارهای فنیِ امن و قابل‌اجرا را با GitHub و رانرها در یک ران یکپارچه پیاده‌سازی، آزمون و ادغام کن؛ نتیجه و دستور ادامه را در مخزن ثبت کن.
 
 Repository: https://github.com/rezamahrm100-ops/hamapp-store
+
+## Current integrated branch follow-up (2026-11-02)
+Inspect `feature/integrated-technical-closure-20261102` PR, diff, source checks and preview artifacts. Complete/repair and merge only on green checks, then inspect merged main. Continue all remaining engineerable gaps listed in `docs/INTEGRATED-GAP-MATRIX.md` within available tooling; no fabricated release approvals or test keys.
