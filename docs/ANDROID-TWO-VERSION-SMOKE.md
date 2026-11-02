@@ -9,3 +9,9 @@ The test verifies same APK signing-certificate fingerprint, installs v1 on a rea
 This confirms Android native version-code upgrade mechanics and rejection of a downgrade under an ephemeral debug signer, NOT real F-Droid signed-repository subscription, developer APK certificate validation, stable production app signing, actual publisher app updates or installation on an owner's device. Requires independent real signed release gates before any public install is enabled.
 
 Acceptance requires a genuine successful GitHub Action run for .github/workflows/android-two-version-smoke.yml.
+
+## Additional package-manager rejection controls (2026-11-02)
+
+The same isolated Android 35 emulator also attempts to update the installed v2 APK using a separately generated, disposable certificate and requires the platform's `INSTALL_FAILED_UPDATE_INCOMPATIBLE`. It then attempts to install a deliberately truncated, invalid APK and requires rejection. After each denied install, Android must still report versionCode=2; the native UI is checked afterward. The job first verifies both signed APKs with upstream `apksigner` and confirms the mismatched signer fingerprint is different.
+
+No test keystore, APK or failure log is uploaded as an artifact. Any acceptance requires a successful **actual** hosted Actions run with the safe report artifact. These debug-signer negative cases do not constitute a production signer or F-Droid client update acceptance.
