@@ -40,7 +40,9 @@ jobs:
       - name: Install pinned open-source browser test tool
         run: |
           npm install --no-save --ignore-scripts playwright@1.64.1
-          npx playwright install --with-deps chromium
+          # Hosted Ubuntu already provides browser runtime libraries; avoid apt
+          # during PR acceptance. Playwright launches its pinned headless shell.
+          npx playwright install chromium --only-shell
       - name: Actual Chromium GUI and offline safety test
         run: |
           set -euo pipefail
