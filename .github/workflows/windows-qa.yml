@@ -1,19 +1,26 @@
 name: HamApp Owner Windows QA
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'tests/**'
+      - 'catalog/trusted_signers.json'
+      - '.github/workflows/windows-qa.yml'
 permissions:
   contents: read
 jobs:
   owner-validation:
-    # Opt-in only: new isolated repo-scoped runner label; never runs on pull requests.
-    if: github.ref == 'refs/heads/main'
+    # Trusted main branch only; public pull requests never execute on owner PCs.
+    if: github.repository == 'rezamahrm100-ops/hamapp-store' && github.ref == 'refs/heads/main'
     runs-on: [self-hosted, Windows, X64, hamapp-windows]
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Validate in runner work directory
+      - name: Validate in isolated runner work directory
         shell: powershell
         run: |
           $ErrorActionPreference='Stop'
