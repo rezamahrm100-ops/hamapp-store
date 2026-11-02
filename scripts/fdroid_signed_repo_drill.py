@@ -158,6 +158,18 @@ def execute(apk, *, sha):
                 if not entry.is_file() or not index_path.is_file():
                     raise DrillError("official fdroid update failed to create signed index-v2")
                 fp = certified_fingerprint(entry)
+                # The official index verifier uses fdroidserver.common.config
+                # for the jarsigner executable. Unlike the fdroid CLI, a
+                # direct Python library call must initialize this config.
+                from fdroidserver import common
+                previous_cwd = Path.cwd()
+                try:
+                    os.chdir(workspace)
+                    common.config = common.read_config()
+                finally:
+                    os.chdir(previous_cwd)
+                if not isinstance(common.config, dict) or not common.config.get("jarsigner"):
+                    raise DrillError("upstream jarsigner configuration unavailable")
                 url = f"http://127.0.0.1:{port}/fdroid/repo/?fingerprint={fp}"
                 data, _etag = download_repo_index_v2(
                     url, verify_fingerprint=True, timeout=30)
