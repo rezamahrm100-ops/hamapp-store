@@ -37,9 +37,17 @@ def run(cmd, *, cwd, env, timeout=180):
         cmd, cwd=str(cwd), env=env, capture_output=True, text=True,
         timeout=timeout, check=False)
     if process.returncode:
-        # Do not expose fdroid init output or config; generated values might
-        # contain temporary keystore credentials.
-        raise DrillError(f"{cmd[0]} {cmd[1]} failed (exit {process.returncode})")
+        # Emit only bounded diagnostic lines; never leak generated private
+        # passwords from fdroid init/config to public Actions logs.
+        import re
+        patterns = re.compile(r"(error|exception|traceback|failed|missing|not found|invalid|no such|warning)", re.I)
+        sensitive = re.compile(r"(pass(word)?|secret|credential|token|keystorepass|keypass)", re.I)
+        diagnostic = [
+            line.strip()[:250] for line in (process.stderr + "\n" + process.stdout).splitlines()
+            if patterns.search(line) and not sensitive.search(line)
+        ][-7:]
+        raise DrillError(f"{cmd[0]} {cmd[1]} failed (exit {process.returncode}); "
+                         + " | ".join(diagnostic))
 
 
 def certified_fingerprint(index_jar):
