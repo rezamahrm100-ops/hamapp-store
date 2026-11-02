@@ -10,6 +10,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import release_integrity
 import release_history
 import publisher_gate
+import web_release_gate
 
 VALID_PLATFORMS = {"android", "windows", "web"}
 PROOF_KEYS = {"sha256", "size_bytes", "certificate_sha256", "source_repo", "package_id", "version_code"}
@@ -67,7 +68,7 @@ def check_approved_binary(app, registry, history):
         raise ValueError("download URL does not match approved source repository")
 
 
-def validate(data, registry=None, history=None):
+def validate(data, registry=None, history=None, web_origins=None, web_releases=None):
     errors = []
     if not isinstance(data, dict):
         return ["catalogue must be an object"]
@@ -81,9 +82,21 @@ def validate(data, registry=None, history=None):
             history = json.loads((ROOT / "catalog/release_history.json").read_text(encoding="utf-8"))
         except (ValueError, OSError) as exc:
             return ["release history unavailable: " + str(exc)]
+    if web_origins is None:
+        try:
+            web_origins = json.loads((ROOT / "catalog/trusted_web_origins.json").read_text(encoding="utf-8"))
+        except (ValueError, OSError) as exc:
+            return ["trusted web origins unavailable: " + str(exc)]
+    if web_releases is None:
+        try:
+            web_releases = json.loads((ROOT / "catalog/web_release_history.json").read_text(encoding="utf-8"))
+        except (ValueError, OSError) as exc:
+            return ["web release history unavailable: " + str(exc)]
     try:
         publisher_gate.validate_trust_registry(registry)
         release_history.validate_history(history)
+        web_release_gate.validate_origins(web_origins)
+        web_release_gate.validate_releases(web_releases)
     except (ValueError, TypeError, KeyError) as exc:
         return ["invalid release trust metadata: " + str(exc)]
     if type(data.get("schema_version")) is not int or data["schema_version"] != 1:
@@ -119,7 +132,10 @@ def validate(data, registry=None, history=None):
                 errors.append(ref + ": planned apps cannot advertise a binary")
         elif state == "released":
             try:
-                check_approved_binary(app, registry, history)
+                if platforms == ["web"]:
+                    web_release_gate.check_web_release(app, web_origins, web_releases)
+                else:
+                    check_approved_binary(app, registry, history)
             except (ValueError, TypeError, KeyError, AttributeError) as exc:
                 errors.append(ref + ": release approval rejected: " + str(exc))
         else:
