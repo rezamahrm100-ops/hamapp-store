@@ -97,3 +97,7 @@ See NEXT-EXECUTION.md for next integrated work. After every merge record new SHA
 **Still unaccepted / not done:** Android production APK release key or production signature, a stable independently approved F-Droid repository/index signing key + secure backup, live signed repository subscription/install/update, verified source provenance and publisher registration, any publicly listed genuine Android app, real two-version device installation and rollback, fully embedded F-Droid client fork, and public signed release download. Signer/release/repo registries remain empty; no installation enabled.
 
 **Private-project intake:** authorized GitHub metadata inspection found private Android/Windows projects with some QA/pre-release APK/EXE artifacts. Do not list their identities/contents in this public repository or automatically treat QA builds as approved products. Next must perform independent signer and release readiness verification privately before any publishing.
+
+## Native binary build provenance checkpoint (2026-11-02)
+- Added first-party actions/attest@v4 for Android debug APK and unsigned Windows EXE, followed by independent gh attestation verify pinned to actual producing workflow, main ref, full source SHA and hosted runner. Review-only digest receipt is generated and short-lived.
+- This is NOT proof of run success until inspected after main merge: verify actual build, attestation, independent verification and receipt artifacts on both workflows. No production signed release or real app download is authorized.

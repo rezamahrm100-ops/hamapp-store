@@ -24,6 +24,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   android-preview:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -69,3 +71,56 @@ jobs:
         run: |
           echo '### ANDROID DEBUG-KEY PREVIEW, NOT PRODUCTION APK' >> "$GITHUB_STEP_SUMMARY"
           echo 'No offline F-Droid repository key, signed production index, approved apps, or device install/update QA. All install actions remain disabled.' >> "$GITHUB_STEP_SUMMARY"
+
+  attest-and-verify:
+    name: Verify trusted-main Android debug APK provenance
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'rezamahrm100-ops/hamapp-store'
+    needs: android-preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: hamapp-android-debug-preview
+          path: dist/native-artifact
+      - name: Validate subject exists
+        shell: bash
+        run: |
+          test -s dist/native-artifact/app-debug.apk
+          sha256sum dist/native-artifact/app-debug.apk
+      - name: Issue GitHub build attestation, not developer code signature
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/native-artifact/app-debug.apk
+      - name: Independently verify expected workflow, branch and commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6; do
+            if gh attestation verify dist/native-artifact/app-debug.apk --repo rezamahrm100-ops/hamapp-store --signer-workflow rezamahrm100-ops/hamapp-store/.github/workflows/android-client-preview.yml --source-ref refs/heads/main --source-digest "$GITHUB_SHA" --deny-self-hosted-runners --format json > verified.json; then
+              break
+            fi
+            if [ "$attempt" -eq 6 ]; then echo "Native binary provenance verification failed" >&2; exit 1; fi
+            sleep 5
+          done
+          mkdir -p dist/native-evidence
+          python3 scripts/attested_binary_receipt.py --artifact dist/native-artifact/app-debug.apk --verified-gh-json verified.json --role android-debug --source-sha "$GITHUB_SHA" --output dist/native-evidence/receipt.json
+          echo 'Verified a signed GitHub build attestation for this main SHA and native binary.'
+          echo 'This does NOT verify Android/Authenticode production signing, F-Droid index or real installation.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save short-lived verified provenance receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-android-debug-provenance
+          path: dist/native-evidence/receipt.json
+          if-no-files-found: error
+          retention-days: 7

@@ -83,3 +83,7 @@ For a new chat: "Open AGENTS.md and docs/NEXT-EXECUTION.md at the current main S
 - Feature PR #17 merged at `4688fb18294a1e05ec3f3cf357c6a456a84009fb`. Hosted Android Gradle CI built and verified a debug-key APK. PR build: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41487326775 ; main build: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41487682003. Both succeeded.
 - Emulator PR #18 merged at `56fe430abab33d4c4a843296778ed39c480e860e`. Hosted Android UI smoke succeeded: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41488084733 ; captures UI hierarchy and screenshot and proves F-Droid button disabled.
 - Next check latest main CI and emulator rerun. The preview APK is debug signed, not production. No trusted F-Droid repo or accepted third-party APK exists. Never equate emulator smoke success with signed repo installation/update or real device QA.
+
+## Native artifact provenance (2026-11-02 engineering tranche)
+- New docs/NATIVE-PROVENANCE.md and scripts/attested_binary_receipt.py: GitHub-native signed build attestation and strict gh CLI verification for Android debug APK and unsigned Windows EXE, main-only, builder workflow/commit pinned. JSON receipt alone never proves cryptographic validity.
+- The attestation verification jobs run ONLY after their own trusted-main build job; do not claim success before inspecting the real Actions results after merge. This does not verify developer APK/Authenticode release signatures.

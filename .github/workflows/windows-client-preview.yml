@@ -26,6 +26,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   desktop-preview:
+    permissions:
+      contents: read
     runs-on: windows-latest
     timeout-minutes: 25
     steps:
@@ -66,3 +68,56 @@ jobs:
         run: |
           "### UNSIGNED WINDOWS CLIENT PREVIEW ONLY" | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
           "This is not a production release. No real publishers are registered, no packages are installable yet, and no code signing or actual device install was accepted." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+  attest-and-verify:
+    name: Verify trusted-main unsigned Windows EXE provenance
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'rezamahrm100-ops/hamapp-store'
+    needs: desktop-preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: hamapp-windows-unsigned-preview
+          path: dist/native-artifact
+      - name: Validate subject exists
+        shell: bash
+        run: |
+          test -s dist/native-artifact/HamApp-Windows-Preview.exe
+          sha256sum dist/native-artifact/HamApp-Windows-Preview.exe
+      - name: Issue GitHub build attestation, not developer code signature
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/native-artifact/HamApp-Windows-Preview.exe
+      - name: Independently verify expected workflow, branch and commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6; do
+            if gh attestation verify dist/native-artifact/HamApp-Windows-Preview.exe --repo rezamahrm100-ops/hamapp-store --signer-workflow rezamahrm100-ops/hamapp-store/.github/workflows/windows-client-preview.yml --source-ref refs/heads/main --source-digest "$GITHUB_SHA" --deny-self-hosted-runners --format json > verified.json; then
+              break
+            fi
+            if [ "$attempt" -eq 6 ]; then echo "Native binary provenance verification failed" >&2; exit 1; fi
+            sleep 5
+          done
+          mkdir -p dist/native-evidence
+          python3 scripts/attested_binary_receipt.py --artifact dist/native-artifact/HamApp-Windows-Preview.exe --verified-gh-json verified.json --role windows-unsigned --source-sha "$GITHUB_SHA" --output dist/native-evidence/receipt.json
+          echo 'Verified a signed GitHub build attestation for this main SHA and native binary.'
+          echo 'This does NOT verify Android/Authenticode production signing, F-Droid index or real installation.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save short-lived verified provenance receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-windows-unsigned-provenance
+          path: dist/native-evidence/receipt.json
+          if-no-files-found: error
+          retention-days: 7
