@@ -18,3 +18,6 @@ This document is a working gap-and-evidence matrix, not a statement that HamApp 
 All production signer registries and real web origins remain empty. Synthetic tests confirm **rejection logic** only; source attestations and signature acceptance require real external evidence. No owner desktop or signing material is accessed by PR workflows. The production storefront remains a static demonstrator.
 
 At the next run, first examine the exact integration-branch and main action results, then address the remaining engineering scope in priority order (real Windows installed-state verifier, editor/reviewer promotion pipeline, native Android F-Droid client acceptance, browser/a11y tests, production isolation design). Do not describe this matrix itself as an engineering completion result.
+
+### Durable signer custody extension
+Owner-only POSIX external-volume keystore backup/byte parity utility with fail-closed permissions and no secret uploads is in a separate PR (verify merged SHA and CI). **Not** evidence of a real approved signer, disconnected backup, successful restore or production signed index.
