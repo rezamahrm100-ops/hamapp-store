@@ -1,5 +1,12 @@
 # HamApp — canonical agent handoff
 
+## PRIMARY EXECUTION DIRECTIVE — full technical closure, not another microfix (effective 2026-11-02)
+
+**The next engineering run MUST target end-to-end closure of all technically actionable HamApp workstreams in one integrated execution.** Do not treat a one-defect PR, a scan of current status, or a planning-only response as completion. Read **[docs/ONE-RUN-TECHNICAL-CLOSURE.md](docs/ONE-RUN-TECHNICAL-CLOSURE.md)** before doing anything beyond verifying live GitHub. It is the controlling mission and acceptance contract; keep existing safety, private-key custody, review and trusted-main-only runner limits.
+
+Cover Android, Windows, web/PWA, publisher/release workflow, security, distribution tooling, integrations and real automated acceptance together. Implement and merge separately reviewable PRs within the same execution instead of pausing between small stages. Use GitHub Free, hosted checks, authorized trusted-main owner Windows QA, pinned open-source tools and existing code. Finish as much as the actual tools/permissions allow; fix failed tests and re-run, verify real main SHAs. **Do not fabricate production signing, publisher approval, public binaries or device tests.** Isolate unavoidable owner/real-world gates, leaving their engineering tooling complete.
+
+
 **Read this file first in every new chat, coding-agent session or runner task.**
 
 Repository: https://github.com/rezamahrm100-ops/hamapp-store

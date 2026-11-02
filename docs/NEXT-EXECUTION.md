@@ -1,5 +1,12 @@
 # HamApp — next integrated execution contract
 
+## OVERRIDING EXECUTION PRIORITY — all feasible engineering in one integrated run (effective 2026-11-02)
+
+The owner has explicitly changed the goal: **stop optimizing for the next microfix, incremental paper gate, or status-only reply. Optimize for closure of the entire technically actionable backlog in one coordinated run.** The controlling document is **[ONE-RUN-TECHNICAL-CLOSURE.md](ONE-RUN-TECHNICAL-CLOSURE.md)**. Read it first and use its complete workstream inventory, acceptance matrix and end-state contract.
+
+Older sections below describe historical continuation stages; they **do not authorize stopping after one stage**. Run as many dependent and independent workstreams as feasible in the same turn, creating several reviewable PRs if needed and merging only after actual relevant tests. Distinguish technically unfinished work from genuine outside gates (private owner-held signing keys, independently approved issuer/trust origins, real-device consent, service accounts, unavailable admin API). No fabricated production completion or security shortcuts; leave no engineerable gap untouched merely because some production approvals are external.
+
+
 **Start from AGENTS.md and ENGINEERING-STATE.md. Verify live main, workflows, open PRs and issues.** Do not substitute this text for current GitHub data.
 
 ## Mission: finish as much independent engineering as possible in a cohesive run

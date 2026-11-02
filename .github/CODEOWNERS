@@ -35,3 +35,6 @@
 /catalog/web_release_history.json @rezamahrm100-ops
 /scripts/web_release_gate.py @rezamahrm100-ops
 /docs/WEB-DEPLOYMENT-GATE.md @rezamahrm100-ops
+
+# Owner-review the mandatory whole-project execution contract.
+/docs/ONE-RUN-TECHNICAL-CLOSURE.md @rezamahrm100-ops
