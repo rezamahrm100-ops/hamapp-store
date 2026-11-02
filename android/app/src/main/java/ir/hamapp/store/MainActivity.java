@@ -35,7 +35,7 @@ public final class MainActivity extends Activity {
     private final int white = Color.rgb(245, 248, 252);
     private final int muted = Color.rgb(181, 197, 211);
     private JSONArray apps = new JSONArray();
-    private JSONObject repo = JSONObject.NULL instanceof JSONObject ? (JSONObject) JSONObject.NULL : null;
+    private JSONObject repo = null;
     private LinearLayout cards;
     private EditText query;
 
