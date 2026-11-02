@@ -146,3 +146,6 @@ Older sections below describe historical continuation stages; they **do not auth
 
 ## Second integrated closing pass (2026-11-02)
 - `docs/ENGINEERING-CLOSURE-2026-11-02-RUN2.md` is the latest dated ledger, not live evidence. It records six merged PRs and exact Actions URLs: emergency review-only release/signer revocation plans + source Trivy/CycloneDX; actual aapt Android debug permission audit; live mobile Chromium axe with brand/contrast fixes; official Pages and checkout action upgrades. Verify all latest main workflows, particularly emulator/F-Droid drills, before relying on main acceptance. Continue unfinished genuine engineering in one integrated execution; production signatures/keys, approved release and physical-device evidence remain real owner/external gates.
+
+## Owner candidate intake and byte-level archive audit — 2026-11-03
+- Owner-local preflight must match actual file digest, OS signer, pinned GitHub attestation and Android aapt permission policy; run ZIP CRC/traversal/expansion checks on real APK and final artifact rehash. The public CI runs only a genuine first-party debug APK, which is **not** production release approval. Check live main QA after merge. Continue actual malware/dynamic analysis, identity registration, signed repo client and owner-device acceptance, with branch protection still independently required.

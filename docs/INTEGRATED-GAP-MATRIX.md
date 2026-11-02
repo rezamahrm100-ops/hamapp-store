@@ -42,3 +42,6 @@ New proposed release-governance transaction tooling can generate coordinated no-
 
 ## Second integrated cross-platform implementation: current reference
 - See [ENGINEERING-CLOSURE-2026-11-02-RUN2.md](ENGINEERING-CLOSURE-2026-11-02-RUN2.md): actual review-only revoke/release proposals, safe code+SBOM Trivy scan, official Android aapt permissions on real debug APK, mobile axe browser tests with fixed genuine brand-label/contrast issues, compatible official GitHub Pages/checkout upgrades. PRs #39/#40/#41/#5/#6/#4 merged with exact SHAs. **Engineering remains PARTIAL**: approved third-party binary scanning, signer identity, actual paid publisher portal, durable production F-Droid key and client install, signed Windows installer, branch ruleset and physical device acceptance are not fulfilled.
+
+### Actual binary archive integrity and owner-local intake extension (2026-11-03)
+- Automated real APK archive entry traversal/CRC/size/ratio inspection and an owner-controlled exact binary signer + signed GitHub producer + Android permission/manifest + final hash check, all fail-closed and review-only. Real Android debug CI artifact required. Still missing genuine approved first-party signer/provenance, dedicated malware and behavioral scan of actual release, full publisher workflow, final approval and real signed F-Droid/Windows device acceptance.
