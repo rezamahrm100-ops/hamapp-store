@@ -54,7 +54,8 @@ class RealArchiveSafetyTests(unittest.TestCase):
             scanner.review(self.file)
 
     def test_crc_tamper_rejected(self):
-        self.write([("data.bin", b"secret-archive-pattern")])
+        with zipfile.ZipFile(self.file, "w", compression=zipfile.ZIP_STORED) as archive:
+            archive.writestr("data.bin", b"secret-archive-pattern")
         payload = self.file.read_bytes()
         self.file.write_bytes(payload.replace(b"secret-archive-pattern", b"tamper-archive-pattern"))
         with self.assertRaises(scanner.ArchiveReviewError):
