@@ -60,3 +60,6 @@ Check the latest PR from `feature/secure-release-governance-and-supply-chain-202
 
 ## Mobile accessibility acceptance gate
 Verify exact workflow run for test/mobile-axe-accessibility-20261102: live Chromium axe audit of Persian RTL/mobile dark/light and modal, keyboard navigation, no horizontal overflow. Fix actual issues until green; full assistive-technology and deployment QA remain separate.
+
+## Latest run 2 accepted engineering and next execution
+- Inspect `docs/ENGINEERING-CLOSURE-2026-11-02-RUN2.md` and current GitHub before coding. Six PRs #39,#40,#41,#5,#6,#4 merged. Audit exact latest main head and Android F-Droid/emulator hosted checks, then continue authentic publisher/permission/malware/OS signer release integration, owner PR branch ruleset, stable signed index and genuine two-version installs. Do not repeat already accepted Trivy source, aapt or real browser axe QA.
