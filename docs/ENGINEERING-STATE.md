@@ -39,3 +39,8 @@ The SHA256 candidate gate and publisher gate check data and signing identity und
 
 ## Next work
 Proceed through docs/NEXT-EXECUTION.md as a coherent end-to-end batch. Update this checkpoint after each accepted milestone with precise SHA and links.
+
+## In-progress acceptance: V1 release continuity (2026-11-02)
+- Candidate-only policy: release_history.py and release_review.py reject SemVer/versionCode downgrade, hash replay, revoked signer and identity substitution. Staging bridge reads the version ledger before copying APKs.
+- This is a *development checkpoint*, not a proof the PR or main passed; inspect actual checks for the continuity PR and main before declaring acceptance.
+- Stored history and signer registries remain empty. No authentic APK, production signing environment or on-device update test has been accepted.

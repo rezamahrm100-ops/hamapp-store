@@ -1,0 +1,6 @@
+# Review responsibility; enforcement requires GitHub branch protection/ruleset.
+/catalog/trusted_signers.json @rezamahrm100-ops
+/catalog/release_history.json @rezamahrm100-ops
+/.github/workflows/ @rezamahrm100-ops
+/scripts/publisher_gate.py @rezamahrm100-ops
+/scripts/release_history.py @rezamahrm100-ops

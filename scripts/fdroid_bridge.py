@@ -12,9 +12,14 @@ import subprocess
 import sys
 
 from publisher_gate import PublisherError, verify
+import release_history
 
 
-def stage(candidate, registry, apk, workspace, runner=subprocess.run, update_runner=subprocess.run):
+def stage(candidate, registry, apk, workspace, runner=subprocess.run, update_runner=subprocess.run, history=None):
+    if history is None:
+        history = release_history.load_history(Path(__file__).resolve().parents[1] / 'catalog/release_history.json')
+    # Check version floor and revocations before invoking expensive signing tools.
+    release_history.check_continuity(candidate, registry, history)
     receipt = verify(candidate, registry, apk, runner=runner)
     if receipt["platform"] != "android":
         raise PublisherError("only Android APKs are supported by F-Droid")
@@ -58,13 +63,14 @@ def main():
     p.add_argument("--workspace", type=Path, required=True)
     p.add_argument("--registry", type=Path, default=Path(__file__).resolve().parents[1] / "catalog/trusted_signers.json")
     p.add_argument("--receipt", type=Path, required=True)
+    p.add_argument("--history", type=Path, default=Path(__file__).resolve().parents[1] / 'catalog/release_history.json')
     args = p.parse_args()
     try:
         if args.receipt.exists():
             raise PublisherError("receipt already exists")
         candidate = json.loads(args.candidate.read_text(encoding="utf-8"))
         registry = json.loads(args.registry.read_text(encoding="utf-8"))
-        receipt = stage(candidate, registry, args.artifact, args.workspace)
+        receipt = stage(candidate, registry, args.artifact, args.workspace, history=release_history.load_history(args.history))
         args.receipt.parent.mkdir(parents=True, exist_ok=True)
         with args.receipt.open("x", encoding="utf-8") as f:
             json.dump(receipt, f, indent=2)
