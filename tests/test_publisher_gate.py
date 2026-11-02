@@ -121,6 +121,19 @@ class GateTests(unittest.TestCase):
         with self.assertRaises(gate.PublisherError):
             gate.validate_candidate(self.candidate, self.registry)
 
+    def test_same_app_can_have_independent_android_and_windows_signers(self):
+        windows = {"app_id": "example", "source_repo": "example-project",
+                   "platform": "windows", "certificate_sha256": "b" * 64,
+                   "package_id": None}
+        self.registry["publishers"].append(windows)
+        self.assertEqual(len(gate.validate_trust_registry(self.registry)["publishers"]), 2)
+        self.assertEqual(gate.validate_candidate(self.candidate, self.registry)["platform"], "android")
+
+    def test_duplicate_platform_publisher_still_rejected(self):
+        self.registry["publishers"].append(dict(self.registry["publishers"][0]))
+        with self.assertRaises(gate.PublisherError):
+            gate.validate_trust_registry(self.registry)
+
     def test_duplicate_publisher_entries_fail_closed(self):
         self.registry['publishers'].append(dict(self.registry['publishers'][0]))
         with self.assertRaises(gate.PublisherError):
