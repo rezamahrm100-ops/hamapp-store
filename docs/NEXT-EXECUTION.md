@@ -28,3 +28,9 @@
 - Never run unreviewed PR code on owner Windows. Never upload private signing keys or unreviewed app binaries to this public repo.
 - Update AGENTS.md and ENGINEERING-STATE.md after the batch with immutable SHAs/run links, exact acceptance gates and blockers.
 - Avoid requesting manual tasks unless an unavoidable owner signing/authorization/device gate remains. Do not announce completion without actual evidence.
+
+## Windows-client follow-up (after preview PR acceptance)
+- Inspect `.github/workflows/windows-client-preview.yml` for a successful hosted Windows EXE artifact. It remains UNSIGNED and nonproduction.
+- Add approved app-to-winget mapping only after independent owner review of package ID, signing identity, source provenance and exact version continuity; no invented publisher registrations.
+- Complete publisher-controlled offline Windows EXE signing, installer/update validation on real interactive desktop and native GUI smoke tests. Do not run unreviewed PR EXE on owner runner.
+- Prioritize similarly upstream-based native Android client work via F-Droid client evaluation and signed repo, rather than rolling a new package manager.

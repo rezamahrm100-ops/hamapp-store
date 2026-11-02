@@ -60,3 +60,8 @@ For a new chat: "Open AGENTS.md and docs/NEXT-EXECUTION.md at the current main S
 ## Accepted V1 release metadata hardening
 - See docs/RELEASE-HISTORY.md and docs/CATALOG-RELEASE-GATE.md: review-only historical anti-rollback checks and approved-download gating. Historical PRs #12 and #13 merged 2026-11-02; their exact verified workflow evidence and outstanding gaps live in docs/ENGINEERING-STATE.md.
 - Never mistake this for completed production F-Droid signing or native Android/Windows clients.
+
+## Native Windows desktop preview (2026-11-02 implementation)
+- Read docs/WINDOWS-CLIENT.md. The project includes a Python Tkinter/official winget client with owner-curated mapping, strict version/package IDs, explicit user confirmation and hosted Windows PyInstaller build.
+- It is **unsigned**, not production release. All package mappings are empty, so no app installs are enabled. Check actual Windows preview workflow result before claiming EXE created.
+- No unattended WinGet actions on the owner runner; client UI and signing identity require separate real-device and owner approval.

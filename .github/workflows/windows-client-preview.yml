@@ -1,0 +1,68 @@
+name: HamApp Windows Desktop Preview EXE
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'windows_client/**'
+      - 'run_windows_client.py'
+      - 'scripts/build_windows_client_catalog.py'
+      - 'catalog/**'
+      - 'tests/test_windows_client.py'
+      - '.github/workflows/windows-client-preview.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'windows_client/**'
+      - 'run_windows_client.py'
+      - 'scripts/build_windows_client_catalog.py'
+      - 'catalog/**'
+      - 'tests/test_windows_client.py'
+      - '.github/workflows/windows-client-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hamapp-windows-preview-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  desktop-preview:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run full offline test suite
+        shell: pwsh
+        run: |
+          python -m unittest discover -s tests -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Generate validated embedded Windows catalogue
+        shell: pwsh
+        run: |
+          python scripts/build_windows_client_catalog.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install pinned open-source PyInstaller on ephemeral hosted runner
+        run: python -m pip install --disable-pip-version-check pyinstaller==6.22.3
+      - name: Build one-file Windows GUI (unsigned preview)
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name HamApp-Windows-Preview --add-data "dist/windows-client/windows-client-catalog.json:." run_windows_client.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path dist/HamApp-Windows-Preview.exe)) { throw "Preview EXE not produced" }
+          Get-FileHash dist/HamApp-Windows-Preview.exe -Algorithm SHA256 | Format-List
+      - name: Upload short-lived unsigned preview for owner QA only
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-windows-unsigned-preview
+          path: dist/HamApp-Windows-Preview.exe
+          if-no-files-found: error
+          retention-days: 3
+      - name: Disclose preview restrictions
+        shell: pwsh
+        run: |
+          "### UNSIGNED WINDOWS CLIENT PREVIEW ONLY" | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          "This is not a production release. No real publishers are registered, no packages are installable yet, and no code signing or actual device install was accepted." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
