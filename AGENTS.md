@@ -56,3 +56,7 @@ For a new chat: "Open AGENTS.md and docs/NEXT-EXECUTION.md at the current main S
 
 ## Public download admission rule
 - Before enabling `released` in public catalog/apps.json read docs/CATALOG-RELEASE-GATE.md. HTTPS alone is NEVER evidence of signed software. Production binary listings must match approved history and independently registered publisher, while actual signing/provenance/device gates are separate.
+
+## Accepted V1 release metadata hardening
+- See docs/RELEASE-HISTORY.md and docs/CATALOG-RELEASE-GATE.md: review-only historical anti-rollback checks and approved-download gating. Historical PRs #12 and #13 merged 2026-11-02; their exact verified workflow evidence and outstanding gaps live in docs/ENGINEERING-STATE.md.
+- Never mistake this for completed production F-Droid signing or native Android/Windows clients.
