@@ -38,3 +38,6 @@ Repository: https://github.com/rezamahrm100-ops/hamapp-store
 
 ## Current integrated branch follow-up (2026-11-02)
 Inspect `feature/integrated-technical-closure-20261102` PR, diff, source checks and preview artifacts. Complete/repair and merge only on green checks, then inspect merged main. Continue all remaining engineerable gaps listed in `docs/INTEGRATED-GAP-MATRIX.md` within available tooling; no fabricated release approvals or test keys.
+
+## Offline F-Droid signing custody follow-up
+Inspect the actual PR implementing scripts/fdroid_key_custody.py, review its tests/hosted CI, then distinguish working owner-only backup tooling from physically secured persistent owner signing keys and a truly signed published index. Complete all other engineerable gaps in docs/INTEGRATED-GAP-MATRIX.md without waiting for keys.
