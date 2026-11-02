@@ -156,3 +156,6 @@ All seven main checks for `eb08797a42fdde5cfacd0f6542ee0100d02bb680` now complet
 
 ## Windows package installed-state gate (implementation awaiting CI)
 - New independent WinGet export JSON readback checks exact approved package ID and installed version before/after interactive WinGet; rejects downgrades, ambiguity and mismatch; user-visible UI no longer equates exit=0 to installed package confirmation. Source tests use synthetic Windows package inventory. No actual approved software has been installed, no Authenticode production signer is registered, and no owner desktop changes were attempted.
+
+## Real Chromium PWA acceptance implementation (CI pending)
+- New independent hosted workflow runs a genuine headless Chromium against validated built site, tests app detail interactions, search/filter, service-worker offline reload and that offline mode cannot advertise unapproved downloads. An actual successful run/screenshot is required before claiming acceptance; browser/device/signed production release remain unverified.

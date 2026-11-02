@@ -24,3 +24,6 @@ Owner-only POSIX external-volume keystore backup/byte parity utility with fail-c
 
 ### Windows native installed-version continuity extension
 The approved WinGet operation path now pre-checks registered version and blocks downgrades/ambiguous versions, then runs a second exact-ID WinGet JSON export to confirm installed version after command exit. Temporary installed-app inventory remains local. Unit tests simulate the official export and check rejection; no owner-approved package mapping or actual install is asserted. Independently verified Authenticode and real interactive system-device acceptance still remain.
+
+### Real browser acceptance extension
+A pinned Playwright/Chromium hosted integration test now exercises actual native modal/search/filters and offline service worker behavior with no download controls. Acceptance requires actual workflow run; detailed full screen-reader and mobile browser/accessibility QA is still unaccepted.

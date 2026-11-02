@@ -44,3 +44,6 @@ Inspect the actual PR implementing scripts/fdroid_key_custody.py, review its tes
 
 ## Windows installed-state verification follow-up
 Check PR `feature/windows-postcondition-verification-20261102` on live GitHub and only merge on successful Linux/Windows CI, CodeQL and hosted native Windows preview. Actual WinGet export readback on the owner's interactive system remains unaccepted until a legitimately approved package exists. Do not confuse this with Authenticode signer validation.
+
+## Real browser acceptance continuation
+- Inspect real Chromium PWA acceptance run and artifact from `.github/workflows/pwa-browser-acceptance.yml` before declaring browser UI/offline QA complete. Continue to full a11y/real-device and genuine production identity acceptance after running all feasible source tests.

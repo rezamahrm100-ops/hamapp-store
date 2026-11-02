@@ -137,3 +137,6 @@ At main `eb08797a42fdde5cfacd0f6542ee0100d02bb680`, actual GitHub Actions runs f
 
 ## Windows real installed-state readback (2026-11-02 pending PR acceptance)
 - See docs/WINDOWS-CLIENT.md and windows_client/installed_state.py. Actual WinGet JSON export is used before and after approved install/upgrade; rejects downgrade, unknown or mismatched installed version and does not equate manager exit=0 with success. No approved WinGet mappings exist. Check real hosted CI and Windows preview workflow before claiming acceptance.
+
+## Real Chromium PWA UI and offline QA (pending workflow)
+- Workflow `.github/workflows/pwa-browser-acceptance.yml` exercises native app detail dialog, search/filter, real Chromium service worker and offline-only planned catalogue. Read docs/PWA-REAL-BROWSER-QA.md. Require actual Actions success + safe screenshot before accepting; this does not verify signed binaries or production publisher accounts.

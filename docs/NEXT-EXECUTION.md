@@ -125,3 +125,6 @@ Older sections below describe historical continuation stages; they **do not auth
 
 ## WinGet postcondition gate
 - Verify exact hosted acceptance of windows_client/installed_state.py and Windows GUI: official WinGet export JSON pre/post operation, no downgrade on installed version, no false success on mismatched version, no private device data upload. Complete actual owner-approved package mapping/signature and consented install/update when genuine provenance and permissions exist. Production Windows signing and all other gaps remain.
+
+## Browser PWA acceptance
+- Verify `tests/browser_pwa_smoke.mjs` truly runs Chromium (not source-only checks), with native dialog, search, platform filters, service-worker offline reload and no fake download controls. Review workflow/CI result and safe screenshot before merging. Full screen-reader and real-device audits remain separate.
