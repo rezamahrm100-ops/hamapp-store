@@ -75,3 +75,10 @@
 - Establish persistent offline F-Droid keystore with backup and independent owner-controlled signing environment; do not generate ephemeral fake production keys in public CI.
 - Verify an actual eligible owned app's producer GitHub provenance, signer certificate identity, release digest and approval **privately** before any public catalogue entry; stage/index/install/update two real versions on isolated emulator, and preserve rollback/rotation controls.
 - Sign the native Android APK and Windows EXE using stable owner-approved production release signing identities, then run real device install/update acceptance. Until then NO public download or installation claim.
+
+## Next coherent execution (after accepted PR #20/#21)
+1. Inspect live GitHub main and all green checks. Prefer completing actual signed-repo builder/validation in an isolated non-public signer workspace using upstream fdroidserver, durable owner key and out-of-band fingerprint confirmation. Never upload a signing key to a public repo/Actions artifact.
+2. Run scripts/verify_fdroid_signed_index.py against a genuine owner-approved HTTPS index-v2 with independently pinned URL+fingerprint; mock tests do not count. Then verify F-Droid client subscription on an emulator/device, unsigned/bad key rejection, and two signed app versions/upgrades.
+3. Identify one eligible owned app from authorized repositories, privately verify source attestation, signed APK/EXE publisher certificate and exact version hash. Request only genuinely necessary owner release approval. Do not publicize private app names or QA binaries prematurely.
+4. Complete production code signing and real device installation acceptance for Android/Windows clients, then enable approved catalog metadata atomically. No public download until all gates pass.
+5. Continue with upstream F-Droid/winget rather than writing another installer. Keep AGENTS and ENGINEERING-STATE updated with exact workflow URLs and real acceptance gaps.
