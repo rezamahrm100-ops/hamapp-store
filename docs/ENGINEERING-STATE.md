@@ -74,3 +74,8 @@ See NEXT-EXECUTION.md for next integrated work. After every merge record new SHA
 - Implemented: native Tkinter Persian GUI; validated offline catalogue snapshot; strict reviewed source-to-winget mapping schema; interactive, fixed-id + source winget install/upgrade/show command construction; no shell injection or silent elevation; PyInstaller preview EXE produced on hosted Windows.
 - Not implemented/accepted: code-signed EXE, installer acceptance on interactive owner's PC, independently verified real winget package publisher mapping, actual install/upgrades, persistent signed release, native Android APK client. Production signer registry, release history and winget mapping remain EMPTY; all app install buttons are DISABLED.
 - This is a preview engineering milestone, not proof of a production-ready Windows app store or binary-equivalence guarantee.
+
+## In-progress Android native preview (2026-11-02)
+- Added native Android Java UI; review-only Android catalogue snapshot generator, F-Droid repo URI validator, runtime signed-repo fingerprint gate and GitHub-hosted Gradle APK build workflow.
+- **Unverified until GitHub Android workflow and actual APK artifact complete.** Do not claim signed production build, emulator acceptance, installer operation or real package installation.
+- No F-Droid private signing key or approved Android publisher was created. Existing trust registry/history stay empty. Android app cannot install anything in this condition.

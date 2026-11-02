@@ -1,0 +1,70 @@
+name: HamApp Android Native Preview APK
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'catalog/**'
+      - 'scripts/build_android_catalog.py'
+      - 'tests/test_android_catalog.py'
+      - '.github/workflows/android-client-preview.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'catalog/**'
+      - 'scripts/build_android_catalog.py'
+      - 'tests/test_android_catalog.py'
+      - '.github/workflows/android-client-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hamapp-android-preview-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  android-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Android SDK platform and build tools
+        shell: bash
+        run: |
+          sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Validate entire HamApp catalogue and Android snapshots
+        run: |
+          python3 -m unittest discover -s tests -v
+          python3 scripts/build_android_catalog.py
+      - name: Assemble native Android preview
+        run: gradle --no-daemon -p android :app:assembleDebug :app:lintDebug
+      - name: Verify debug APK exists and inspect its signing identity
+        shell: bash
+        run: |
+          apk=android/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$apk"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$apk" | head -n 4
+          sha256sum "$apk"
+      - name: Upload short-lived DEBUG APK; never production signing
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-android-debug-preview
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 3
+      - name: Publish accurate testing scope
+        shell: bash
+        run: |
+          echo '### ANDROID DEBUG-KEY PREVIEW, NOT PRODUCTION APK' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No offline F-Droid repository key, signed production index, approved apps, or device install/update QA. All install actions remain disabled.' >> "$GITHUB_STEP_SUMMARY"
