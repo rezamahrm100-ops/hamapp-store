@@ -69,3 +69,7 @@ GitHub build evidence is for the **static PWA bundle only**; it is not Android A
 ## Release continuity checks
 
 See [release history and rollback protections](docs/RELEASE-HISTORY.md). This is an offline release review-only policy and does not publish packages or sign the F-Droid repository. Trusted signer and historical approval registers are intentionally empty until independently reviewed.
+
+## Public-download admission policy
+
+[Catalogue release approval gate](docs/CATALOG-RELEASE-GATE.md) refuses unapproved Android/Windows download buttons even when a HTTPS link is present. It cross-checks independently reviewed publisher and history metadata, but cannot replace actual signature/provenance/device verification. Web-app release policy remains a separate workstream.

@@ -37,3 +37,8 @@ Mission: convert verified catalog + candidate intake into a safe real publishing
 - Set a protected workflow for promoting authenticated publisher releases with independent provenance and signer continuity; no implicit trust from a PR-provided manifest.
 - Implement Android native client upstream reuse and native Windows updater in separate coherent workstreams; use existing package-manager APIs.
 - Keep user-action gates limited to genuine signing/owner/device authorizations; never infer an installed product from green CI.
+
+## After catalogue approval gate
+- Integrate cryptographic GitHub build-attestation VERIFICATION at the producing app repositories, not just a claimed commit ID in JSON.
+- Introduce real, separately trusted web-deployment origin approval to enable web app listings (the binary-only gate deliberately refuses web downloads).
+- Create operator-controlled, auditable promotion workflow for actual approved releases after binary signature, malware, two-version update and provenance checks. Do not accept a forged receipt supplied in a PR.

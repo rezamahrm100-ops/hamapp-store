@@ -4,3 +4,7 @@
 /.github/workflows/ @rezamahrm100-ops
 /scripts/publisher_gate.py @rezamahrm100-ops
 /scripts/release_history.py @rezamahrm100-ops
+
+/catalog/apps.json @rezamahrm100-ops
+/scripts/validate_catalog.py @rezamahrm100-ops
+/docs/CATALOG-RELEASE-GATE.md @rezamahrm100-ops

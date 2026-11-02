@@ -44,3 +44,7 @@ Proceed through docs/NEXT-EXECUTION.md as a coherent end-to-end batch. Update th
 - Candidate-only policy: release_history.py and release_review.py reject SemVer/versionCode downgrade, hash replay, revoked signer and identity substitution. Staging bridge reads the version ledger before copying APKs.
 - This is a *development checkpoint*, not a proof the PR or main passed; inspect actual checks for the continuity PR and main before declaring acceptance.
 - Stored history and signer registries remain empty. No authentic APK, production signing environment or on-device update test has been accepted.
+
+## In-progress V1 public catalogue guard (2026-11-02)
+- New validation rejects public binary download links not matching the latest approved release history entry and pinned publisher identity.
+- Trust history and signer registry remain empty; no app was published. This checkpoint is not acceptance of PR checks; inspect the live GitHub run results before claiming the gate works.
