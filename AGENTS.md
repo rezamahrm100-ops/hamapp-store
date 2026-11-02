@@ -107,3 +107,16 @@ For a new chat: "Open AGENTS.md and docs/NEXT-EXECUTION.md at the current main S
 
 ## Android package rejection QA extension (pending acceptance)
 - The two-version emulator workflow also tests an independently debug-re-signed update and a truncated APK; both must be rejected without replacing installed v2. Only hosted CI, no owner desktop and no test keys/APKs uploaded. Require real workflow success before claiming acceptance. See docs/ANDROID-TWO-VERSION-SMOKE.md.
+
+
+## Consolidated engineering acceptance and stable root handoff (2026-11-02)
+- New root `NEXT-EXECUTION.md` points to canonical `docs/NEXT-EXECUTION.md`; read both after this file in new chats, and verify live GitHub checks.
+- PR #27: hosted Android 35 two-debug-version upgrade and downgrade denial, merged `df47991144c4a226fe76552cadbf351b1bc7c197`. Feature run https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41498803142 and merged-main run https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41504126166 were SUCCESS.
+- PR #28: Android foreign-signer and truncated APK rejection plus installed-v2 continuity, merged `1a5e43a4e59d1ce17966c83d6042eb78127fe681`. Feature emulator https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41504576824, CI https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41504576692 and CodeQL https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41504576810 all SUCCESS; main emulator https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41505157772 also SUCCESS.
+- PR #29: reviewed immutable web launch origin and release-history metadata gate, merged `eb08797a42fdde5cfacd0f6542ee0100d02bb680`. Feature CI https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41505384878, CodeQL https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41505384980, hosted Android https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41505384967 and Windows preview https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41505385179 all SUCCESS. Latest main checks must be independently rechecked after merge.
+- `catalog/trusted_web_origins.json` and `catalog/web_release_history.json` are EMPTY. Static approval metadata is NOT real HTTPS deployment-content validation. The Android negative tests use ephemeral debug keys, not production publisher signing.
+- Release blockers remain independently approved developer certificates, persistent offline F-Droid signing key + backup, real signed public index and client subscription, actual signed production APK/EXE, true F-Droid app update and owner-device acceptance. Never enable public downloads on a fabricated fixture.
+
+
+### Recheck after PR #29 merge: main green
+At main `eb08797a42fdde5cfacd0f6542ee0100d02bb680`, actual GitHub Actions runs for CI #41505611808, CodeQL #41505612155, owner-trusted Windows QA #41505612176, Android preview #41505612008, Windows EXE preview #41505612132, Pages #41505611948 and PWA evidence #41505612012 all completed SUCCESS. The preview APK remains debug-signed, the EXE unsigned, and both web origin registries remain empty.
