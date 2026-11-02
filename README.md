@@ -97,3 +97,7 @@ A separate [F-Droid signed-index verifier](docs/FDROID-INDEX-PREFLIGHT.md) now r
 ## Actual F-Droid signature pipeline rehearsal
 
 A [hosted isolated signed-index drill](docs/FDROID-ISOLATED-SIGNED-INDEX-DRILL.md) builds a real signed index-v2 with upstream fdroidserver using a **disposable** signing identity; validates the correct fingerprint and rejects an altered index or wrong fingerprint. It has no release rights and never publishes signing secrets or an installable production catalogue. Acceptance requires a green run of the dedicated GitHub workflow.
+
+## Real emulator two-version upgrade smoke
+
+The [two-version Android acceptance test](docs/ANDROID-TWO-VERSION-SMOKE.md) uses the actual Android 35 Package Manager to install and upgrade HamApp between two temporary debug-signed versions, checks downgrade refusal and the native UI after upgrading. It cannot substitute for a stable signed production/F-Droid app update.

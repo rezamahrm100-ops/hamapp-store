@@ -1,0 +1,73 @@
+name: HamApp Real Android Debug Two-Version Upgrade
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'scripts/android_two_version_smoke.sh'
+      - 'tests/test_android_two_version_smoke.py'
+      - '.github/workflows/android-two-version-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'scripts/android_two_version_smoke.sh'
+      - 'tests/test_android_two_version_smoke.py'
+      - '.github/workflows/android-two-version-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hamapp-android-two-version-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  two-version-upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Android SDK 35
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Build version 1 and 2 with same ephemeral debug signer
+        run: |
+          python3 -m unittest discover -s tests -v
+          bash scripts/android_two_version_smoke.sh prepare
+      - name: Enable KVM on GitHub-hosted runner
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Actual emulator install upgrade downgrade guard and UI
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          script: bash scripts/android_two_version_smoke.sh verify
+      - name: Upload only safe upgrade acceptance report and UI
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-android-debug-two-version-upgrade-evidence
+          path: |
+            dist/android-two-version/report.json
+            dist/android-two-version/ui.xml
+            dist/android-two-version/activity.txt
+            dist/android-two-version/after-update.png
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Explain signing limitations
+        if: success()
+        run: |
+          echo '### Real Android emulator upgrade v1->v2, downgrade denied' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Both APKs use temporary hosted DEBUG signing; no production signer, approved F-Droid repo subscription, private app or owner device is involved.' >> "$GITHUB_STEP_SUMMARY"

@@ -87,3 +87,8 @@
 - Verify the real GitHub signed-index drill's exact main SHA/run and receipt. Distinguish this end-to-end test of a disposable key from owner-approved real signer acceptance.
 - Next engineering: build a safe private owner-controlled, durable signing workspace with isolated backup and signed-index verification against independently pinned public trust. No unsigned fallback, no owner signing keys in GitHub.
 - Select one eligible privately owned app, verify real production signer, GitHub source provenance, immutable release digests and version continuity; then test two genuine signed versions/install/update on emulator. All approvals stay disabled until independently grounded evidence.
+
+## After native Android debug two-version upgrade acceptance
+- Inspect exact hosted Android two-version workflow SHA/receipt, confirm default downgrade refusal and native UI remained fail-closed. Do NOT confuse test debug signing with real production app/F-Droid update.
+- Next run a true F-Droid **client** install/update using owner-approved signed repository and two publisher-approved APK versions with stable signatures in isolated emulator, then accept owner device only with permission.
+- The ephemeral signed-index drill succeeded on main run #41497810315; document its acceptance and keep production signing keys outside public CI.

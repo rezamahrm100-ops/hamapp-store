@@ -100,3 +100,7 @@ For a new chat: "Open AGENTS.md and docs/NEXT-EXECUTION.md at the current main S
 ## Real F-Droid signed-index sandbox acceptance (pending workflow)
 - Script scripts/fdroid_signed_repo_drill.py and hosted-main workflow .github/workflows/fdroid-signed-index-drill.yml build a throwaway F-Droid repository with upstream fdroidserver from our native debug APK. They must verify an actual signed v2 index and reject wrong fingerprint/tampering. Read docs/FDROID-ISOLATED-SIGNED-INDEX-DRILL.md before running or editing.
 - Ephemeral signing material is created ONLY in temporary GitHub-hosted Ubuntu workspace; no test key/config/index or debug APK from the drill is published. Production signer registry and repository remain empty/null. Check real GitHub workflow run before claiming acceptance.
+
+## Native Android two-version emulator upgrade (pending acceptance)
+- Hosted workflow .github/workflows/android-two-version-smoke.yml builds ephemeral preview versionCode 1 and 2 under SAME debug key, installs and upgrades on real Android 35 emulator, rejects a downgrade, and confirms RTL UI still disables unapproved F-Droid button. See docs/ANDROID-TWO-VERSION-SMOKE.md; check actual Actions acceptance before claiming pass.
+- This is Android system DEBUG upgrade only, NOT an update from a signed F-Droid production repo or approved real app. No APKs or signing keys uploaded.

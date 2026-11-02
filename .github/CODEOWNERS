@@ -26,3 +26,6 @@
 
 /scripts/fdroid_signed_repo_drill.py @rezamahrm100-ops
 /.github/workflows/fdroid-signed-index-drill.yml @rezamahrm100-ops
+
+/scripts/android_two_version_smoke.sh @rezamahrm100-ops
+/.github/workflows/android-two-version-smoke.yml @rezamahrm100-ops
