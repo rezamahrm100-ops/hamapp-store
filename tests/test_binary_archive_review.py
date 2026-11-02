@@ -31,11 +31,22 @@ class RealArchiveSafetyTests(unittest.TestCase):
 
     def test_dot_traversal_rejected(self):
         for path in ("../escape", "/absolute", "dir/../escape", "C:/evil.exe",
-                     "directory\\evil.exe", "sub//double", "./prefix"):
+                     "sub//double", "./prefix"):
             with self.subTest(path=path):
                 self.write([(path, b"payload")])
                 with self.assertRaises(scanner.ArchiveReviewError):
                     scanner.review(self.file)
+
+    def test_raw_windows_separator_is_rejected_without_zipfile_normalization(self):
+        from types import SimpleNamespace
+        # zipfile normalizes backslashes to slash during archive *creation*
+        # on Windows. Test the raw untrusted entry parser independently.
+        record = SimpleNamespace(filename="directory\\evil.exe", flag_bits=0,
+                                 compress_type=zipfile.ZIP_STORED,
+                                 create_system=0, external_attr=0,
+                                 file_size=2, compress_size=2)
+        with self.assertRaisesRegex(scanner.ArchiveReviewError, "unsafe"):
+            scanner.checked_entry(record, set())
 
     def test_duplicate_and_case_collisions_rejected(self):
         with zipfile.ZipFile(self.file, "w") as f:
