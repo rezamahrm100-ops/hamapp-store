@@ -24,19 +24,9 @@ class ProvenanceError(ValueError):
     pass
 
 
-def verify(candidate, artifact, trusted_workflow, trusted_source_ref, runner=subprocess.run):
-    """No injected receipts: in production runner executes gh with strict flags."""
-    release = publisher_gate.validate_candidate(candidate, {
-        "schema_version": 1, "publishers": [{
-            "app_id": candidate["release"]["app_id"],
-            "platform": candidate["release"]["platform"],
-            "source_repo": candidate["source_repo"],
-            "package_id": candidate["package_id"],
-            # Policy-only input here: true certificate approval is checked separately.
-            "certificate_sha256": "0" * 64,
-        }]
-    })
-    del release
+def verify(candidate, registry, artifact, trusted_workflow, trusted_source_ref, runner=subprocess.run):
+    """Require existing independent publisher registration; execute real gh verifier."""
+    publisher_gate.validate_candidate(candidate, registry)
     manifest = candidate["release"]
     full_repo = publisher_gate.OWNER + "/" + candidate["source_repo"]
     if not isinstance(trusted_workflow, str) or not WORKFLOW.fullmatch(trusted_workflow):
@@ -103,6 +93,7 @@ def main():
     parser = argparse.ArgumentParser(description="Verify real GitHub artifact provenance (not release approval)")
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--artifact", type=Path, required=True)
+    parser.add_argument("--registry", type=Path, default=Path(__file__).resolve().parents[1] / "catalog/trusted_signers.json")
     parser.add_argument("--trusted-workflow", required=True)
     parser.add_argument("--trusted-source-ref", required=True)
     parser.add_argument("--receipt", type=Path, required=True)
@@ -111,7 +102,8 @@ def main():
         if args.receipt.exists() or args.receipt.is_symlink():
             raise ProvenanceError("receipt already exists")
         candidate = json.loads(args.candidate.read_text(encoding="utf-8"))
-        result = verify(candidate, args.artifact, args.trusted_workflow, args.trusted_source_ref)
+        registry = json.loads(args.registry.read_text(encoding="utf-8"))
+        result = verify(candidate, registry, args.artifact, args.trusted_workflow, args.trusted_source_ref)
         args.receipt.parent.mkdir(parents=True, exist_ok=True)
         with args.receipt.open("x", encoding="utf-8") as out:
             json.dump(result, out, sort_keys=True, indent=2)
