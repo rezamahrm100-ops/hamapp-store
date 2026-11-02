@@ -42,3 +42,9 @@
 3. For Windows, independently verify a real publisher package, winget ID, version and binary signer. Preserve empty mapping until verified. Provide a secure signing environment outside public CI, sign and version the desktop EXE, run interactive owner-device install/update QA only under explicit owner approval, then publish a properly signed release.
 4. Build authentic release source provenance and owner-reviewed promotion (certificate continuity, malware policy, anti-rollback, verified GitHub attestations) before enabling downloads.
 5. Improve real application detail pages/accessibility and publisher governance via safe GitHub PR workflow; do not build a new install system where F-Droid/winget already provide one.
+
+## After Android native preview verification
+- Inspect `.github/workflows/android-client-preview.yml` actual run + APK digest. Verify Android Studio/Gradle compatibility and manifest; perform emulator or instrumented UI smoke tests in isolated CI.
+- Add independent F-Droid signed index verification, pinned repository key fingerprint and stable private signer backup in trusted environment before enabling any production Android package install flow. Do not infer validity from public JSON alone.
+- Explore F-Droid's reusable client libraries under their applicable GPL licenses if a tightly integrated installer is needed. Existing native code currently hands off to the separate official client, not an embedded package manager.
+- Continue release source-to-binary provenance and Android release-key continuity, then two-version real-device update acceptance. Never register the ephemeral Android debug signing key.

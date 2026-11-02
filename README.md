@@ -77,3 +77,7 @@ See [release history and rollback protections](docs/RELEASE-HISTORY.md). This is
 ## Native Windows client preview
 
 The [Windows desktop client](docs/WINDOWS-CLIENT.md) uses Tkinter + Microsoft's winget and is built as a short-lived unsigned preview EXE on GitHub-hosted Windows. Its source lives under `windows_client/`; the preapproved package map `catalog/winget_packages.json` starts empty, and download/install buttons cannot be enabled without independent publisher, version, and package mapping review. This is not an installed or signed production app.
+
+## Native Android client preview (GitHub-hosted build)
+
+A minimal **native Android Java** RTL catalogue app now lives under [android/](android/) and uses the existing F-Droid client as an optional package-installer companion. It does not fork or redistribute F-Droid's GPL source. See [Android client notes](docs/ANDROID-CLIENT.md). GitHub-hosted Android CI builds a **debug-signed preview APK** (not production). Trust registration is intentionally absent: `catalog/android_repository.json` contains null, and every install action stays disabled. Read the actual Android workflow outcome and signing key before claiming installable production readiness.

@@ -20,3 +20,7 @@ Use mature upstream tools and native formats first. Record project URL, exact ve
 Functionality match; pinned reproducible version; current maintenance and vulnerabilities; licensing compatibility (especially AGPL/GPL); security boundaries and update continuity; independent integration test; migration/exit strategy. Prefer a verified upstream adapter to a long-lived invasive fork.
 
 Never claim F-Droid repository signature, Android/Windows installer readiness or source provenance solely from synthetic CI tests.
+
+## Android client integration decision (2026-11-02)
+- Reuse the independently installed official F-Droid Android client by Android ACTION_VIEW repository-subscription URL; do **not** embed/rebrand the GPL-3.0 client without source-redistribution and attribution planning. The HamApp Android UI is native Android SDK Java, minimal dependency surface, and all install buttons are disabled until an independently approved signed F-Droid repository and package identity exist.
+- Build with Google Android Gradle Plugin 8.13.0 / Gradle 8.13 / JDK 17 using standard GitHub-hosted Android runner; no private APK signing keys in CI. More information in docs/ANDROID-CLIENT.md.
