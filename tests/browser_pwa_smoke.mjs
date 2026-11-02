@@ -4,8 +4,10 @@ import { chromium } from 'playwright';
 const browser = await chromium.launch({headless: true});
 const context = await browser.newContext({locale: 'fa-IR', viewport: {width: 1100, height: 780}});
 const page = await context.newPage();
+page.setDefaultTimeout(15000);
+page.setDefaultNavigationTimeout(20000);
 try {
-  await page.goto('http://127.0.0.1:8765/', {waitUntil: 'networkidle'});
+  await page.goto('http://127.0.0.1:8765/', {waitUntil: 'networkidle', timeout: 20000});
   assert.match(await page.title(), /هَماپ/);
   await page.locator('#cards .card').first().waitFor();
   assert.equal(await page.locator('#cards .card').count(), 3);
@@ -25,8 +27,13 @@ try {
   assert.equal(await page.locator('#cards a.download').count(), 0);
 
   await page.screenshot({path: 'dist/pwa-browser-evidence.png'});
-  await page.evaluate(() => navigator.serviceWorker.ready);
+  console.log('Browser UI passed; waiting for real Service Worker');
+  await page.evaluate(() => Promise.race([
+    navigator.serviceWorker.ready.then(() => true),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Service Worker install timeout')), 15000))
+  ]));
   await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller), null, {timeout: 20000});
+  console.log('Service Worker active; verifying physical-network-offline reload');
   await context.setOffline(true);
   await page.reload({waitUntil: 'domcontentloaded', timeout: 20000});
   await page.waitForFunction(
