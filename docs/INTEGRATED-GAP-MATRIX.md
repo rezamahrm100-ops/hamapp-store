@@ -27,3 +27,6 @@ The approved WinGet operation path now pre-checks registered version and blocks 
 
 ### Real browser acceptance extension
 A pinned Playwright/Chromium hosted integration test now exercises actual native modal/search/filters and offline service worker behavior with no download controls. Acceptance requires actual workflow run; detailed full screen-reader and mobile browser/accessibility QA is still unaccepted.
+
+## Acceptance reconciliation 2026-11-02
+All planned source tranches #33–#37 are now merged and exact feature/main Actions green. Details and remaining full-engineering gaps: [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md). Actual hosted browser test found/fixed insecurely narrow localhost string check; Chromium + offline planned-only controls now accepted. Do not call production signer, publisher platform, real F-Droid client installation, physical device or commercial marketplace accepted. **PARTIAL** engineering closure.

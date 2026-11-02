@@ -128,3 +128,8 @@ Older sections below describe historical continuation stages; they **do not auth
 
 ## Browser PWA acceptance
 - Verify `tests/browser_pwa_smoke.mjs` truly runs Chromium (not source-only checks), with native dialog, search, platform filters, service-worker offline reload and no fake download controls. Review workflow/CI result and safe screenshot before merging. Full screen-reader and real-device audits remain separate.
+
+## Post integrated PRs #33–#37: concrete continuation
+- Source of dated actual results: [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md). Main SHA `8a76c419e581506d395e9eb6e016425d9afa2ca1` and six main workflows all succeeded. Real Chromium finally passed after fixing Service Worker `window.isSecureContext` for 127.0.0.1.
+- **Next mission** is not repeating completed PWA, WinGet readback or dummy-key tests. Build the owner-reviewed atomic promotion/revocation review workflow, real upstream software supply-chain/malware/permissions/SBOM review, actual trusted F-Droid client signed-index subscription and production-version tests when genuine owner key/origin available, production Windows Authenticode/device install when owner approves, and publisher portal/access-control architecture if requirements warrant it.
+- Preserve separate external gates, no publisher or installer metadata fabricated; verify live main and any open Dependabot PRs and Issue #31 security ruleset before merging unreviewed automation. Keep engineering verdict PARTIAL unless all requested technical tasks genuinely pass.
