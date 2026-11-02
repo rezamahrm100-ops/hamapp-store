@@ -67,3 +67,7 @@
 
 /tests/browser_accessibility_smoke.mjs @rezamahrm100-ops
 /docs/PWA-MOBILE-A11Y.md @rezamahrm100-ops
+
+/scripts/verify_live_pages.py @rezamahrm100-ops
+/docs/REAL-PAGES-HTTPS-ACCEPTANCE.md @rezamahrm100-ops
+/.github/workflows/pages-live-preflight.yml @rezamahrm100-ops

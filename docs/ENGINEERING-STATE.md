@@ -174,3 +174,6 @@ Read [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md) for 
 
 ## Second integrated engineering execution: accepted merges and live QA reconciliation
 - Six PRs #39/#40/#41/#5/#6/#4 merged. Source of exact SHAs, feature-branch CI/CodeQL/Trivy/Android aapt/Chromium axe and Pages evidence: `docs/ENGINEERING-CLOSURE-2026-11-02-RUN2.md`. Main checkout-v7 merge `86b47e7839c4c63f722da448ebdee1f3fcda163c` requires exact terminal confirmation of 12 workflows; do not interpret pending as pass. Actual owner Windows runner 2.338.2 is above upstream checkout Node24 requirement 2.327.1. Public signers, release history, F-Droid repository and trusted web origins still empty/null; production readiness rejected.
+
+## Real first-party HTTPS Pages parity (implementation, acceptance pending)
+- New read-only live HTTPS source-to-public byte parity verifier and short-lived hash receipt, preflight hosted PR and post-deploy main Pages check. This closes missing real **first-party storefront** CDN byte observation, not third-party approved web apps. Mark accepted only after actual success for both workflows.

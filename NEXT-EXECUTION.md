@@ -63,3 +63,6 @@ Verify exact workflow run for test/mobile-axe-accessibility-20261102: live Chrom
 
 ## Latest run 2 accepted engineering and next execution
 - Inspect `docs/ENGINEERING-CLOSURE-2026-11-02-RUN2.md` and current GitHub before coding. Six PRs #39,#40,#41,#5,#6,#4 merged. Audit exact latest main head and Android F-Droid/emulator hosted checks, then continue authentic publisher/permission/malware/OS signer release integration, owner PR branch ruleset, stable signed index and genuine two-version installs. Do not repeat already accepted Trivy source, aapt or real browser axe QA.
+
+## 2026-11-03 real Pages deployment verification
+- Inspect `feature/real-pages-https-deployed-bytes-20261103` PR: real hosted preflight of public site, CI, CodeQL and actual deployed HTTPS post-Pages parity job on main. Fix any CDN/origin mismatch instead of bypassing TLS/redirect checks. Separate approved app web origins and stable immutable releases remain empty.

@@ -42,3 +42,6 @@ New proposed release-governance transaction tooling can generate coordinated no-
 
 ## Second integrated cross-platform implementation: current reference
 - See [ENGINEERING-CLOSURE-2026-11-02-RUN2.md](ENGINEERING-CLOSURE-2026-11-02-RUN2.md): actual review-only revoke/release proposals, safe code+SBOM Trivy scan, official Android aapt permissions on real debug APK, mobile axe browser tests with fixed genuine brand-label/contrast issues, compatible official GitHub Pages/checkout upgrades. PRs #39/#40/#41/#5/#6/#4 merged with exact SHAs. **Engineering remains PARTIAL**: approved third-party binary scanning, signer identity, actual paid publisher portal, durable production F-Droid key and client install, signed Windows installer, branch ruleset and physical device acceptance are not fulfilled.
+
+### Live first-party Pages HTTPS parity (2026-11-03)
+- Actual byte-for-byte comparison of seven fixed first-party public HTTPS Pages files with local source build, no redirects, hostname-verified certificate, retry after deploy and bounded evidence. PR preflight and post-merge Pages workflow required. Not a third-party immutable web app source attestation; origin trust registry remains empty.

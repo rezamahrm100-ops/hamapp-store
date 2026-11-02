@@ -157,3 +157,6 @@ At main `eb08797a42fdde5cfacd0f6542ee0100d02bb680`, actual GitHub Actions runs f
 
 ## Second integrated engineering run (2026-11-02) — six real merged PRs
 - Read `docs/ENGINEERING-CLOSURE-2026-11-02-RUN2.md` for exact PRs, main SHAs, workflow run URLs, source supply-chain scan, actual Android permission aapt acceptance, mobile axe accessibility findings/fixes, and safe official GitHub Actions upgrades (#39, #40, #41, #5, #6, #4). Final latest main target `86b47e7839c4c63f722da448ebdee1f3fcda163c` — **verify terminal actual workflows before declaring all main checks green**. No first-party publisher identity or signed production release is approved; full engineering state remains PARTIAL.
+
+## First-party real HTTPS Pages deployment parity (2026-11-03; PR acceptance pending)
+- Read `docs/REAL-PAGES-HTTPS-ACCEPTANCE.md`; `scripts/verify_live_pages.py` performs actual CA+hostname-verified public HTTPS byte parity for seven fixed site/catalogue files after Pages deployment with no redirects and source sha256 receipt. An independent hosted PR preflight checks current deployed first-party site. Verify real CI and post-merge Pages job before claiming parity. This does NOT approve any third-party publisher or immutable web release origin.

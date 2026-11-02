@@ -146,3 +146,6 @@ Older sections below describe historical continuation stages; they **do not auth
 
 ## Second integrated closing pass (2026-11-02)
 - `docs/ENGINEERING-CLOSURE-2026-11-02-RUN2.md` is the latest dated ledger, not live evidence. It records six merged PRs and exact Actions URLs: emergency review-only release/signer revocation plans + source Trivy/CycloneDX; actual aapt Android debug permission audit; live mobile Chromium axe with brand/contrast fixes; official Pages and checkout action upgrades. Verify all latest main workflows, particularly emulator/F-Droid drills, before relying on main acceptance. Continue unfinished genuine engineering in one integrated execution; production signatures/keys, approved release and physical-device evidence remain real owner/external gates.
+
+## Actual CDN bytes/HTTPS verification (not publisher origin approval)
+- Check real hosted read-only PR parity and main Pages publish `scripts/verify_live_pages.py`: source-built HTML/CSS/JS/Service Worker and JSON must match live HTTPS bytes after deployment with zero redirect, CA trust and full-path match. Restore or fix if red. Public app origins still need independently approved immutable deployment and signer provenance.
