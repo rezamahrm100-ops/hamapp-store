@@ -126,6 +126,11 @@ def validate(data, registry=None, history=None, web_origins=None, web_releases=N
             errors.append(ref + ": invalid platforms")
             continue
         state = app.get("status")
+        if "changelog" in app:
+            changes = app["changelog"]
+            if (state != "released" or not isinstance(changes, str)
+                    or not changes.strip() or len(changes) > 2000):
+                errors.append(ref + ": changelog is allowed only for released apps (max 2000 chars)")
         if state == "planned":
             if (app.get("version") is not None or app.get("download_url") is not None
                     or app.get("release_proof") is not None):

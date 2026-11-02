@@ -4,6 +4,9 @@ const count = document.getElementById('count');
 const status = document.getElementById('status');
 const search = document.getElementById('search');
 const filterButtons = Array.from(document.querySelectorAll('[data-filter]'));
+const detailsDialog = document.getElementById('detailsDialog');
+const detailsTitle = document.getElementById('detailsTitle');
+const detailsContent = document.getElementById('detailsContent');
 const platformNames = {android:'اندروید', windows:'ویندوز',web:'وب'};
 let data = [];
 let platformFilter = 'all';
@@ -19,6 +22,34 @@ function validUrl(value) {
   try { const url = new URL(value); return url.protocol === 'https:'; }
   catch { return false; }
 }
+function showDetails(app) {
+  detailsTitle.textContent = app.name_fa;
+  detailsContent.replaceChildren();
+  function fact(label, value) {
+    const section = el('div', 'details-fact');
+    section.append(el('strong', '', label), el('p', '', String(value)));
+    detailsContent.append(section);
+  }
+  fact('نام لاتین', app.name_en);
+  fact('معرفی', app.description);
+  fact('پلتفرم', app.platforms.map(p => platformNames[p] || p).join('، '));
+  if (app.status !== 'released') {
+    fact('وضعیت', 'در حال توسعه؛ هنوز نسخه یا فایل قابل دریافت وجود ندارد.');
+  } else {
+    fact('نسخهٔ ثبت‌شده', app.version);
+    if (app.changelog) fact('تغییرات نسخه', app.changelog);
+    if (app.release_proof && typeof app.release_proof === 'object') {
+      if (app.release_proof.source_repo) fact('مخزن منبع ثبت‌شده', app.release_proof.source_repo);
+      if (app.release_proof.source_sha) fact('شناسهٔ تغییر منبع', app.release_proof.source_sha);
+      const digest = app.release_proof.sha256 || app.release_proof.artifact_sha256;
+      if (digest) fact('SHA-256 ثبت‌شدهٔ بسته', digest);
+    }
+    fact('محدودیت بررسی', 'این مشخصات از کاتالوگ انتشار خوانده می‌شوند و به‌تنهایی اثبات امضای واقعی فایل یا سلامت لحظه‌ای مقصد نیستند.');
+  }
+  detailsDialog.showModal();
+}
+document.getElementById('detailsClose').addEventListener('click', () => detailsDialog.close());
+
 function render() {
   const term = search.value.trim().toLocaleLowerCase('fa');
   const matched = data.filter(app => {
@@ -45,6 +76,11 @@ function render() {
     app.platforms.forEach(p => meta.append(el('span', 'pill', platformNames[p] || p)));
     meta.append(el('span', `badge ${app.status === 'released' ? 'live' : ''}`, app.status === 'released' ? `نسخهٔ ${app.version}` : 'در حال توسعه'));
     footer.append(meta);
+    const detailButton = el('button', 'detail-button', 'جزئیات');
+    detailButton.type = 'button';
+    detailButton.setAttribute('aria-label', `مشاهدهٔ جزئیات ${app.name_fa}`);
+    detailButton.addEventListener('click', () => showDetails(app));
+    footer.append(detailButton);
     if (app.status === 'released' && validUrl(app.download_url)) {
       const isWeb = app.platforms.length === 1 && app.platforms[0] === 'web';
       const link = el('a', 'download', isWeb ? 'باز کردن برنامه' : 'دریافت');
