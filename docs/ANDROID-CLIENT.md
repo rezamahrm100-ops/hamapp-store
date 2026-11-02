@@ -34,3 +34,9 @@ The GitHub-hosted workflow performs this without changes to the owner's PC. Sour
 ## Hosted emulator UI acceptance
 
 `reactivecircus/android-emulator-runner@v2` boots an isolated Android 35 emulator on GitHub-hosted Linux and executes `scripts/android_emulator_smoke.sh`. The test installs the DEBUG APK with ADB, launches the native activity, checks the accessibility hierarchy for a Persian HamApp title, planned-app status and disabled F-Droid install buttons, then stores an emulator screenshot and hierarchy as three-day artifacts. The UI hierarchy parser has negative unit tests. This is a meaningful native-activity smoke test, **not** a test of production F-Droid subscription, binary signatures, updates or physical-device behavior. Do not run it on the owner's Windows session or accept untrusted PR code on the owner runner.
+
+## Evidence of hosted native Android QA (2026-11-02)
+
+- PR #17 Android debug APK build: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41487326775 (success).
+- PR #18 real emulator smoke: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41488084733 (success); Android 35 device simulator installed Debug APK, launched MainActivity, verified Persian title and disabled F-Droid button in UI hierarchy; saved ephemeral UI screenshot / hierarchy.
+- The test checks only the preview UI and F-Droid handoff is DISABLED. Not equivalent to real owner device UX QA, production APK signing, verified F-Droid signed repository, install/update or rollback acceptance.

@@ -81,3 +81,7 @@ The [Windows desktop client](docs/WINDOWS-CLIENT.md) uses Tkinter + Microsoft's 
 ## Native Android client preview (GitHub-hosted build)
 
 A minimal **native Android Java** RTL catalogue app now lives under [android/](android/) and uses the existing F-Droid client as an optional package-installer companion. It does not fork or redistribute F-Droid's GPL source. See [Android client notes](docs/ANDROID-CLIENT.md). GitHub-hosted Android CI builds a **debug-signed preview APK** (not production). Trust registration is intentionally absent: `catalog/android_repository.json` contains null, and every install action stays disabled. Read the actual Android workflow outcome and signing key before claiming installable production readiness.
+
+## Android native app and emulator-verified preview
+
+The [native Android app](docs/ANDROID-CLIENT.md) now builds a **debug APK** on hosted GitHub Actions with Gradle and Android SDK. A separate [hosted emulator smoke test](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41488084733) installed and launched the native Java RTL app and checked that unapproved F-Droid actions stay disabled. **Debug signing is not production signing**; no approved publisher or signed F-Droid repo exists yet. No install controls are active and no production Android app release has been published.

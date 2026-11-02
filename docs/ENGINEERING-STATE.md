@@ -83,3 +83,17 @@ See NEXT-EXECUTION.md for next integrated work. After every merge record new SHA
 ## Android emulator smoke check — in progress
 - New workflow `.github/workflows/android-emulator-smoke.yml` runs Android 35 x86_64 on GitHub-hosted Ubuntu using the upstream ReactiveCircus emulator runner (Apache 2.0). Installs a Debug APK, launches native UI, checks Arabic-script title and F-Droid button disabled, archives an accessibility dump and screenshot.
 - At checkpoint the workflow is **not yet accepted**: inspect actual run's conclusion, artifact and SHA. This is distinct from production signed F-Droid install/update QA.
+
+## Acceptance checkpoint — native Android app and hosted emulator (2026-11-02)
+
+**Implemented and validated:**
+- PR #17 https://github.com/rezamahrm100-ops/hamapp-store/pull/17 merged SHA `4688fb18294a1e05ec3f3cf357c6a456a84009fb`.
+- Native RTL Java Android UI, offline approved catalogue snapshot generator, strict F-Droid repo fingerprint URI policy, no package install permissions; GitHub-hosted AGP 8.13.0 / Gradle 8.13 debug APK built via upstream tools.
+- Hosted debug APK build: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41487326775 — success; artifact `hamapp-android-debug-preview`; ephemeral debug key is not production signer.
+- Source PR tests https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41487326902 and CodeQL https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41487326756 — success.
+- PR #18 https://github.com/rezamahrm100-ops/hamapp-store/pull/18 merged SHA `56fe430abab33d4c4a843296778ed39c480e860e`. Hosted emulator smoke: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41488084733 — success; Android 35 emulator installed debug APK, launched native UI, found Persian title/planned status and **disabled F-Droid button**, and saved screenshot + accessibility hierarchy artifact `hamapp-android-emulator-evidence`. PR CI and CodeQL passed: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41488084564 and https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41488084433.
+- On `main` after PR #18, independently check https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41488539802 (emulator smoke), https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41488540097 (owner Windows), https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41488540082 (CI), https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41488539973 (CodeQL), Pages and build evidence. These might have been running while this documentation was authored.
+
+**Still unaccepted / not done:** Android production APK release key or production signature, a stable independently approved F-Droid repository/index signing key + secure backup, live signed repository subscription/install/update, verified source provenance and publisher registration, any publicly listed genuine Android app, real two-version device installation and rollback, fully embedded F-Droid client fork, and public signed release download. Signer/release/repo registries remain empty; no installation enabled.
+
+**Private-project intake:** authorized GitHub metadata inspection found private Android/Windows projects with some QA/pre-release APK/EXE artifacts. Do not list their identities/contents in this public repository or automatically treat QA builds as approved products. Next must perform independent signer and release readiness verification privately before any publishing.

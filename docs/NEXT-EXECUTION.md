@@ -52,3 +52,13 @@
 ## After hosted Android emulator acceptance
 - Review a real GitHub Android emulator workflow run: APK installation into ephemeral emulator, app activity start, UI dump, disabled F-Droid handoff and screenshot. A green emulator test is not equivalent to signed repo subscription or physical-device two-version APK update acceptance.
 - Prioritize real signed F-Droid repo with persistent offline key / verified index and an owner-approved signer registration, then active install+upgrade on isolated device and stable APK release signing.
+
+## Next integrated batch after verified Android native/emulator PRs #17 and #18
+
+1. Verify GitHub main SHA and status of the six main workflows after PR #18; confirm actual Android Debug APK and emulator screenshot artifacts before claiming green.
+2. Move toward a **real signed F-Droid repository and first eligible application**: check privately available owned release candidates, exact publisher certificate fingerprints and immutable binaries; get an independently trusted owner approval and signing key outside GitHub. Keep private source/release names out of this public catalogue until explicitly authorized.
+3. Build an isolated, persistent-key fdroidserver signing workspace with verified official index and separate offline backup, actual QR/subscription smoke test, then publish signed metadata via appropriate HTTPS hosting (GitHub Pages is only a static project showcase under its terms).
+4. Test F-Droid handoff on the Android emulator after a real signed repository fingerprint is approved, including two-version APK install/update, downgrade/revocation and persistence of signing keys.
+5. Finish signed Windows client release and real winget/publisher provenance mapping; isolate owner-device/UAC acceptance from hosted CI. Do not activate download or install controls with synthetic data.
+6. Review which F-Droid libraries or GPL-client code can be reused directly if integrated install/update UI is desired; follow GPL source/notice/trademark obligations. The current native client uses the external F-Droid client as a companion, **not** an embedded F-Droid fork.
+7. Update AGENTS.md and ENGINEERING-STATE.md with exact accepted SHA and runs after each coherent branch, not with guesses.
