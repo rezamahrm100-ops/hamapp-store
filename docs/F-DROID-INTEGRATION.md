@@ -18,3 +18,7 @@ The production Android **repository** key must live on a trusted owner-controlle
 6. Before using a branded client, preserve GPL compliance (license text, notices, complete corresponding source, brand/trademark distinctions, and distribution obligations).
 
 Until these gates pass, the store website will NOT claim that it can install or automatically update Android apps. No F-Droid keystore or active signed repository is in this bootstrap.
+
+## Signed-index admission CLI
+
+Before enabling a repository, use [the official index-v2 verification wrapper](FDROID-INDEX-PREFLIGHT.md). It explicitly invokes fdroidserver.index.download_repo_index_v2 with verify_fingerprint=True and a fingerprint independently pinned by owner approval. `catalog/android_repository.json` remains null until a genuine securely signed HTTPS repository is available and independently audited. This wrapper creates no keystore or live F-Droid repo.

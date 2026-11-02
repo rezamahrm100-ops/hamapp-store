@@ -20,3 +20,6 @@
 
 /scripts/attested_binary_receipt.py @rezamahrm100-ops
 /docs/NATIVE-PROVENANCE.md @rezamahrm100-ops
+
+/scripts/verify_fdroid_signed_index.py @rezamahrm100-ops
+/docs/FDROID-INDEX-PREFLIGHT.md @rezamahrm100-ops

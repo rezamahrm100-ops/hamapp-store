@@ -87,3 +87,7 @@ For a new chat: "Open AGENTS.md and docs/NEXT-EXECUTION.md at the current main S
 ## Native artifact provenance (2026-11-02 engineering tranche)
 - New docs/NATIVE-PROVENANCE.md and scripts/attested_binary_receipt.py: GitHub-native signed build attestation and strict gh CLI verification for Android debug APK and unsigned Windows EXE, main-only, builder workflow/commit pinned. JSON receipt alone never proves cryptographic validity.
 - The attestation verification jobs run ONLY after their own trusted-main build job; do not claim success before inspecting the real Actions results after merge. This does not verify developer APK/Authenticode release signatures.
+
+## Build provenance accepted; F-Droid preflight in progress (2026-11-02)
+- PR #20 merged main SHA 5429ee5d259b138c7478a5c15b226c4b995c1d5b. Android provenance run https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41491331966 and Windows provenance run https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41491331958 both SUCCESS, with independently verified GitHub attestations and short-lived receipt artifacts. Full native CI/CodeQL/owner Windows checks also passed.
+- The new F-Droid signed-index preflight uses official fdroidserver verification only after independent URL+fingerprint pins. See docs/FDROID-INDEX-PREFLIGHT.md; do not claim live signature acceptance since catalog/android_repository.json is still null.
