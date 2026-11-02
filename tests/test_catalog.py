@@ -117,6 +117,15 @@ class CatalogTests(unittest.TestCase):
         app["platforms"] = ["web"]
         self.assertTrue(validator.validate(self.sample, self.pub, self.history))
 
+    def test_changelog_requires_real_released_version(self):
+        self.sample["apps"][0]["changelog"] = "New features"
+        self.assertTrue(validator.validate(self.sample, self.pub, self.history))
+        self.sample["apps"][0].pop("changelog")
+        self.approved()["changelog"] = "Reviewed version notes"
+        self.assertEqual(validator.validate(self.sample, self.pub, self.history), [])
+        self.sample["apps"][0]["changelog"] = "a" * 2001
+        self.assertTrue(validator.validate(self.sample, self.pub, self.history))
+
     def test_duplicate_id_rejected(self):
         self.sample["apps"].append(self.sample["apps"][0].copy())
         self.assertTrue(validator.validate(self.sample))

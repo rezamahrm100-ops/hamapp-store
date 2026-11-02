@@ -17,6 +17,17 @@ class SiteContractTests(unittest.TestCase):
         self.assertIn('role="status"',page)
         self.assertIn('aria-pressed',page)
 
+    def test_native_dialog_and_text_only_details(self):
+        page = (ROOT / "web/index.html").read_text(encoding="utf-8")
+        app = (ROOT / "web/app.js").read_text(encoding="utf-8")
+        self.assertIn('id="detailsDialog"', page)
+        self.assertIn('aria-labelledby="detailsTitle"', page)
+        self.assertIn("detailsDialog.showModal()", app)
+        self.assertIn("detailsContent.replaceChildren()", app)
+        self.assertIn("detailsTitle.textContent", app)
+        self.assertNotIn("innerHTML", app)
+        self.assertIn("app.release_proof", app)
+
     def test_manifest_installable_assets(self):
         data=json.loads((ROOT/'web'/'manifest.webmanifest').read_text(encoding='utf-8'))
         self.assertEqual(data['display'],'standalone')
