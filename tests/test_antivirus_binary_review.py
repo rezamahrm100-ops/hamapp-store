@@ -14,9 +14,10 @@ DB="ClamAV 1.4.3/27999/Tue Nov 3 09:00:00 2026\n"
 
 class FakeRunner:
     def __init__(self, status=0, version=DB, mutate=None):
-        self.status=status;self.version=version;self.commands=[];self.mutate=mutate
+        self.status=status;self.version=version;self.commands=[];self.calls=[];self.mutate=mutate
     def __call__(self, cmd, **kwargs):
         self.commands.append(cmd)
+        self.calls.append(kwargs)
         if cmd[1]=="--version":
             return subprocess.CompletedProcess(cmd,0,self.version,"")
         if self.mutate: self.mutate()
@@ -36,7 +37,8 @@ class AntivirusReviewTests(unittest.TestCase):
         self.assertFalse(receipt["malware_absence_verified"])
         self.assertEqual(runner.commands[1][0:4],
                          ["clamscan","--infected","--no-summary","--stdout"])
-        self.assertFalse("shell" not in ["shell"] if False else runner.status)
+        self.assertTrue(all(call["shell"] is False and call["check"] is False
+                            for call in runner.calls))
 
     def test_stale_or_missing_db_rejected(self):
         for version in ("ClamAV 1.4.3\n",
