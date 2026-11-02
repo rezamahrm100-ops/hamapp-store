@@ -161,7 +161,7 @@ class GateTests(unittest.TestCase):
         if sys.platform != 'win32': config.chmod(0o600)
         def fdroid(command, **kwargs):
             self.assertEqual(command, ['fdroid', 'update', '--create-metadata'])
-            self.assertEqual(kwargs['cwd'], str(workspace))
+            self.assertEqual(pathlib.Path(kwargs['cwd']).resolve(), workspace.resolve())
             return subprocess.CompletedProcess(command, 0, '', '')
         result = fdroid_bridge.stage(self.candidate, self.registry, self.path, workspace, runner=MockRunner(), update_runner=fdroid)
         self.assertFalse(result['deployed'])
