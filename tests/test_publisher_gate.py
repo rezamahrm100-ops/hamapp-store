@@ -167,6 +167,22 @@ class GateTests(unittest.TestCase):
         self.assertFalse(result['deployed'])
         self.assertTrue((workspace / 'repo' / self.path.name).exists())
 
+    def test_fdroid_rechecks_copied_file(self):
+        workspace = pathlib.Path(self.temp.name) / 'private_toctou'
+        workspace.mkdir()
+        config = workspace / 'config.yml'
+        config.write_text('# test only\n', encoding='utf8')
+        if sys.platform != 'win32': config.chmod(0o600)
+        source = self.path
+        class MutatingRunner(MockRunner):
+            def __call__(self, command, **kwargs):
+                result = super().__call__(command, **kwargs)
+                if command[0] == 'aapt': source.write_bytes(b'altered after initial hash')
+                return result
+        with self.assertRaisesRegex(gate.PublisherError, 'staging failed'):
+            fdroid_bridge.stage(self.candidate, self.registry, self.path, workspace, runner=MutatingRunner())
+        self.assertFalse((workspace / 'repo' / self.path.name).exists())
+
     def test_fdroid_failure_removes_new_file(self):
         workspace = pathlib.Path(self.temp.name) / 'private'
         workspace.mkdir()
