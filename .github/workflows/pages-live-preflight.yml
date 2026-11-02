@@ -1,0 +1,43 @@
+name: HamApp Real Public HTTPS Pages Parity Preflight
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/verify_live_pages.py'
+      - 'tests/test_verify_live_pages.py'
+      - '.github/workflows/pages.yml'
+      - '.github/workflows/pages-live-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-https-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Validate public source and reproducibly build
+        run: |
+          python3 -m unittest discover -s tests -v
+          python3 scripts/build_site.py
+      - name: Verify ACTUAL public HTTPS Pages bytes and no redirects
+        run: |
+          python3 scripts/verify_live_pages.py \
+            --site-dir dist/site \
+            --receipt dist/pr-live-pages-parity.json \
+            --attempts 3 --retry-seconds 5
+      - name: Save safe public parity metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-real-pages-pr-https-parity
+          path: dist/pr-live-pages-parity.json
+          if-no-files-found: error
+          retention-days: 3
+      - name: Accurate result scope
+        if: success()
+        run: |
+          echo 'Verified current public GitHub Pages HTTPS file bytes against the current built site. No redirects accepted.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This PR preflight is only expected to pass when the PR changes verification tooling, not website content.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Production third-party publisher web origins remain unapproved.' >> "$GITHUB_STEP_SUMMARY"
