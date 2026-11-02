@@ -43,11 +43,12 @@ function render() {
     meta.append(el('span', `badge ${app.status === 'released' ? 'live' : ''}`, app.status === 'released' ? `نسخهٔ ${app.version}` : 'در حال توسعه'));
     footer.append(meta);
     if (app.status === 'released' && validUrl(app.download_url)) {
-      const link = el('a', 'download', 'دریافت');
+      const isWeb = app.platforms.length === 1 && app.platforms[0] === 'web';
+      const link = el('a', 'download', isWeb ? 'باز کردن برنامه' : 'دریافت');
       link.href = app.download_url;
       link.rel = 'noopener noreferrer';
       link.target = '_blank';
-      link.setAttribute('aria-label', `دریافت ${app.name_fa}`);
+      link.setAttribute('aria-label', `${isWeb ? 'باز کردن' : 'دریافت'} ${app.name_fa}`);
       footer.append(link);
     } else footer.append(el('span', 'disabled', 'هنوز منتشر نشده'));
     card.append(top, desc, footer);
