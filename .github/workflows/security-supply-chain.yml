@@ -1,0 +1,67 @@
+name: HamApp Hosted Source Supply-Chain Scan
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hamapp-supply-chain-\${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  source-supply-chain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout public source (no credentials persisted)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Actual upstream Trivy vulnerability/secret/config review
+        # Immutable v0.36.0 annotated tag resolves to this action source commit.
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          ignore-unfixed: 'true'
+          exit-code: '1'
+          format: table
+          cache: 'false'
+      - name: Generate CycloneDX SBOM of PUBLIC source only
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          format: cyclonedx
+          output: hamapp-source-sbom.cdx.json
+          skip-setup-trivy: 'true'
+          exit-code: '0'
+          cache: 'false'
+      - name: Validate minimum SBOM structure
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          doc=json.loads(Path('hamapp-source-sbom.cdx.json').read_text(encoding='utf-8'))
+          if doc.get('bomFormat') != 'CycloneDX' or not isinstance(doc.get('specVersion'),str):
+              raise SystemExit('invalid CycloneDX output')
+          print('SOURCE_SBOM_CYCLONEDX_GENERATED; PUBLIC_SOURCE_ONLY')
+          PY
+      - name: Upload short-lived PUBLIC source SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-public-source-cyclonedx-sbom
+          path: hamapp-source-sbom.cdx.json
+          if-no-files-found: error
+          retention-days: 5
+      - name: State scanner scope honestly
+        if: success()
+        run: |
+          echo '### Hosted source security review passed' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Real upstream Trivy scanned public source and generated a CycloneDX SBOM. This does NOT scan real publisher APK/EXE bytes, prove absence of malware, authenticate private releases, or authorize promotion.' >> "$GITHUB_STEP_SUMMARY"

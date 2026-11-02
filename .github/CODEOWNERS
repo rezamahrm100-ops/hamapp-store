@@ -54,3 +54,9 @@
 
 # Verified engineering closure acceptance ledger requires owner review.
 /docs/ENGINEERING-CLOSURE-2026-11-02.md @rezamahrm100-ops
+
+/scripts/release_governance.py @rezamahrm100-ops
+/scripts/publisher_gate.py @rezamahrm100-ops
+/.github/workflows/security-supply-chain.yml @rezamahrm100-ops
+/docs/RELEASE-GOVERNANCE.md @rezamahrm100-ops
+/docs/SUPPLY-CHAIN-SCAN.md @rezamahrm100-ops
