@@ -1,5 +1,12 @@
 # HamApp — engineering state and evidence ledger
 
+## Effective next-run objective (2026-11-02): integrated engineering closure
+
+The project owner has replaced the incremental microfix/status-report mission with **one coordinated effort to close every technically actionable workstream**. The mandatory contract is [docs/ONE-RUN-TECHNICAL-CLOSURE.md](ONE-RUN-TECHNICAL-CLOSURE.md); root AGENTS.md and both NEXT-EXECUTION.md files link to it. Agents must inventory gaps, execute implementation and real checks across Android/Windows/PWA/publisher/security/release pipelines, integrate reviewable PRs where possible, and record a strict PASS/PARTIAL engineering verdict.
+
+This policy **does not mark any remaining feature as implemented** and **does not authorize invented signatures, persistent production keys in public CI, private project publication or unattended owner-device changes**. Real owner/external prerequisites remain explicit blockers after the corresponding technical tooling is completed.
+
+
 Checkpoint: 2026-11-02. Always query live GitHub before trusting this snapshot.
 
 Repository: https://github.com/rezamahrm100-ops/hamapp-store
