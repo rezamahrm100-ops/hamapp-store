@@ -7,6 +7,7 @@ const filterButtons = Array.from(document.querySelectorAll('[data-filter]'));
 const platformNames = {android:'اندروید', windows:'ویندوز',web:'وب'};
 let data = [];
 let platformFilter = 'all';
+let offlineMode = false;
 
 function el(tag, className, value) {
   const element = document.createElement(tag);
@@ -26,7 +27,9 @@ function render() {
   });
   cards.replaceChildren();
   count.textContent = `${matched.length} برنامه`;
-  status.textContent = matched.length ? '' : 'برنامه‌ای با این مشخصات پیدا نشد.';
+  status.textContent = matched.length
+    ? (offlineMode ? 'حالت آفلاین: فقط فهرست برنامه‌های در حال توسعه نمایش داده می‌شود؛ هیچ لینکی برای نصب فعال نیست.' : '')
+    : 'برنامه‌ای با این مشخصات پیدا نشد.';
   matched.forEach(app => {
     const card = el('article', 'card');
     const top = el('div', 'card-top');
@@ -63,10 +66,25 @@ async function load() {
     const payload = await response.json();
     if (!Array.isArray(payload.apps)) throw new Error('invalid catalog');
     data = payload.apps;
+    offlineMode = false;
     render();
   } catch (err) {
-    status.textContent = 'بارگذاری برنامه‌ها ممکن نشد. اتصال اینترنت را بررسی و صفحه را تازه کنید.';
-    console.error('Catalog loading error', err);
+    console.warn('Live catalogue unavailable; attempting safe offline planned-only snapshot', err);
+    try {
+      const cached = await fetch('./catalog/planned-offline.json', {cache:'force-cache'});
+      if (!cached.ok) throw new Error(String(cached.status));
+      const snapshot = await cached.json();
+      if (!Array.isArray(snapshot.apps) || !snapshot.apps.every(app =>
+        app.status === 'planned' && app.download_url === null && app.version === null)) {
+        throw new Error('invalid offline snapshot');
+      }
+      data = snapshot.apps;
+      offlineMode = true;
+      render();
+    } catch (offlineError) {
+      status.textContent = 'فهرست برنامه‌ها در دسترس نیست. پس از برقراری اتصال، صفحه را تازه کنید.';
+      console.error('Safe offline snapshot unavailable', offlineError);
+    }
   }
 }
 filterButtons.forEach(button => button.addEventListener('click', () => {

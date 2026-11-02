@@ -22,6 +22,23 @@ class SiteContractTests(unittest.TestCase):
         self.assertEqual(data['display'],'standalone')
         self.assertEqual({x['sizes'] for x in data['icons']}, {'192x192','512x512'})
 
+    def test_generated_offline_fallback_contains_no_download_or_released_app(self):
+        import subprocess
+        import sys
+        p = subprocess.run([sys.executable, str(ROOT / "scripts/build_site.py")],
+                           cwd=ROOT, capture_output=True, text=True, timeout=45)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        offline = json.loads((ROOT / "dist/site/catalog/planned-offline.json").read_text(encoding="utf-8"))
+        self.assertTrue(all(x["status"] == "planned" and x["download_url"] is None
+                            and x["version"] is None and "release_proof" not in x
+                            for x in offline["apps"]))
+        sw = (ROOT / "web/sw.js").read_text(encoding="utf-8")
+        self.assertIn("./catalog/planned-offline.json", sw)
+        self.assertIn("cache:'no-store'", sw)
+        app = (ROOT / "web/app.js").read_text(encoding="utf-8")
+        self.assertIn("offlineMode = true", app)
+        self.assertIn("app.status === 'planned'", app)
+
     def test_no_download_links_before_first_verified_release(self):
         data=json.loads((ROOT/'catalog'/'apps.json').read_text(encoding='utf-8'))
         self.assertTrue(all(a['status']=='planned' and a['download_url'] is None for a in data['apps']))

@@ -75,6 +75,31 @@ class WindowsClientTests(unittest.TestCase):
             self.assertEqual(core.command_for(sample, "show"),
                 ["winget", "show", "--id", "Example.App", "--exact", "--source", "winget"])
 
+    def test_waits_for_winget_and_does_not_claim_independent_install(self):
+        from types import SimpleNamespace
+        sample = dict(self.sample["apps"][0], status="available", version="1.2.3",
+                      winget_id="Example.App")
+        from unittest.mock import Mock
+        runner = Mock(return_value=SimpleNamespace(returncode=0))
+        with patch.object(core.sys, "platform", "win32"):
+            result = core.execute_operation(sample, "install", runner=runner)
+        self.assertFalse(result["installed_version_independently_verified"])
+        self.assertFalse(result["installer_signature_independently_verified"])
+        kwargs = runner.call_args.kwargs
+        self.assertFalse(kwargs["shell"])
+        self.assertFalse(kwargs["check"] is True)
+        self.assertEqual(kwargs["timeout"], 3600)
+
+    def test_winget_failure_is_not_reported_as_success(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        sample = dict(self.sample["apps"][0], status="available", version="1.2.3",
+                      winget_id="Example.App")
+        with patch.object(core.sys, "platform", "win32"):
+            with self.assertRaises(core.ClientError):
+                core.execute_operation(sample, "upgrade", runner=Mock(
+                    return_value=SimpleNamespace(returncode=1)))
+
     def test_production_map_is_empty_and_store_safe(self):
         with (ROOT / "catalog/winget_packages.json").open(encoding="utf-8") as f:
             self.assertEqual(json.load(f)["packages"], [])

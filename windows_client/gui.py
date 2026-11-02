@@ -1,8 +1,8 @@
 """Native Tkinter Windows client: Persian RTL catalogue; owner-approved winget actions."""
-import subprocess
+import threading
 import sys
 
-from windows_client.core import ClientError, load_manifest, command_for
+from windows_client.core import ClientError, load_manifest, command_for, execute_operation
 
 
 def main():
@@ -59,6 +59,7 @@ def main():
     actions = tk.Frame(details, bg=surface)
     actions.pack(fill="x", padx=18, pady=6)
     visible = []
+    busy = False
 
     def selected():
         if not listbox.curselection():
@@ -67,6 +68,9 @@ def main():
         return visible[idx] if idx < len(visible) else None
 
     def launch(op):
+        nonlocal busy
+        if busy:
+            return
         app = selected()
         if app is None:
             return
@@ -81,10 +85,36 @@ def main():
                   "نصب‌کننده را در این مرحله اثبات نمی‌کند.\n\nاجرا شود؟")
         if not messagebox.askyesno("تأیید عملیات", prompt, parent=root):
             return
-        try:
-            subprocess.Popen(cmd, shell=False, creationflags=subprocess.CREATE_NEW_CONSOLE)
-        except OSError as exc:
-            messagebox.showerror("هَماپ", f"اجرا ممکن نشد: {exc}", parent=root)
+        busy = True
+        state.config(text="WinGet در حال اجراست؛ منتظر نتیجهٔ مدیر بسته...")
+        for button in buttons:
+            button.config(state="disabled")
+
+        def worker():
+            try:
+                receipt = execute_operation(app, op)
+                outcome = ("WinGet بدون خطای اجرایی پایان یافت. نسخهٔ نصب‌شده و امضای بسته "
+                           "هنوز به‌صورت مستقل بررسی نشده‌اند.")
+                error = False
+                del receipt
+            except ClientError as exc:
+                outcome = str(exc)
+                error = True
+
+            def finished():
+                nonlocal busy
+                busy = False
+                render_details()
+                if error:
+                    messagebox.showerror("هَماپ | WinGet", outcome, parent=root)
+                else:
+                    messagebox.showinfo("هَماپ | نتیجهٔ مدیر بسته", outcome, parent=root)
+            try:
+                root.after(0, finished)
+            except RuntimeError:
+                return
+
+        threading.Thread(target=worker, daemon=True).start()
 
     buttons = []
     for label, op in (("اطلاعات بسته", "show"), ("نصب", "install"), ("به‌روزرسانی", "upgrade")):
@@ -110,7 +140,7 @@ def main():
             enabled = app["status"] == "available"
             state.config(text=("نسخهٔ تأییدشده: " + app["version"]) if enabled else "هنوز قابل نصب نیست")
         for button in buttons:
-            button.config(state="normal" if enabled else "disabled")
+            button.config(state="normal" if enabled and not busy else "disabled")
 
     def filter_apps(*_):
         term = query.get().strip().lower()
