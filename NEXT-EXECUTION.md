@@ -69,3 +69,6 @@ Inspect actual PR on branch `feature/actual-binary-archive-inspection-and-owner-
 
 ## First-party live HTTPS deployment control
 - Continue from merged repo: inspect PR #44 and real Pages workflow, verify first-party public HTTPS parity on exact main SHA, then pursue genuine third-party signed origin and production publisher/device keys as separate gates. `docs/REAL-PAGES-HTTPS-ACCEPTANCE.md` is authoritative for this check.
+
+## Actual fresh ClamAV artifact scanning
+- Review live PR #45 and the actual hosted ClamAV workflow, CI and CodeQL on exact head before merging; check main after. This validates real first-party debug APK signature scanning, not malware absence or any third-party production publisher. Continue offline signer, F-Droid official client, owner device and branch ruleset.

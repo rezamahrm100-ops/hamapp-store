@@ -149,3 +149,6 @@ Older sections below describe historical continuation stages; they **do not auth
 
 ## Owner candidate intake and byte-level archive audit — 2026-11-03
 - Owner-local preflight must match actual file digest, OS signer, pinned GitHub attestation and Android aapt permission policy; run ZIP CRC/traversal/expansion checks on real APK and final artifact rehash. The public CI runs only a genuine first-party debug APK, which is **not** production release approval. Check live main QA after merge. Continue actual malware/dynamic analysis, identity registration, signed repo client and owner-device acceptance, with branch protection still independently required.
+
+## Binary antivirus signature gate
+- Check docs/ACTUAL-ANTIVIRUS-SCREENING.md and latest hosted actual APK ClamAV/freshclam DB receipt; owner local signed candidate intake now requires fresh clamscan on identical immutable bytes, refuses scanner absence/detections/TOCTOU, and never approves public release. Independently clear dynamic behavior and real publisher rights.

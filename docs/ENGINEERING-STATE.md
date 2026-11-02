@@ -180,3 +180,6 @@ Read [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md) for 
 
 ## Real Pages HTTPS deployment parity (2026-11-03; acceptance pending)
 - Source HTML/CSS/JS/manifest/catalogue bytes are validated against real CA/hostname-authenticated HTTPS public Pages after deploy; read-only PR preflight and post-main receipt. No publisher origin approval, no signing or private binary access. Verify exact live workflow success before calling parity accepted.
+
+## Actual fresh ClamAV candidate binary screening (2026-11-03)
+- Native first-party debug APK is scanned on GitHub-hosted Ubuntu with ClamAV after database refresh, fail-closed on missing/stale DB, detections, errors or artifact mutation. Owner local intake requires same hash. Real production third-party APK/EXE and sandbox/behavior review remain unverified; confirm workflow evidence before marking accepted.

@@ -1,0 +1,72 @@
+name: HamApp Actual ClamAV APK Signature Screening
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/antivirus_binary_review.py'
+      - 'tests/test_antivirus_binary_review.py'
+      - 'android/**'
+      - '.github/workflows/android-binary-antivirus.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/antivirus_binary_review.py'
+      - 'tests/test_antivirus_binary_review.py'
+      - 'android/**'
+      - '.github/workflows/android-binary-antivirus.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hamapp-actual-binary-clamav-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  actual-clamav:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Validate source tests and available Android SDK
+        shell: bash
+        run: |
+          python3 -m unittest discover -s tests -v
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Build real DEBUG APK on isolated hosted runner
+        run: gradle --no-daemon -p android :app:assembleDebug
+      - name: Install ClamAV and refresh signature database
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends clamav clamav-freshclam
+          sudo systemctl stop clamav-freshclam || true
+          sudo freshclam --stdout
+          clamscan --version
+      - name: Real ClamAV signature scan of actual APK, with fresh DB and byte stability
+        shell: bash
+        run: |
+          python3 scripts/antivirus_binary_review.py \
+            --artifact android/app/build/outputs/apk/debug/app-debug.apk \
+            --scanner clamscan \
+            --receipt dist/antivirus-native-evidence/clamav-actual-apk.json
+      - name: Publish safe public DEBUG signature scan receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-actual-android-clamav-signature-evidence
+          path: dist/antivirus-native-evidence/clamav-actual-apk.json
+          if-no-files-found: error
+          retention-days: 3
+      - name: Accurate boundary
+        if: success()
+        run: |
+          echo '### Actual hosted ClamAV APK signature scan passed on fresh DB' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No virus signature detected. NOT a proof of malware absence, dynamic behavior safety, publisher identity, or public release approval.' >> "$GITHUB_STEP_SUMMARY"
