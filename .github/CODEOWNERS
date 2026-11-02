@@ -42,3 +42,6 @@
 /scripts/review_provenance.py @rezamahrm100-ops
 /scripts/integrated_release_review.py @rezamahrm100-ops
 /docs/INTEGRATED-GAP-MATRIX.md @rezamahrm100-ops
+
+/scripts/fdroid_key_custody.py @rezamahrm100-ops
+/docs/FDROID-KEY-CUSTODY.md @rezamahrm100-ops

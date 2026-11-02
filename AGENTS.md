@@ -131,3 +131,6 @@ At main `eb08797a42fdde5cfacd0f6542ee0100d02bb680`, actual GitHub Actions runs f
 ## Integrated engineering batch (2026-11-02; pending real PR acceptance)
 - The cross-platform branch `feature/integrated-technical-closure-20261102` implements safe PWA planned-only offline fallback, observed WinGet execution without false installed-state claims, actual GitHub attestation verifier with pinned producer/source identity, and a combined OS signature + source provenance release-review gate. Read `docs/INTEGRATED-GAP-MATRIX.md`.
 - Recheck actual hosted Linux/Windows CI, CodeQL, Android emulator and unsigned Windows preview workflow results before claiming acceptance. Trust registries remain empty. Do not treat mock tests as real production signature or malware approval.
+
+## F-Droid independent keystore backup engineering (2026-11-02; pending PR acceptance)
+- Read docs/FDROID-KEY-CUSTODY.md: offline POSIX owner-only independent-volume backup with byte verification, strict file perms, no symlinks/overwrites, no key uploads. Public CI tests dummy bytes only. Do not claim actual owner offline backup or production signer provisioning.
