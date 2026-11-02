@@ -53,3 +53,6 @@ For a new chat: "Open AGENTS.md and docs/NEXT-EXECUTION.md at the current main S
 ## Release continuity policy (added 2026-11-02)
 - Read docs/RELEASE-HISTORY.md before release work. New release_history.py and release_review.py provide fail-closed pre-publish rollback/replay/revocation checks, not production authorization.
 - catalog/release_history.json is initially empty; do not fabricate approved history or signer fingerprints. F-Droid offline staging now checks this ledger before accepting candidates.
+
+## Public download admission rule
+- Before enabling `released` in public catalog/apps.json read docs/CATALOG-RELEASE-GATE.md. HTTPS alone is NEVER evidence of signed software. Production binary listings must match approved history and independently registered publisher, while actual signing/provenance/device gates are separate.
