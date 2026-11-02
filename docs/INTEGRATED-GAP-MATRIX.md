@@ -45,3 +45,6 @@ New proposed release-governance transaction tooling can generate coordinated no-
 
 ### Actual binary archive integrity and owner-local intake extension (2026-11-03)
 - Automated real APK archive entry traversal/CRC/size/ratio inspection and an owner-controlled exact binary signer + signed GitHub producer + Android permission/manifest + final hash check, all fail-closed and review-only. Real Android debug CI artifact required. Still missing genuine approved first-party signer/provenance, dedicated malware and behavioral scan of actual release, full publisher workflow, final approval and real signed F-Droid/Windows device acceptance.
+
+### Real ClamAV artifact signature screening
+- Added offline actual candidate ClamAV scan, DB freshness constraint and hash continuity, plus real hosted debug APK scan. This is signature detection only; does not make malware absence claims or fulfill authentic production publisher malware/behavior review.

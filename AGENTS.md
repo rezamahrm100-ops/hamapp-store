@@ -163,3 +163,6 @@ At main `eb08797a42fdde5cfacd0f6542ee0100d02bb680`, actual GitHub Actions runs f
 
 ## Actual owner-operated Pages HTTPS byte parity (2026-11-03)
 - Read docs/REAL-PAGES-HTTPS-ACCEPTANCE.md: source-built public site bytes are compared via certificate-verified HTTPS against the live Pages origin, with redirects and mismatches denied in PR preflight and after production Pages deploy. This is FIRST-PARTY storefront parity only, not an approved third-party web app or product release. PR #44 requires exact CI/CodeQL/live preflight and merged-main Pages verification.
+
+## Actual ClamAV on real APK/EXE bytes (2026-11-03; acceptance pending)
+- Read docs/ACTUAL-ANTIVIRUS-SCREENING.md: owner local intake runs real ClamAV with recent signature DB and exact artifact rehash, fails on detections/errors; hosted first-party debug APK workflow refreshes DB and scans real APK. A non-detection never proves malware absence or authorizes public release. Verify real CI and scanner receipts before accepting.

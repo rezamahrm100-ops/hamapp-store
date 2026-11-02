@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 
 import android_permission_review
+import antivirus_binary_review
 import binary_archive_review
 import release_governance
 import release_history
@@ -23,7 +24,8 @@ class IntakeError(ValueError):
 
 def assess(candidate, registry, history, artifact, workflow, ref, *,
            permission_policy=None, aapt="aapt", signature_runner=None,
-           gh_runner=None, aapt_runner=None):
+           gh_runner=None, aapt_runner=None,
+           antivirus_scanner=None, antivirus_runner=None):
     base = release_governance.plan_promotion(
         candidate, registry, history, artifact, workflow, ref,
         signature_runner=signature_runner, gh_runner=gh_runner)
@@ -53,6 +55,13 @@ def assess(candidate, registry, history, artifact, workflow, ref, *,
         raise IntakeError("Android permission policy does not apply to Windows artifacts")
     if (archive_result is None and release["platform"] == "android"):
         raise IntakeError("Android archive structural check required")
+    antivirus_result = None
+    if antivirus_scanner is not None:
+        opts = {} if antivirus_runner is None else {"runner": antivirus_runner}
+        antivirus_result = antivirus_binary_review.scan(
+            full_path, scanner=antivirus_scanner, **opts)
+        if antivirus_result["artifact_sha256"] != actual_sha:
+            raise IntakeError("antivirus receipt does not match approved candidate bytes")
     # Final re-hash prevents a local attacker from replacing the candidate after
     # OS+upstream+archive+Android permission checks. Never claim this prevents
     # malicious writes AFTER the review; owner controls artifact custody.
@@ -71,6 +80,7 @@ def assess(candidate, registry, history, artifact, workflow, ref, *,
         "public_history_sha256_before": release_governance.digest(history),
         "actual_archive": archive_result,
         "actual_android_permissions": permission_result,
+        "actual_antivirus_signature_scan": antivirus_result,
         "developer_signature_and_github_provenance_checked": True,
         "malware_signature_and_behavior_clearance": False,
         "license_and_privacy_review_complete": False,
@@ -92,6 +102,7 @@ def main():
                    default=ROOT / "catalog/release_history.json")
     p.add_argument("--android-permissions-policy", type=Path)
     p.add_argument("--aapt", default="aapt")
+    p.add_argument("--antivirus-scanner", default="clamscan")
     p.add_argument("--trusted-workflow", required=True)
     p.add_argument("--trusted-source-ref", required=True)
     p.add_argument("--output-dir", required=True, type=Path)
@@ -109,7 +120,8 @@ def main():
                   if a.android_permissions_policy else None)
         receipt = assess(candidate, registry, history, a.artifact,
                          a.trusted_workflow, a.trusted_source_ref,
-                         permission_policy=policy, aapt=a.aapt)
+                         permission_policy=policy, aapt=a.aapt,
+                         antivirus_scanner=a.antivirus_scanner)
         output.mkdir(parents=True, exist_ok=False)
         with (output / "review-only-receipt.json").open("x", encoding="utf-8") as stream:
             json.dump(receipt, stream, ensure_ascii=False, sort_keys=True, indent=2)

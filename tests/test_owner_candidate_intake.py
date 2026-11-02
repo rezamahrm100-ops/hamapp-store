@@ -53,6 +53,34 @@ class OwnerIntakeTests(unittest.TestCase):
         self.assertFalse(r["public_distribution_authorized"])
         self.assertFalse(r["files_committed"])
 
+    def test_owner_intake_rejects_antivirus_digest_mismatch(self):
+        from types import SimpleNamespace
+        def aapt(cmd, **kwargs):
+            out = ("package: name='ir.example.app' versionCode='7' versionName='1.2.3'\n"
+                   if cmd[2] == "badging" else "package: ir.example.app\n")
+            return SimpleNamespace(returncode=0, stdout=out)
+        with patch.object(intake.release_governance, "plan_promotion", return_value=self.review), \
+             patch.object(intake.antivirus_binary_review, "scan",
+                          return_value={"artifact_sha256": "d" * 64}):
+            with self.assertRaises(intake.IntakeError):
+                self.call(aapt_runner=aapt, antivirus_scanner="clamscan")
+
+    def test_owner_intake_can_record_actual_scanner_receipt_without_public_approval(self):
+        from types import SimpleNamespace
+        def aapt(cmd, **kwargs):
+            out = ("package: name='ir.example.app' versionCode='7' versionName='1.2.3'\n"
+                   if cmd[2] == "badging" else "package: ir.example.app\n")
+            return SimpleNamespace(returncode=0, stdout=out)
+        malware_receipt = {"artifact_sha256": self.sha,
+                           "actual_signature_scan_completed_without_detection": True,
+                           "malware_absence_verified": False}
+        with patch.object(intake.release_governance, "plan_promotion", return_value=self.review), \
+             patch.object(intake.antivirus_binary_review, "scan", return_value=malware_receipt):
+            result = self.call(aapt_runner=aapt, antivirus_scanner="clamscan")
+        self.assertEqual(result["actual_antivirus_signature_scan"], malware_receipt)
+        self.assertFalse(result["malware_signature_and_behavior_clearance"])
+        self.assertFalse(result["public_distribution_authorized"])
+
     def test_missing_policy_cannot_pass(self):
         with patch.object(intake.release_governance, "plan_promotion", return_value=self.review):
             with self.assertRaises(intake.IntakeError):
