@@ -177,3 +177,6 @@ Read [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md) for 
 
 ## Real binary intake and archive security (source checkpoint pending CI)
 - New actual APK archive CRC/path/symlink/ZIP-bomb/duplicate checks integrated into native Android preview, with bounded JSON receipt, plus local owner-only cross-check of approved signer, source attestation, Android aapt permission policy and unmodified binary SHA. This is review-only; no actual production publisher verified, no malware/behavior scanner run, no release activated. Read `docs/REAL-BINARY-INTAKE.md` and verify live Actions before claiming acceptance.
+
+## Real Pages HTTPS deployment parity (2026-11-03; acceptance pending)
+- Source HTML/CSS/JS/manifest/catalogue bytes are validated against real CA/hostname-authenticated HTTPS public Pages after deploy; read-only PR preflight and post-main receipt. No publisher origin approval, no signing or private binary access. Verify exact live workflow success before calling parity accepted.

@@ -160,3 +160,6 @@ At main `eb08797a42fdde5cfacd0f6542ee0100d02bb680`, actual GitHub Actions runs f
 
 ## Actual binary archive and owner-local publisher preflight — 2026-11-03 (CI acceptance pending)
 - Inspect `docs/REAL-BINARY-INTAKE.md`, `scripts/binary_archive_review.py` and `scripts/owner_candidate_intake.py`: source + signed GitHub producer verification, actual Android APK archive CRC/traversal/ZIP-bomb inspection, Android manifest reviewed permissions and before/after SHA-256 on same artifact. Native debug APK CI runs archive scanner on real bytes. Public CI fixtures are not real production malware clearance, publisher credentials or owner approval; no public downloads registered.
+
+## Actual owner-operated Pages HTTPS byte parity (2026-11-03)
+- Read docs/REAL-PAGES-HTTPS-ACCEPTANCE.md: source-built public site bytes are compared via certificate-verified HTTPS against the live Pages origin, with redirects and mismatches denied in PR preflight and after production Pages deploy. This is FIRST-PARTY storefront parity only, not an approved third-party web app or product release. PR #44 requires exact CI/CodeQL/live preflight and merged-main Pages verification.
