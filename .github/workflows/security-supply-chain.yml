@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Checkout public source (no credentials persisted)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Actual upstream Trivy vulnerability/secret/config review
