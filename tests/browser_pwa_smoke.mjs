@@ -4,6 +4,10 @@ import { chromium } from 'playwright';
 const browser = await chromium.launch({headless: true});
 const context = await browser.newContext({locale: 'fa-IR', viewport: {width: 1100, height: 780}});
 const page = await context.newPage();
+page.on('console', message => console.log('PAGE_CONSOLE', message.type(), message.text().slice(0,500)));
+page.on('pageerror', error => console.error('PAGE_ERROR', String(error).slice(0,500)));
+page.on('requestfailed', request => console.warn('REQUEST_FAILED', request.url(), request.failure()?.errorText));
+context.on('serviceworker', worker => console.log('SERVICE_WORKER_SEEN', worker.url()));
 page.setDefaultTimeout(15000);
 page.setDefaultNavigationTimeout(20000);
 try {
@@ -28,10 +32,26 @@ try {
 
   await page.screenshot({path: 'dist/pwa-browser-evidence.png'});
   console.log('Browser UI passed; waiting for real Service Worker');
-  await page.evaluate(() => Promise.race([
-    navigator.serviceWorker.ready.then(() => true),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Service Worker install timeout')), 15000))
-  ]));
+  try {
+    await page.evaluate(() => Promise.race([
+      navigator.serviceWorker.ready.then(() => true),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Service Worker install timeout')), 15000))
+    ]));
+  } catch (error) {
+    const diagnostics = await page.evaluate(async () => ({
+      secureContext: window.isSecureContext,
+      hasSW: 'serviceWorker' in navigator,
+      registrations: await Promise.all((await navigator.serviceWorker.getRegistrations()).map(r => ({
+        scope: r.scope, active: r.active?.state, waiting: r.waiting?.state,
+        installing: r.installing?.state
+      }))),
+      caches: await caches.keys(),
+      shellStatus: (await fetch('./sw.js')).status,
+      plannedOfflineStatus: (await fetch('./catalog/planned-offline.json')).status
+    }));
+    console.error('SERVICE_WORKER_DIAGNOSTICS', JSON.stringify(diagnostics));
+    throw error;
+  }
   await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller), null, {timeout: 20000});
   console.log('Service Worker active; verifying physical-network-offline reload');
   await context.setOffline(true);
