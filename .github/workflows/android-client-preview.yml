@@ -40,7 +40,9 @@ jobs:
       - name: Android SDK platform and build tools
         shell: bash
         run: |
-          sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0'
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
       - name: Validate entire HamApp catalogue and Android snapshots
         run: |
           python3 -m unittest discover -s tests -v
