@@ -148,3 +148,6 @@ At main `eb08797a42fdde5cfacd0f6542ee0100d02bb680`, actual GitHub Actions runs f
 
 ## Review-only release governance and real source security scan (2026-11-02; acceptance pending)
 - Branch `feature/secure-release-governance-and-supply-chain-20261102` adds cross-platform publisher trust identity correction, PR-only atomic revocation plan for exact release / whole signer, owner-review-only integrated promotion proposal, and upstream pinned Trivy source vulnerability/secret/config scan + CycloneDX SBOM. Read `docs/RELEASE-GOVERNANCE.md` and `docs/SUPPLY-CHAIN-SCAN.md`. Neither source scanning nor proposal authorizes live package distribution. Verify exact CI/CodeQL/Trivy run + merge before marking accepted.
+
+## Actual Android debug manifest permission acceptance (2026-11-02; pending green checks)
+- The hosted native APK workflow invokes official `aapt` against the newly assembled debug APK and checks reviewed exact version and manifest permission allowlist in `catalog/android_preview_permission_policy.json`. See `docs/ANDROID-PERMISSIONS.md`. Do not claim malware detection or production signer proof from permission names. Require actual workflow success and artifact receipt before acceptance.

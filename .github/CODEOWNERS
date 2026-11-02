@@ -60,3 +60,7 @@
 /.github/workflows/security-supply-chain.yml @rezamahrm100-ops
 /docs/RELEASE-GOVERNANCE.md @rezamahrm100-ops
 /docs/SUPPLY-CHAIN-SCAN.md @rezamahrm100-ops
+
+/scripts/android_permission_review.py @rezamahrm100-ops
+/catalog/android_preview_permission_policy.json @rezamahrm100-ops
+/docs/ANDROID-PERMISSIONS.md @rezamahrm100-ops

@@ -33,3 +33,6 @@ All planned source tranches #33–#37 are now merged and exact feature/main Acti
 
 ### Candidate promotion, revocation and source supply-chain hardening
 New proposed release-governance transaction tooling can generate coordinated no-link revocation patches and owner-review hashes; public source scanned by pinned upstream Trivy + CycloneDX SBOM. **None** of these grant publisher permissions or production malware clearance. After actual CI/Trivy green, remaining tasks include enforced GitHub owner PR approval, real signed APK/EXE scanning/permissions/behavior, persistent F-Droid distribution and authentic installation tests.
+
+### Real Android preview permissions
+- New official Android SDK `aapt dump permissions` validation of assembled debug APK and owner-reviewed empty shell permission list. Genuine Android 35 app package validation requires actual hosted run; no application publisher approval, malware sandbox or production signing is implied.
