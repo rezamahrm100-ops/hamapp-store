@@ -150,3 +150,6 @@ All seven main checks for `eb08797a42fdde5cfacd0f6542ee0100d02bb680` now complet
 ## Integrated PWA/Windows/provenance code tranche — verification pending
 - Feature branch `feature/integrated-technical-closure-20261102` implements a planned-only PWA offline snapshot and live catalogue non-cache policy; WinGet background execution with exit-code reporting (not actual installed-version readback); actual GitHub signed provenance verifier; and a combined OS signature + attestation review-only gate.
 - This is a **code implementation checkpoint only** until actual hosted checks succeed and branch merges. Synthetic unit receipts never authorize publication. See `docs/INTEGRATED-GAP-MATRIX.md` for full remaining work; owner signers/repos/approvals remain unregistered.
+
+## Isolated F-Droid key-custody tooling (implementation pending real CI)
+- Proposed offline owner-only command creates and verifies a no-overwrite 0600 keystore backup on a separate mounted filesystem, refuses symlinks/checkout paths, and does not expose material to public GitHub. POSIX dummy fixture tests do NOT prove real owner keys are backed up, physically offline or restorable. Check actual PR workflow and merge SHA.
