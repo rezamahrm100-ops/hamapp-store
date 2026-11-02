@@ -62,3 +62,9 @@
 5. Finish signed Windows client release and real winget/publisher provenance mapping; isolate owner-device/UAC acceptance from hosted CI. Do not activate download or install controls with synthetic data.
 6. Review which F-Droid libraries or GPL-client code can be reused directly if integrated install/update UI is desired; follow GPL source/notice/trademark obligations. The current native client uses the external F-Droid client as a companion, **not** an embedded F-Droid fork.
 7. Update AGENTS.md and ENGINEERING-STATE.md with exact accepted SHA and runs after each coherent branch, not with guesses.
+
+## Next after native artifact provenance acceptance
+- Verify both trusted-main native build attestation jobs, their exact SHAs and review receipts from GitHub Actions.
+- Build private, independently approved source/release intake: require exact producing repo ID, signed binary digest, developer certificate pin, independent source provenance and malware policy before enabling ANY download.
+- Use existing fdroidserver for stable-key signed repository, verify signed index against pinned fingerprint, then test two consecutive versions in isolated Android emulator and owner-controlled device. No private key in public CI.
+- Windows production EXE needs owner-signed Authenticode and independent real install/update acceptance. Neither a GitHub attestation nor a preview EXE substitutes for it.

@@ -17,3 +17,6 @@
 /catalog/android_repository.json @rezamahrm100-ops
 /scripts/build_android_catalog.py @rezamahrm100-ops
 /.github/workflows/android-client-preview.yml @rezamahrm100-ops
+
+/scripts/attested_binary_receipt.py @rezamahrm100-ops
+/docs/NATIVE-PROVENANCE.md @rezamahrm100-ops

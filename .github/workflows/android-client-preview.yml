@@ -83,6 +83,9 @@ jobs:
       id-token: write
       attestations: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: hamapp-android-debug-preview
@@ -109,6 +112,15 @@ jobs:
             if [ "$attempt" -eq 6 ]; then echo "Native binary provenance verification failed" >&2; exit 1; fi
             sleep 5
           done
-          python3 -c 'import json; x=json.load(open("verified.json")); assert isinstance(x,list) and len(x)>0, "no verified attestations"'
+          mkdir -p dist/native-evidence
+          python3 scripts/attested_binary_receipt.py --artifact dist/native-artifact/app-debug.apk --verified-gh-json verified.json --role android-debug --source-sha "$GITHUB_SHA" --output dist/native-evidence/receipt.json
           echo 'Verified a signed GitHub build attestation for this main SHA and native binary.'
           echo 'This does NOT verify Android/Authenticode production signing, F-Droid index or real installation.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save short-lived verified provenance receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-android-debug-provenance
+          path: dist/native-evidence/receipt.json
+          if-no-files-found: error
+          retention-days: 7

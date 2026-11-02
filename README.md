@@ -85,3 +85,7 @@ A minimal **native Android Java** RTL catalogue app now lives under [android/](a
 ## Android native app and emulator-verified preview
 
 The [native Android app](docs/ANDROID-CLIENT.md) now builds a **debug APK** on hosted GitHub Actions with Gradle and Android SDK. A separate [hosted emulator smoke test](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41488084733) installed and launched the native Java RTL app and checked that unapproved F-Droid actions stay disabled. **Debug signing is not production signing**; no approved publisher or signed F-Droid repo exists yet. No install controls are active and no production Android app release has been published.
+
+## Native preview artifact provenance
+
+GitHub-hosted Android debug APK and unsigned Windows EXE now produce main-only cryptographically signed GitHub build attestations, independently checked with gh attestation verify against a fixed producing workflow and source SHA. See [build provenance](docs/NATIVE-PROVENANCE.md). These are **not** developer signing identities or production app releases.
