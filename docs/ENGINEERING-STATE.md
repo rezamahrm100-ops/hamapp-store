@@ -101,3 +101,11 @@ See NEXT-EXECUTION.md for next integrated work. After every merge record new SHA
 ## Native binary build provenance checkpoint (2026-11-02)
 - Added first-party actions/attest@v4 for Android debug APK and unsigned Windows EXE, followed by independent gh attestation verify pinned to actual producing workflow, main ref, full source SHA and hosted runner. Review-only digest receipt is generated and short-lived.
 - This is NOT proof of run success until inspected after main merge: verify actual build, attestation, independent verification and receipt artifacts on both workflows. No production signed release or real app download is authorized.
+
+## Accepted native GitHub build provenance (2026-11-02)
+- PR #20 merged main SHA 5429ee5d259b138c7478a5c15b226c4b995c1d5b.
+- Android debug APK build + signed provenance + independent gh CLI verification: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41491331966 — success, artifact hamapp-android-debug-provenance.
+- Windows unsigned EXE build + signed provenance + independent gh CLI verification: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41491331958 — success, artifact hamapp-windows-unsigned-provenance.
+- Additional main checks: CI https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41491331877; CodeQL https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41491331997; trusted owner Windows QA https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41491331983; Pages https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41491331975 — all success.
+- These attest only GitHub build provenance. Android APK remains debug-signed; Windows EXE unsigned; no approved publisher/repository identities or production installs.
+- New fdroidserver signed-index v2 checker requires independently approved URL/fingerprint; its unit tests use injected synthetic responses. **Do not mistake green CI for live signed-index acceptance**. No production index is configured.

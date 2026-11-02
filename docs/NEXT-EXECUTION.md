@@ -68,3 +68,10 @@
 - Build private, independently approved source/release intake: require exact producing repo ID, signed binary digest, developer certificate pin, independent source provenance and malware policy before enabling ANY download.
 - Use existing fdroidserver for stable-key signed repository, verify signed index against pinned fingerprint, then test two consecutive versions in isolated Android emulator and owner-controlled device. No private key in public CI.
 - Windows production EXE needs owner-signed Authenticode and independent real install/update acceptance. Neither a GitHub attestation nor a preview EXE substitutes for it.
+
+## After accepted GitHub native attestations + F-Droid index policy
+- Verify live main and new preflight PR checks; keep `catalog/android_repository.json` null until independently approved F-Droid signing key and public HTTPS origin actually exist.
+- Perform official fdroidserver signed-index-v2 verification against a pinned external trust root using scripts/verify_fdroid_signed_index.py; its current tests are mocked and cannot prove a real deployed repo.
+- Establish persistent offline F-Droid keystore with backup and independent owner-controlled signing environment; do not generate ephemeral fake production keys in public CI.
+- Verify an actual eligible owned app's producer GitHub provenance, signer certificate identity, release digest and approval **privately** before any public catalogue entry; stage/index/install/update two real versions on isolated emulator, and preserve rollback/rotation controls.
+- Sign the native Android APK and Windows EXE using stable owner-approved production release signing identities, then run real device install/update acceptance. Until then NO public download or installation claim.

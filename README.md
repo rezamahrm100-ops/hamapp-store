@@ -89,3 +89,7 @@ The [native Android app](docs/ANDROID-CLIENT.md) now builds a **debug APK** on h
 ## Native preview artifact provenance
 
 GitHub-hosted Android debug APK and unsigned Windows EXE now produce main-only cryptographically signed GitHub build attestations, independently checked with gh attestation verify against a fixed producing workflow and source SHA. See [build provenance](docs/NATIVE-PROVENANCE.md). These are **not** developer signing identities or production app releases.
+
+## F-Droid signed index verification preflight
+
+A separate [F-Droid signed-index verifier](docs/FDROID-INDEX-PREFLIGHT.md) now reuses fdroidserver's index-v2 verifier, demanding a separately pinned repository URL and signing key fingerprint. It rejects missing or unapproved repositories, never generates keys and does not approve package downloads. Production F-Droid key and signed index do not exist yet.
