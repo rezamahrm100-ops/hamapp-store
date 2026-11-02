@@ -21,3 +21,7 @@ Upstream guidance: https://f-droid.org/docs/Setup_an_F-Droid_App_Repo/ . Keep re
 ## Toolchain compatibility fix
 
 The first hosted execution failed in Ubuntu's older fdroidserver/Androguard package at APK resources.arsc parsing. The dedicated isolated test now pins fdroidserver==2.4.5 and androguard==4.1.4 inside a temporary venv. This is not a production signer and does not transfer a signing key. Validate the new GitHub run before claiming a successful real signed-index drill.
+
+## Library initialization repair
+
+The next real hosted run using fdroidserver 2.4.5 correctly built the signed index, but direct Python index verification required `fdroidserver.common.config` and the installed `jarsigner` path to be initialized from the temporary workspace's config.yml. The integration script now loads this configuration inside the disposable test process before calling the official index-v2 verifier. No config or key is uploaded or used for production.
