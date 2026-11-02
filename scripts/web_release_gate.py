@@ -10,10 +10,10 @@ from urllib.parse import urlsplit
 import release_history
 import release_integrity
 
-SHA40 = re.compile(r"[0-9a-f]{40}\\Z")
-SHA64 = re.compile(r"[0-9a-f]{64}\\Z")
-HOST = re.compile(r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?\\Z")
-PATH = re.compile(r"/[A-Za-z0-9_./-]*\\Z")
+SHA40 = re.compile(r"[0-9a-f]{40}\Z")
+SHA64 = re.compile(r"[0-9a-f]{64}\Z")
+HOST = re.compile(r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?\Z")
+PATH = re.compile(r"/[A-Za-z0-9_./-]*\Z")
 ORIGIN_KEYS = {"app_id", "source_repo", "origin"}
 RELEASE_KEYS = {"app_id", "source_repo", "source_sha", "artifact_sha256",
                 "version", "deployment_url", "status"}
