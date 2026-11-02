@@ -47,3 +47,7 @@ Check PR `feature/windows-postcondition-verification-20261102` on live GitHub an
 
 ## Real browser acceptance continuation
 - Inspect real Chromium PWA acceptance run and artifact from `.github/workflows/pwa-browser-acceptance.yml` before declaring browser UI/offline QA complete. Continue to full a11y/real-device and genuine production identity acceptance after running all feasible source tests.
+
+## Latest authoritative acceptance and next work
+Read [docs/ENGINEERING-CLOSURE-2026-11-02.md](docs/ENGINEERING-CLOSURE-2026-11-02.md): PRs #33–#37 were implemented and merged; the latest verified main SHA `8a76c419e581506d395e9eb6e016425d9afa2ca1` passed all six post-merge workflows including actual Chromium offline acceptance, as recorded in the ledger. Do **not** repeat accepted preview/browser work or reinterpret it as production signing.
+Continue remaining engineerable backlog (atomic reviewed publisher promotion, real provenance/permission/malware policy, authenticated source workflows, real F-Droid client and Windows release path, mobile/assistive-tech QA) in integrated batches; separate genuine owner-only signing/approvals and branch ruleset (#31). Verdict is PARTIAL until end-to-end scope is demonstrated.

@@ -140,3 +140,8 @@ At main `eb08797a42fdde5cfacd0f6542ee0100d02bb680`, actual GitHub Actions runs f
 
 ## Real Chromium PWA UI and offline QA (pending workflow)
 - Workflow `.github/workflows/pwa-browser-acceptance.yml` exercises native app detail dialog, search/filter, real Chromium service worker and offline-only planned catalogue. Read docs/PWA-REAL-BROWSER-QA.md. Require actual Actions success + safe screenshot before accepting; this does not verify signed binaries or production publisher accounts.
+
+## Integrated 2026-11-02 engineering execution — actual merged results
+- **Read docs/ENGINEERING-CLOSURE-2026-11-02.md** for the authoritative dated acceptance and gap ledger. PRs **#33, #34, #35, #36, #37** all merged, with exact main SHAs and live Actions evidence. Main at PR #37 merge SHA `8a76c419e581506d395e9eb6e016425d9afa2ca1` completed hosted Linux/Windows CI, CodeQL, owner-trusted Windows QA, Pages, reproducible PWA evidence and REAL Playwright Chromium browser/offline acceptance — all SUCCESS.
+- The genuine browser test exposed and fixed a real localhost-only PWA Service Worker registration bug; secure loopback IPv4 127.0.0.1 now works. Other work: offline planned-only PWA, Windows installed-state readback, signed GitHub provenance review, isolated owner keystore backup tooling, application details/changelog.
+- **Engineering result PARTIAL, production readiness NOT accepted.** Real publisher signers, stable offline F-Droid signer and verified signed public repository/client install, owner-approved app release, signed Windows installer/real-device updates, full publisher portal and branch ruleset remain incomplete. Do not fabricate release or key approval.

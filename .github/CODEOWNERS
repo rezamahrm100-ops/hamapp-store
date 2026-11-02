@@ -51,3 +51,6 @@
 /.github/workflows/pwa-browser-acceptance.yml @rezamahrm100-ops
 /tests/browser_pwa_smoke.mjs @rezamahrm100-ops
 /docs/PWA-REAL-BROWSER-QA.md @rezamahrm100-ops
+
+# Verified engineering closure acceptance ledger requires owner review.
+/docs/ENGINEERING-CLOSURE-2026-11-02.md @rezamahrm100-ops
