@@ -30,3 +30,7 @@ gradle -p android :app:assembleDebug :app:lintDebug
 ```
 
 The GitHub-hosted workflow performs this without changes to the owner's PC. Source is public, but private application repositories, signing credentials and release APKs stay separate.
+
+## Hosted emulator UI acceptance
+
+`reactivecircus/android-emulator-runner@v2` boots an isolated Android 35 emulator on GitHub-hosted Linux and executes `scripts/android_emulator_smoke.sh`. The test installs the DEBUG APK with ADB, launches the native activity, checks the accessibility hierarchy for a Persian HamApp title, planned-app status and disabled F-Droid install buttons, then stores an emulator screenshot and hierarchy as three-day artifacts. The UI hierarchy parser has negative unit tests. This is a meaningful native-activity smoke test, **not** a test of production F-Droid subscription, binary signatures, updates or physical-device behavior. Do not run it on the owner's Windows session or accept untrusted PR code on the owner runner.
