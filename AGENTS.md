@@ -154,3 +154,6 @@ At main `eb08797a42fdde5cfacd0f6542ee0100d02bb680`, actual GitHub Actions runs f
 
 ## Real mobile Chromium accessibility QA (pending genuine workflow evidence)
 - The browser acceptance workflow now runs pinned axe-core on mobile-sized actual Chromium for serious/critical WCAG2.1 A/AA checks across dark/light/native-dialog states, horizontal overflow and keyboard/escape navigation. See docs/PWA-MOBILE-A11Y.md; do not mark as passed until actual workflow success. This is not a full screen-reader/physical-device audit.
+
+## Second integrated engineering run (2026-11-02) — six real merged PRs
+- Read `docs/ENGINEERING-CLOSURE-2026-11-02-RUN2.md` for exact PRs, main SHAs, workflow run URLs, source supply-chain scan, actual Android permission aapt acceptance, mobile axe accessibility findings/fixes, and safe official GitHub Actions upgrades (#39, #40, #41, #5, #6, #4). Final latest main target `86b47e7839c4c63f722da448ebdee1f3fcda163c` — **verify terminal actual workflows before declaring all main checks green**. No first-party publisher identity or signed production release is approved; full engineering state remains PARTIAL.

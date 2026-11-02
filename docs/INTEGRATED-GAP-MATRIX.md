@@ -39,3 +39,6 @@ New proposed release-governance transaction tooling can generate coordinated no-
 
 ### Mobile browser and automated accessibility
 - Hosted real Chromium axe-core WCAG2.1 smoke covers serious/critical rule findings for dark/light/modal on mobile viewport and keyboard dialog navigation. Acceptance depends on exact workflow run; full screen-reader, physical-device and complete WCAG conformance remain external/engineering gaps.
+
+## Second integrated cross-platform implementation: current reference
+- See [ENGINEERING-CLOSURE-2026-11-02-RUN2.md](ENGINEERING-CLOSURE-2026-11-02-RUN2.md): actual review-only revoke/release proposals, safe code+SBOM Trivy scan, official Android aapt permissions on real debug APK, mobile axe browser tests with fixed genuine brand-label/contrast issues, compatible official GitHub Pages/checkout upgrades. PRs #39/#40/#41/#5/#6/#4 merged with exact SHAs. **Engineering remains PARTIAL**: approved third-party binary scanning, signer identity, actual paid publisher portal, durable production F-Droid key and client install, signed Windows installer, branch ruleset and physical device acceptance are not fulfilled.

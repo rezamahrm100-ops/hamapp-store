@@ -171,3 +171,6 @@ Read [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md) for 
 
 ## Hosted mobile Chromium accessibility gate (implementation, acceptance pending)
 - New actual 390x844 Chromium mobile context with pinned axe tests for A/AA serious/critical, dark/light/native-dialog modes, keyboard Escape and horizontal overflow; NOT full WCAG certification. Check real PR and main workflow acceptance before marking success.
+
+## Second integrated engineering execution: accepted merges and live QA reconciliation
+- Six PRs #39/#40/#41/#5/#6/#4 merged. Source of exact SHAs, feature-branch CI/CodeQL/Trivy/Android aapt/Chromium axe and Pages evidence: `docs/ENGINEERING-CLOSURE-2026-11-02-RUN2.md`. Main checkout-v7 merge `86b47e7839c4c63f722da448ebdee1f3fcda163c` requires exact terminal confirmation of 12 workflows; do not interpret pending as pass. Actual owner Windows runner 2.338.2 is above upstream checkout Node24 requirement 2.327.1. Public signers, release history, F-Droid repository and trusted web origins still empty/null; production readiness rejected.
