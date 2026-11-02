@@ -4,6 +4,7 @@ No automatic installs, no privilege escalation and no untrusted URLs.  A
 reviewed winget mapping is not a cryptographic verification of an installer.
 """
 import json
+import subprocess
 import re
 import sys
 from pathlib import Path
@@ -75,3 +76,23 @@ def command_for(app, operation):
     if operation in ("install", "upgrade"):
         cmd += ["--version", app["version"], "--interactive"]
     return cmd
+
+
+def execute_operation(app, operation, runner=subprocess.run):
+    """Run official WinGet interactively and wait for its exit code.
+
+    Returning from WinGet is not independent installed-version or signer proof.
+    This intentionally does NOT silently elevate, suppress prompts or claim an install.
+    """
+    command = command_for(app, operation)
+    try:
+        result = runner(command, shell=False, timeout=3600, check=False,
+                        creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0))
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ClientError("WinGet unavailable or operation timed out; inspect Windows state") from exc
+    if type(result.returncode) is not int or result.returncode != 0:
+        raise ClientError("WinGet returned a failure; installed state is not verified")
+    return {"manager_exit_code": 0, "operation": operation,
+            "package_id": app["winget_id"], "requested_version": app["version"],
+            "installed_version_independently_verified": False,
+            "installer_signature_independently_verified": False}

@@ -6,6 +6,8 @@ on:
       - 'android/**'
       - 'scripts/android_two_version_smoke.sh'
       - 'tests/test_android_two_version_smoke.py'
+      - 'scripts/review_provenance.py'
+      - 'scripts/integrated_release_review.py'
       - '.github/workflows/android-two-version-smoke.yml'
   push:
     branches: [main]

@@ -22,10 +22,15 @@ jobs:
         run: python3 --version
       - name: Test
         run: python3 -m unittest discover -s tests -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse checked-in browser JavaScript
+        run: node --check web/app.js && node --check web/sw.js
       - name: Build static store
         run: python3 scripts/build_site.py
       - name: Check built website
-        run: test -s dist/site/index.html && test -s dist/site/catalog/apps.json && test -s dist/site/sw.js
+        run: test -s dist/site/index.html && test -s dist/site/catalog/apps.json && test -s dist/site/catalog/planned-offline.json && test -s dist/site/sw.js
 
   windows-hosted:
     runs-on: windows-latest
@@ -37,13 +42,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Test and build on clean hosted Windows
         shell: pwsh
         run: |
           python -m unittest discover -s tests -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --check web/app.js
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --check web/sw.js
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python scripts/build_site.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path 'dist/site/index.html')) { throw 'Missing website build' }
           if (-not (Test-Path 'dist/site/catalog/apps.json')) { throw 'Missing catalogue' }
           if (-not (Test-Path 'dist/site/sw.js')) { throw 'Missing service worker' }
+          if (-not (Test-Path 'dist/site/catalog/planned-offline.json')) { throw 'Missing safe offline catalogue' }

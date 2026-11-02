@@ -38,3 +38,7 @@
 
 # Owner-review the mandatory whole-project execution contract.
 /docs/ONE-RUN-TECHNICAL-CLOSURE.md @rezamahrm100-ops
+
+/scripts/review_provenance.py @rezamahrm100-ops
+/scripts/integrated_release_review.py @rezamahrm100-ops
+/docs/INTEGRATED-GAP-MATRIX.md @rezamahrm100-ops

@@ -127,3 +127,7 @@ For a new chat: "Open AGENTS.md and docs/NEXT-EXECUTION.md at the current main S
 
 ### Recheck after PR #29 merge: main green
 At main `eb08797a42fdde5cfacd0f6542ee0100d02bb680`, actual GitHub Actions runs for CI #41505611808, CodeQL #41505612155, owner-trusted Windows QA #41505612176, Android preview #41505612008, Windows EXE preview #41505612132, Pages #41505611948 and PWA evidence #41505612012 all completed SUCCESS. The preview APK remains debug-signed, the EXE unsigned, and both web origin registries remain empty.
+
+## Integrated engineering batch (2026-11-02; pending real PR acceptance)
+- The cross-platform branch `feature/integrated-technical-closure-20261102` implements safe PWA planned-only offline fallback, observed WinGet execution without false installed-state claims, actual GitHub attestation verifier with pinned producer/source identity, and a combined OS signature + source provenance release-review gate. Read `docs/INTEGRATED-GAP-MATRIX.md`.
+- Recheck actual hosted Linux/Windows CI, CodeQL, Android emulator and unsigned Windows preview workflow results before claiming acceptance. Trust registries remain empty. Do not treat mock tests as real production signature or malware approval.
