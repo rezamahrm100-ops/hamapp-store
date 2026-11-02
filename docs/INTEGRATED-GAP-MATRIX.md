@@ -36,3 +36,6 @@ New proposed release-governance transaction tooling can generate coordinated no-
 
 ### Real Android preview permissions
 - New official Android SDK `aapt dump permissions` validation of assembled debug APK and owner-reviewed empty shell permission list. Genuine Android 35 app package validation requires actual hosted run; no application publisher approval, malware sandbox or production signing is implied.
+
+### Mobile browser and automated accessibility
+- Hosted real Chromium axe-core WCAG2.1 smoke covers serious/critical rule findings for dark/light/modal on mobile viewport and keyboard dialog navigation. Acceptance depends on exact workflow run; full screen-reader, physical-device and complete WCAG conformance remain external/engineering gaps.

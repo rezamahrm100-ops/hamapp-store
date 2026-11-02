@@ -64,3 +64,6 @@
 /scripts/android_permission_review.py @rezamahrm100-ops
 /catalog/android_preview_permission_policy.json @rezamahrm100-ops
 /docs/ANDROID-PERMISSIONS.md @rezamahrm100-ops
+
+/tests/browser_accessibility_smoke.mjs @rezamahrm100-ops
+/docs/PWA-MOBILE-A11Y.md @rezamahrm100-ops

@@ -168,3 +168,6 @@ Read [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md) for 
 
 ## Android real APK manifest permission gate (pending PR acceptance)
 - A GitHub-hosted APK build workflow now invokes official Android SDK `aapt` on actual debug APK bytes; validates exact package/version and a fail-closed reviewed permissions allowlist. Uploads a safe short-lived digest/permissions-only receipt, not a key. Source tests mock aapt only and are not sufficient to claim real acceptance; check actual Android preview workflow after merge. This does NOT establish production malware or developer signer identity.
+
+## Hosted mobile Chromium accessibility gate (implementation, acceptance pending)
+- New actual 390x844 Chromium mobile context with pinned axe tests for A/AA serious/critical, dark/light/native-dialog modes, keyboard Escape and horizontal overflow; NOT full WCAG certification. Check real PR and main workflow acceptance before marking success.

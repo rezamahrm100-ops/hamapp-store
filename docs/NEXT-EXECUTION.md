@@ -140,3 +140,6 @@ Older sections below describe historical continuation stages; they **do not auth
 
 ## Android third-party permission and publisher acceptance
 - Check the actual Android native preview workflow's official `aapt` manifest permission scan and debug receipt after PR merge. In approved private-publisher intake, use independently reviewed per-app allowed permission policies and inspect real APK bytes, then combine with true OS signature, provenance, scanner, real signed F-Droid index and on-device install/update. Preview permission scan is not malware clearance.
+
+## Mobile PWA a11y real-browser continuation
+- Inspect exact hosted Playwright + axe CI job, assert serious/critical WCAG2.1 A/AA rules passed for dark/light/modal and no mobile horizontal overflow. If red, fix actual UI issues, not skip the gate. Real screen reader, device and broader WCAG acceptance still require independent evidence.
