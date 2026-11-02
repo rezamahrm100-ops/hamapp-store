@@ -1,0 +1,50 @@
+name: HamApp Reproducible Build Evidence
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - 'catalog/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - '.github/workflows/build-evidence.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+concurrency:
+  group: hamapp-evidence-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  evidence:
+    if: github.repository == 'rezamahrm100-ops/hamapp-store' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Full tests and static build
+        run: |
+          python3 -m unittest discover -s tests -v
+          python3 scripts/build_site.py
+      - name: Reproducible archive and evidence receipt
+        run: python3 scripts/build_evidence.py --output dist/evidence
+      - name: Save build evidence artifact for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-static-site-evidence
+          path: dist/evidence/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Attest static site bundle provenance (not APK signature)
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/evidence/hamapp-static-site.zip
+      - name: Job summary
+        shell: bash
+        run: |
+          echo '### HamApp static PWA build evidence' >> "$GITHUB_STEP_SUMMARY"
+          echo 'ZIP, SHA256 receipt and GitHub artifact provenance generated.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This is NOT an app-signing or production-store approval.' >> "$GITHUB_STEP_SUMMARY"
