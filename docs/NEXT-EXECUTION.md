@@ -34,3 +34,11 @@
 - Add approved app-to-winget mapping only after independent owner review of package ID, signing identity, source provenance and exact version continuity; no invented publisher registrations.
 - Complete publisher-controlled offline Windows EXE signing, installer/update validation on real interactive desktop and native GUI smoke tests. Do not run unreviewed PR EXE on owner runner.
 - Prioritize similarly upstream-based native Android client work via F-Droid client evaluation and signed repo, rather than rolling a new package manager.
+
+## Continuation after verified Windows preview PR #15
+
+1. Inspect live `main` and recheck https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41484699926 to establish which unsigned preview artifact was actually built. It is not a signed release.
+2. Native Android client is the next high-impact code workstream: reuse a pinned upstream F-Droid client implementation with GPL source and trademark compliance; build an independent APK in hosted CI, test signed F-Droid repository registration, and do not claim production install without keys and device QA.
+3. For Windows, independently verify a real publisher package, winget ID, version and binary signer. Preserve empty mapping until verified. Provide a secure signing environment outside public CI, sign and version the desktop EXE, run interactive owner-device install/update QA only under explicit owner approval, then publish a properly signed release.
+4. Build authentic release source provenance and owner-reviewed promotion (certificate continuity, malware policy, anti-rollback, verified GitHub attestations) before enabling downloads.
+5. Improve real application detail pages/accessibility and publisher governance via safe GitHub PR workflow; do not build a new install system where F-Droid/winget already provide one.
