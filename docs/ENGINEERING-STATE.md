@@ -177,3 +177,6 @@ Read [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md) for 
 
 ## Real binary intake and archive security (source checkpoint pending CI)
 - New actual APK archive CRC/path/symlink/ZIP-bomb/duplicate checks integrated into native Android preview, with bounded JSON receipt, plus local owner-only cross-check of approved signer, source attestation, Android aapt permission policy and unmodified binary SHA. This is review-only; no actual production publisher verified, no malware/behavior scanner run, no release activated. Read `docs/REAL-BINARY-INTAKE.md` and verify live Actions before claiming acceptance.
+
+## Bounded real signature malware screening (CI acceptance pending)
+- Real ClamAV CLI integration for actual APK/EXE/MSIX bytes with independent fresh DB, no shell, bounded scan, SHA continuity, fail-closed detections and non-misleading `malware_absence_verified=false`. Dedicated hosted real debug APK build/scan uses updated official database; check Actions before accepting; authentic release app malware and dynamic review still unverified.

@@ -149,3 +149,6 @@ Older sections below describe historical continuation stages; they **do not auth
 
 ## Owner candidate intake and byte-level archive audit — 2026-11-03
 - Owner-local preflight must match actual file digest, OS signer, pinned GitHub attestation and Android aapt permission policy; run ZIP CRC/traversal/expansion checks on real APK and final artifact rehash. The public CI runs only a genuine first-party debug APK, which is **not** production release approval. Check live main QA after merge. Continue actual malware/dynamic analysis, identity registration, signed repo client and owner-device acceptance, with branch protection still independently required.
+
+## Owner-local antivirus validation
+- Actual `clamscan` signature scan with DB age<=14d is added to `owner_candidate_intake.py` CLI before any review receipt, requiring same exact immutable artifact hash. Hosted debug APK exercises scanner with official freshclam (accept only actual workflow success). It does not replace sandbox/behavior, licensing, publisher authentication, production signer or branch protection.

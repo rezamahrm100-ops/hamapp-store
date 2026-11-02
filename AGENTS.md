@@ -160,3 +160,6 @@ At main `eb08797a42fdde5cfacd0f6542ee0100d02bb680`, actual GitHub Actions runs f
 
 ## Actual binary archive and owner-local publisher preflight — 2026-11-03 (CI acceptance pending)
 - Inspect `docs/REAL-BINARY-INTAKE.md`, `scripts/binary_archive_review.py` and `scripts/owner_candidate_intake.py`: source + signed GitHub producer verification, actual Android APK archive CRC/traversal/ZIP-bomb inspection, Android manifest reviewed permissions and before/after SHA-256 on same artifact. Native debug APK CI runs archive scanner on real bytes. Public CI fixtures are not real production malware clearance, publisher credentials or owner approval; no public downloads registered.
+
+## Real antivirus binary screening batch (2026-11-03; workflow acceptance pending)
+- See `docs/ACTUAL-ANTIVIRUS-SCREENING.md`; source CLI now invokes actual fresh ClamAV DB against exact APK/EXE/MSIX before owner intake, rehashes afterwards and never marks malware absence verified. Dedicated GitHub-hosted native DEBUG APK scan with fresh upstream `freshclam`; do not count this as third-party production release malware clearance. Inspect real job + receipt before claiming completion.

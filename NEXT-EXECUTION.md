@@ -66,3 +66,6 @@ Verify exact workflow run for test/mobile-axe-accessibility-20261102: live Chrom
 
 ## 2026-11-03 real binary intake batch
 Inspect actual PR on branch `feature/actual-binary-archive-inspection-and-owner-intake-20261103` for real hosted Android preview archive receipt, source Linux/Windows tests and CodeQL. Fix failures and merge only after source + actual build pass; then continue secure malware screening of owner-approved actual artifact, genuine signed F-Droid index/client and Windows production signer, and enforce branch review ruleset Issue #31. See `docs/REAL-BINARY-INTAKE.md`.
+
+## Actual ClamAV binary scan continuation (2026-11-03)
+- Check `feature/bounded-antivirus-artifact-inspection-20261103` real hosted workflow, CI, CodeQL, fresh DB, exact APK SHA and receipt. If scanner signature DB retrieval is blocked, treat that as an external engine outage, never PASS. On approved local owner APK/EXE perform real ClamAV plus app signatures/attestation/device behavioral review. No private assets on public GitHub.

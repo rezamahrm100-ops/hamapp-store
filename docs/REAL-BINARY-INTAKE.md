@@ -40,3 +40,6 @@ Require independent actual malware/behavior and privacy/license review on exact 
 ## Tests
 
 Hosted Linux/Windows source tests exercise archive corruption, path traversal, ZIP bombs, duplicates, POSIX symlinks, fail-closed missing permission policy, and byte mutation during intake; **those synthetic tests alone are not production signing acceptance**. Android native preview workflow independently validates the real built APK with official Android SDK and actual archive bytes. See the exact run/commit results rather than inferring that the workflow ran merely because YAML exists.
+
+## Added actual antivirus scan gate
+The owner CLI now invokes `clamscan` with fresh DB by default, rejects missing scanner/DB, detections and file mutation, checks the receipt digest against previously verified producer bytes, and **never** treats its signature scan as complete malware/behavior approval. See `docs/ACTUAL-ANTIVIRUS-SCREENING.md`. Public CI scans only the DEBUG HamApp APK on GitHub-hosted Linux, not private candidate assets.
