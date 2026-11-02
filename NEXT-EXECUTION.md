@@ -54,3 +54,6 @@ Continue remaining engineerable backlog (atomic reviewed publisher promotion, re
 
 ## Current release security engineering batch
 Check the latest PR from `feature/secure-release-governance-and-supply-chain-20261102`: real hosted Linux/Windows suite, CodeQL, pinned upstream Trivy source scan and CycloneDX artifact, trusted-main-only owner QA if merged; review safe revocation and proposal-only status. Continue authentic publisher approval, external source/binary malware assessment, F-Droid live signer/index/client and production install paths; do not stop at the PR or claim they were accepted.
+
+## Android real manifest check
+- Inspect latest hosted `android-client-preview.yml` run containing actual `aapt dump permissions` and safe receipt. Reject newly requested undeclared permissions and keep public APK approvals disabled. Continue true production key/repo/client install and other engineering gaps.

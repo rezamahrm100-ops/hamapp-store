@@ -137,3 +137,6 @@ Older sections below describe historical continuation stages; they **do not auth
 ## Owner-governed release transactions and scanning
 - Confirm actual CI and security scanner run for `feature/secure-release-governance-and-supply-chain-20261102`. PR-only release/signing-key revocation proposals must disable any active download links and validate both JSON records together; no direct public deploy or unaudited owner approval. Audit SHA-256 before/after; require a GitHub single-commit change after independent review.
 - Source filesystem Trivy vuln/secret/config scan and CycloneDX metadata alone do not clear release APK/EXE for malware, license/privacy or Authenticode, and no production binary is approved. Resolve branch-ruleset Issue #31 via authorized admin only.
+
+## Android third-party permission and publisher acceptance
+- Check the actual Android native preview workflow's official `aapt` manifest permission scan and debug receipt after PR merge. In approved private-publisher intake, use independently reviewed per-app allowed permission policies and inspect real APK bytes, then combine with true OS signature, provenance, scanner, real signed F-Droid index and on-device install/update. Preview permission scan is not malware clearance.

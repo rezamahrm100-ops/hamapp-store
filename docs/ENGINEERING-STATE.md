@@ -165,3 +165,6 @@ Read [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md) for 
 
 ## Release governance + upstream source security integration (implementation, acceptance pending)
 - Implemented proposal-only atomic release and signer revocation with safe unpublishing/revocation state and canonical before/after hash audit; no direct repo writes. Fixes per-app **platform-specific** independent signer registration. Adds real upstream pinned Trivy hosted public-source vulnerability/secret/config scan and a CycloneDX source SBOM. Tests synthetic release records only. Status NOT accepted until actual hosted CI/CodeQL/Trivy workflow results and post-merge checks inspected. Production source/artifact malware, publisher approval, branch ruleset and live F-Droid/Windows device acceptance remain unsatisfied.
+
+## Android real APK manifest permission gate (pending PR acceptance)
+- A GitHub-hosted APK build workflow now invokes official Android SDK `aapt` on actual debug APK bytes; validates exact package/version and a fail-closed reviewed permissions allowlist. Uploads a safe short-lived digest/permissions-only receipt, not a key. Source tests mock aapt only and are not sufficient to claim real acceptance; check actual Android preview workflow after merge. This does NOT establish production malware or developer signer identity.
