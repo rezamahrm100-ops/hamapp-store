@@ -15,6 +15,11 @@ class AndroidVersionSmokePolicyTests(unittest.TestCase):
         self.assertIn("check_android_emulator_ui.py",text)
         self.assertNotIn("adb install -d ",text)
         self.assertNotIn("adb root",text)
+        self.assertIn("INSTALL_FAILED_UPDATE_INCOMPATIBLE", text)
+        self.assertIn("v2-foreign-signer.apk", text)
+        self.assertIn("v2-truncated.apk", text)
+        self.assertIn("corrupt_package_update_rejected", text)
+        self.assertIn("installed_v2_preserved_after_denials", text)
 
 if __name__=="__main__":
     unittest.main()
