@@ -13,3 +13,7 @@
 .details-fact{border-top:1px solid var(--stroke);padding-top:10px;overflow-wrap:anywhere}
 .details-fact strong{font-size:13px;color:var(--accent)}
 .details-fact p{margin:3px 0;color:var(--muted);white-space:pre-wrap}
+
+/* Light theme status badges need independent WCAG AA text/background contrast. */
+:root.light .badge{color:#6c4809;background:#fff0c2}
+:root.light .badge.live{color:#165c41;background:#e6f5e9}

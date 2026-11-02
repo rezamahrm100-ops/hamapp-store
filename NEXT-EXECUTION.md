@@ -57,3 +57,6 @@ Check the latest PR from `feature/secure-release-governance-and-supply-chain-202
 
 ## Android real manifest check
 - Inspect latest hosted `android-client-preview.yml` run containing actual `aapt dump permissions` and safe receipt. Reject newly requested undeclared permissions and keep public APK approvals disabled. Continue true production key/repo/client install and other engineering gaps.
+
+## Mobile accessibility acceptance gate
+Verify exact workflow run for test/mobile-axe-accessibility-20261102: live Chromium axe audit of Persian RTL/mobile dark/light and modal, keyboard navigation, no horizontal overflow. Fix actual issues until green; full assistive-technology and deployment QA remain separate.

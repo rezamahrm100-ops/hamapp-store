@@ -151,3 +151,6 @@ At main `eb08797a42fdde5cfacd0f6542ee0100d02bb680`, actual GitHub Actions runs f
 
 ## Actual Android debug manifest permission acceptance (2026-11-02; pending green checks)
 - The hosted native APK workflow invokes official `aapt` against the newly assembled debug APK and checks reviewed exact version and manifest permission allowlist in `catalog/android_preview_permission_policy.json`. See `docs/ANDROID-PERMISSIONS.md`. Do not claim malware detection or production signer proof from permission names. Require actual workflow success and artifact receipt before acceptance.
+
+## Real mobile Chromium accessibility QA (pending genuine workflow evidence)
+- The browser acceptance workflow now runs pinned axe-core on mobile-sized actual Chromium for serious/critical WCAG2.1 A/AA checks across dark/light/native-dialog states, horizontal overflow and keyboard/escape navigation. See docs/PWA-MOBILE-A11Y.md; do not mark as passed until actual workflow success. This is not a full screen-reader/physical-device audit.
