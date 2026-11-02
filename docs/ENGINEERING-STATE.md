@@ -79,3 +79,7 @@ See NEXT-EXECUTION.md for next integrated work. After every merge record new SHA
 - Added native Android Java UI; review-only Android catalogue snapshot generator, F-Droid repo URI validator, runtime signed-repo fingerprint gate and GitHub-hosted Gradle APK build workflow.
 - **Unverified until GitHub Android workflow and actual APK artifact complete.** Do not claim signed production build, emulator acceptance, installer operation or real package installation.
 - No F-Droid private signing key or approved Android publisher was created. Existing trust registry/history stay empty. Android app cannot install anything in this condition.
+
+## Android emulator smoke check — in progress
+- New workflow `.github/workflows/android-emulator-smoke.yml` runs Android 35 x86_64 on GitHub-hosted Ubuntu using the upstream ReactiveCircus emulator runner (Apache 2.0). Installs a Debug APK, launches native UI, checks Arabic-script title and F-Droid button disabled, archives an accessibility dump and screenshot.
+- At checkpoint the workflow is **not yet accepted**: inspect actual run's conclusion, artifact and SHA. This is distinct from production signed F-Droid install/update QA.

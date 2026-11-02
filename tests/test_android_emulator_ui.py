@@ -1,0 +1,53 @@
+import importlib.util
+from pathlib import Path
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location("check_android_emulator_ui", ROOT / "scripts/check_android_emulator_ui.py")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+
+class EmulatorUiParserTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.xml = Path(self.tmp.name) / "window.xml"
+
+    def write(self, disabled=True, title=True, planned=True):
+        content = [
+            '<hierarchy rotation="0">',
+            '<node text="' + ("هَماپ" if title else "other") + '" enabled="true"/>',
+            '<node text="مدیریت از طریق F-Droid" enabled="' + ("false" if disabled else "true") + '"/>',
+            '<node text="' + ("در دست توسعه" if planned else "آماده") + '" enabled="true"/>',
+            '</hierarchy>',
+        ]
+        self.xml.write_text("".join(content), encoding="utf-8")
+
+    def test_requires_safe_disabled_install(self):
+        self.write()
+        self.assertEqual(module.check_ui(self.xml), 1)
+
+    def test_rejects_enabled_install(self):
+        self.write(disabled=False)
+        with self.assertRaisesRegex(ValueError, "must be disabled"):
+            module.check_ui(self.xml)
+
+    def test_rejects_missing_title(self):
+        self.write(title=False)
+        with self.assertRaises(ValueError):
+            module.check_ui(self.xml)
+
+    def test_rejects_missing_planned_label(self):
+        self.write(planned=False)
+        with self.assertRaises(ValueError):
+            module.check_ui(self.xml)
+
+    def test_missing_file_fails(self):
+        with self.assertRaises(OSError):
+            module.check_ui(self.xml)
+
+
+if __name__ == "__main__":
+    unittest.main()

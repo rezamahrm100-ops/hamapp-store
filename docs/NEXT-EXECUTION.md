@@ -48,3 +48,7 @@
 - Add independent F-Droid signed index verification, pinned repository key fingerprint and stable private signer backup in trusted environment before enabling any production Android package install flow. Do not infer validity from public JSON alone.
 - Explore F-Droid's reusable client libraries under their applicable GPL licenses if a tightly integrated installer is needed. Existing native code currently hands off to the separate official client, not an embedded package manager.
 - Continue release source-to-binary provenance and Android release-key continuity, then two-version real-device update acceptance. Never register the ephemeral Android debug signing key.
+
+## After hosted Android emulator acceptance
+- Review a real GitHub Android emulator workflow run: APK installation into ephemeral emulator, app activity start, UI dump, disabled F-Droid handoff and screenshot. A green emulator test is not equivalent to signed repo subscription or physical-device two-version APK update acceptance.
+- Prioritize real signed F-Droid repo with persistent offline key / verified index and an owner-approved signer registration, then active install+upgrade on isolated device and stable APK release signing.

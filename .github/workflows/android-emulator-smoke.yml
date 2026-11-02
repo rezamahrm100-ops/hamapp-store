@@ -1,0 +1,62 @@
+name: HamApp Android Native Emulator Smoke
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'scripts/android_emulator_smoke.sh'
+      - 'scripts/check_android_emulator_ui.py'
+      - 'tests/test_android_emulator_ui.py'
+      - '.github/workflows/android-emulator-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'scripts/android_emulator_smoke.sh'
+      - 'scripts/check_android_emulator_ui.py'
+      - 'tests/test_android_emulator_ui.py'
+      - '.github/workflows/android-emulator-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hamapp-android-emulator-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  emulator-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Allow isolated hosted emulator KVM access
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Boot ephemeral emulator and verify disabled F-Droid installation UI
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          script: bash scripts/android_emulator_smoke.sh
+      - name: Keep short-lived UI acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-android-emulator-evidence
+          path: |
+            dist/android-emulator/
+            android-activity-launch.txt
+          if-no-files-found: warn
+          retention-days: 3
