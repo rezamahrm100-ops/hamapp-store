@@ -34,19 +34,19 @@ def stage(candidate, registry, apk, workspace, runner=subprocess.run, update_run
         raise PublisherError("expected a new APK filename")
     # No unaudited shell commands and no signing on GitHub-hosted CI.
     dest.parent.mkdir(exist_ok=True)
-    with dest.open("xb") as output, Path(apk).open("rb") as source:
-        shutil.copyfileobj(source, output)
     try:
+        with dest.open("xb") as output, Path(apk).open("rb") as source:
+            shutil.copyfileobj(source, output)
+        # Recheck staged bytes after copying (mitigates time-of-check/time-of-use changes).
+        from release_integrity import verify_file
+        verify_file(candidate["release"], dest)
         completed = update_runner(["fdroid", "update", "--create-metadata"], cwd=str(workspace),
                                   capture_output=True, text=True, timeout=300, check=False)
         if completed.returncode != 0:
             raise PublisherError("upstream fdroid update failed (review private workspace logs locally)")
-    except (OSError, subprocess.TimeoutExpired):
+    except (OSError, subprocess.TimeoutExpired, ValueError) as exc:
         dest.unlink(missing_ok=True)
-        raise PublisherError("fdroid tool unavailable or timed out") from None
-    except PublisherError:
-        dest.unlink(missing_ok=True)
-        raise
+        raise PublisherError("F-Droid staging failed; staged APK removed") from exc
     # This step does not deploy. Independently inspect the output and verify signed index.
     return {**receipt, "staged_filename": dest.name, "deployed": False, "review_required": True}
 
