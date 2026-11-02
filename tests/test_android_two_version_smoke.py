@@ -1,0 +1,20 @@
+import pathlib
+import unittest
+ROOT=pathlib.Path(__file__).resolve().parents[1]
+
+class AndroidVersionSmokePolicyTests(unittest.TestCase):
+    def test_expected_real_preview_base(self):
+        text=(ROOT/"android/app/build.gradle").read_text()
+        self.assertEqual(text.count("versionCode 1"),1)
+        self.assertEqual(text.count("versionName '0.1.0-preview'"),1)
+
+    def test_real_upgrade_and_default_downgrade_guards_present(self):
+        text=(ROOT/"scripts/android_two_version_smoke.sh").read_text()
+        self.assertIn("adb install -r",text)
+        self.assertIn("INSTALL_FAILED_VERSION_DOWNGRADE",text)
+        self.assertIn("check_android_emulator_ui.py",text)
+        self.assertNotIn("adb install -d ",text)
+        self.assertNotIn("adb root",text)
+
+if __name__=="__main__":
+    unittest.main()

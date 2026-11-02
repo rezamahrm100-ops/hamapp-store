@@ -118,3 +118,7 @@ See NEXT-EXECUTION.md for next integrated work. After every merge record new SHA
 ## In-progress real signed-index F-Droid integration drill
 - PR introduces hosted-main Ubuntu workflow with actual fdroidserver init/update on HamApp Android debug APK, local-only HTTP signed index-v2 verification, tampered-index and wrong-fingerprint rejection. Uses disposable signing key, never production key, no deployment or installation.
 - Status NOT ACCEPTED until actual GitHub run succeeds and review-only receipt artifact is confirmed. Official library integration is tested in the workflow, separate from mocked preflight unit tests. No production repository is configured.
+
+## In-progress two-debug-version Android emulator upgrade (2026-11-02)
+- New hosted GitHub Actions smoke tests real Android 35 install versionCode=1, upgrade versionCode=2 with same temporary debug signer, default downgrade refusal and native safe UI after upgrade. Requires actual run success + evidence artifact for acceptance.
+- No real publisher-approved app, signed F-Droid client subscription, stable production release signing or owner-device update acceptance. See docs/ANDROID-TWO-VERSION-SMOKE.md.
