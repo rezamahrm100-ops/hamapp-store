@@ -66,3 +66,6 @@ Verify exact workflow run for test/mobile-axe-accessibility-20261102: live Chrom
 
 ## 2026-11-03 real binary intake batch
 Inspect actual PR on branch `feature/actual-binary-archive-inspection-and-owner-intake-20261103` for real hosted Android preview archive receipt, source Linux/Windows tests and CodeQL. Fix failures and merge only after source + actual build pass; then continue secure malware screening of owner-approved actual artifact, genuine signed F-Droid index/client and Windows production signer, and enforce branch review ruleset Issue #31. See `docs/REAL-BINARY-INTAKE.md`.
+
+## First-party live HTTPS deployment control
+- Continue from merged repo: inspect PR #44 and real Pages workflow, verify first-party public HTTPS parity on exact main SHA, then pursue genuine third-party signed origin and production publisher/device keys as separate gates. `docs/REAL-PAGES-HTTPS-ACCEPTANCE.md` is authoritative for this check.

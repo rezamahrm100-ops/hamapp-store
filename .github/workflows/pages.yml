@@ -39,3 +39,24 @@ jobs:
       - name: Publish
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify ACTUAL deployed HTTPS page and release metadata bytes
+        shell: bash
+        run: |
+          python3 scripts/verify_live_pages.py \
+            --site-dir dist/site \
+            --receipt dist/live-pages-qa-receipt.json \
+            --attempts 12 \
+            --retry-seconds 5
+      - name: Upload public-only deployment parity receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-real-https-pages-byte-parity
+          path: dist/live-pages-qa-receipt.json
+          if-no-files-found: error
+          retention-days: 5
+      - name: Disclose exact parity scope
+        shell: bash
+        run: |
+          echo '### LIVE PUBLIC HTTPS BYTE PARITY VERIFIED' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Exact published HTML, CSS, JavaScript, service worker and catalogue bytes matched the built site without redirects using CA-validated HTTPS.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This is NOT publisher web-app origin, immutable third-party release, signing, uptime or malware acceptance.' >> "$GITHUB_STEP_SUMMARY"
