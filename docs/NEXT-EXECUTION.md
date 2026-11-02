@@ -92,3 +92,8 @@
 - Inspect exact hosted Android two-version workflow SHA/receipt, confirm default downgrade refusal and native UI remained fail-closed. Do NOT confuse test debug signing with real production app/F-Droid update.
 - Next run a true F-Droid **client** install/update using owner-approved signed repository and two publisher-approved APK versions with stable signatures in isolated emulator, then accept owner device only with permission.
 - The ephemeral signed-index drill succeeded on main run #41497810315; document its acceptance and keep production signing keys outside public CI.
+
+## After Android signer-mismatch/corrupt-package QA
+- Inspect the actual `android-two-version-smoke.yml` run for branch `feature/android-package-rejection-qa-20261102`. Require Linux/Windows hosted CI + CodeQL + emulator job success and the safe evidence artifact before merging.
+- Confirm on-emulator refusal of downgrade, foreign signer and truncated APK, with versionCode=2 still installed. These are **debug** tests, not publisher-signed F-Droid adoption.
+- Remaining independent engineering prioritization: owner-controlled persistent repo signing + offline backup, an independently approved origin/fingerprint, first eligible source/release provenance with real publisher certificate, trusted F-Droid client two-version update, and production signed Windows installer acceptance. Never register test identities.
