@@ -63,3 +63,6 @@ Verify exact workflow run for test/mobile-axe-accessibility-20261102: live Chrom
 
 ## Latest run 2 accepted engineering and next execution
 - Inspect `docs/ENGINEERING-CLOSURE-2026-11-02-RUN2.md` and current GitHub before coding. Six PRs #39,#40,#41,#5,#6,#4 merged. Audit exact latest main head and Android F-Droid/emulator hosted checks, then continue authentic publisher/permission/malware/OS signer release integration, owner PR branch ruleset, stable signed index and genuine two-version installs. Do not repeat already accepted Trivy source, aapt or real browser axe QA.
+
+## 2026-11-03 real binary intake batch
+Inspect actual PR on branch `feature/actual-binary-archive-inspection-and-owner-intake-20261103` for real hosted Android preview archive receipt, source Linux/Windows tests and CodeQL. Fix failures and merge only after source + actual build pass; then continue secure malware screening of owner-approved actual artifact, genuine signed F-Droid index/client and Windows production signer, and enforce branch review ruleset Issue #31. See `docs/REAL-BINARY-INTAKE.md`.

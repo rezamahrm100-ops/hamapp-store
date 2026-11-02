@@ -157,3 +157,6 @@ At main `eb08797a42fdde5cfacd0f6542ee0100d02bb680`, actual GitHub Actions runs f
 
 ## Second integrated engineering run (2026-11-02) — six real merged PRs
 - Read `docs/ENGINEERING-CLOSURE-2026-11-02-RUN2.md` for exact PRs, main SHAs, workflow run URLs, source supply-chain scan, actual Android permission aapt acceptance, mobile axe accessibility findings/fixes, and safe official GitHub Actions upgrades (#39, #40, #41, #5, #6, #4). Final latest main target `86b47e7839c4c63f722da448ebdee1f3fcda163c` — **verify terminal actual workflows before declaring all main checks green**. No first-party publisher identity or signed production release is approved; full engineering state remains PARTIAL.
+
+## Actual binary archive and owner-local publisher preflight — 2026-11-03 (CI acceptance pending)
+- Inspect `docs/REAL-BINARY-INTAKE.md`, `scripts/binary_archive_review.py` and `scripts/owner_candidate_intake.py`: source + signed GitHub producer verification, actual Android APK archive CRC/traversal/ZIP-bomb inspection, Android manifest reviewed permissions and before/after SHA-256 on same artifact. Native debug APK CI runs archive scanner on real bytes. Public CI fixtures are not real production malware clearance, publisher credentials or owner approval; no public downloads registered.

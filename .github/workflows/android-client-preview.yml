@@ -9,6 +9,10 @@ on:
       - 'tests/test_android_catalog.py'
       - 'tests/test_android_permission_review.py'
       - 'scripts/android_permission_review.py'
+      - 'scripts/binary_archive_review.py'
+      - 'scripts/owner_candidate_intake.py'
+      - 'tests/test_binary_archive_review.py'
+      - 'tests/test_owner_candidate_intake.py'
       - 'catalog/android_preview_permission_policy.json'
       - '.github/workflows/android-client-preview.yml'
   push:
@@ -20,6 +24,10 @@ on:
       - 'tests/test_android_catalog.py'
       - 'tests/test_android_permission_review.py'
       - 'scripts/android_permission_review.py'
+      - 'scripts/binary_archive_review.py'
+      - 'scripts/owner_candidate_intake.py'
+      - 'tests/test_binary_archive_review.py'
+      - 'tests/test_owner_candidate_intake.py'
       - 'catalog/android_preview_permission_policy.json'
       - '.github/workflows/android-client-preview.yml'
   workflow_dispatch:
@@ -73,6 +81,19 @@ jobs:
             --policy catalog/android_preview_permission_policy.json \
             --aapt "$ANDROID_HOME/build-tools/35.0.0/aapt" \
             --receipt dist/android-permission-evidence/receipt.json
+      - name: Inspect actual APK archive paths, CRC and decompression limits
+        shell: bash
+        run: |
+          python3 scripts/binary_archive_review.py \
+            --artifact android/app/build/outputs/apk/debug/app-debug.apk \
+            --receipt dist/android-archive-evidence/receipt.json
+      - name: Upload safe debug-only archive validation receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-android-debug-archive-safety-evidence
+          path: dist/android-archive-evidence/receipt.json
+          if-no-files-found: error
+          retention-days: 5
       - name: Upload safe debug-only permission verification receipt
         uses: actions/upload-artifact@v4
         with:

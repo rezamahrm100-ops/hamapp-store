@@ -174,3 +174,6 @@ Read [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md) for 
 
 ## Second integrated engineering execution: accepted merges and live QA reconciliation
 - Six PRs #39/#40/#41/#5/#6/#4 merged. Source of exact SHAs, feature-branch CI/CodeQL/Trivy/Android aapt/Chromium axe and Pages evidence: `docs/ENGINEERING-CLOSURE-2026-11-02-RUN2.md`. Main checkout-v7 merge `86b47e7839c4c63f722da448ebdee1f3fcda163c` requires exact terminal confirmation of 12 workflows; do not interpret pending as pass. Actual owner Windows runner 2.338.2 is above upstream checkout Node24 requirement 2.327.1. Public signers, release history, F-Droid repository and trusted web origins still empty/null; production readiness rejected.
+
+## Real binary intake and archive security (source checkpoint pending CI)
+- New actual APK archive CRC/path/symlink/ZIP-bomb/duplicate checks integrated into native Android preview, with bounded JSON receipt, plus local owner-only cross-check of approved signer, source attestation, Android aapt permission policy and unmodified binary SHA. This is review-only; no actual production publisher verified, no malware/behavior scanner run, no release activated. Read `docs/REAL-BINARY-INTAKE.md` and verify live Actions before claiming acceptance.

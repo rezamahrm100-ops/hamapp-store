@@ -67,3 +67,7 @@
 
 /tests/browser_accessibility_smoke.mjs @rezamahrm100-ops
 /docs/PWA-MOBILE-A11Y.md @rezamahrm100-ops
+
+/scripts/binary_archive_review.py @rezamahrm100-ops
+/scripts/owner_candidate_intake.py @rezamahrm100-ops
+/docs/REAL-BINARY-INTAKE.md @rezamahrm100-ops
