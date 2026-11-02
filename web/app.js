@@ -136,7 +136,7 @@ themeButton.addEventListener('click',() => {const light=document.documentElement
 let deferredInstall;
 window.addEventListener('beforeinstallprompt', e => {e.preventDefault();deferredInstall=e;document.getElementById('installPwa').classList.remove('hidden')});
 document.getElementById('installPwa').addEventListener('click',async() => {if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;document.getElementById('installPwa').classList.add('hidden')});
-if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+if ('serviceWorker' in navigator && window.isSecureContext) {
   window.addEventListener('load',() => navigator.serviceWorker.register('./sw.js').catch(console.warn));
 }
 load();

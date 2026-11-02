@@ -17,6 +17,11 @@ class SiteContractTests(unittest.TestCase):
         self.assertIn('role="status"',page)
         self.assertIn('aria-pressed',page)
 
+    def test_service_worker_registration_uses_browser_secure_context(self):
+        app = (ROOT / "web/app.js").read_text(encoding="utf-8")
+        self.assertIn("window.isSecureContext", app)
+        self.assertNotIn("location.hostname === 'localhost'", app)
+
     def test_native_dialog_and_text_only_details(self):
         page = (ROOT / "web/index.html").read_text(encoding="utf-8")
         app = (ROOT / "web/app.js").read_text(encoding="utf-8")

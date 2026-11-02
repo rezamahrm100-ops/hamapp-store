@@ -47,3 +47,7 @@
 /docs/FDROID-KEY-CUSTODY.md @rezamahrm100-ops
 
 /windows_client/installed_state.py @rezamahrm100-ops
+
+/.github/workflows/pwa-browser-acceptance.yml @rezamahrm100-ops
+/tests/browser_pwa_smoke.mjs @rezamahrm100-ops
+/docs/PWA-REAL-BROWSER-QA.md @rezamahrm100-ops
