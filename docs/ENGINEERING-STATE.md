@@ -1,50 +1,62 @@
-# HamApp engineering state — handoff checkpoint
+# HamApp — engineering state and evidence ledger
 
-Checkpoint recorded 2026-11-02. **Never treat this snapshot as current evidence**: verify GitHub main SHA, workflow runs, release assets and signing registry on every continuation.
+Checkpoint: 2026-11-02. Always query live GitHub before trusting this snapshot.
 
-## Source of truth
 Repository: https://github.com/rezamahrm100-ops/hamapp-store
-Actions: https://github.com/rezamahrm100-ops/hamapp-store/actions
-Pull requests: https://github.com/rezamahrm100-ops/hamapp-store/pulls
-Issues: https://github.com/rezamahrm100-ops/hamapp-store/issues
+Default branch: main; public code only, existing proprietary app repositories stay private.
 
-Last independently inspected main commit *before accelerator work*: 46563fd8a381f679bb1bd997918de718939df24a.
-Historical successful owner QA: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41475888396.
-Historical successful CI: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41475888298.
-Historical successful CodeQL: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41475888321.
-These are historical evidence, not claims that new modifications passed.
+## Last inspected feature commits
+- PR #12: https://github.com/rezamahrm100-ops/hamapp-store/pull/12 — merged to main SHA `81effa33d2ace1c537a3de792816cf901d549272`. Release history/revoked certificate/anti-rollback precheck added to F-Droid staging; no live binary published.
+- PR #13: https://github.com/rezamahrm100-ops/hamapp-store/pull/13 — merged to main SHA `8ca141f25fed22f053b1d2940ca47e97ebf1ead2`. Public binary downloads require matching approved historical release and pinned publisher. Existing catalogue remains entirely planned.
+- PRIOR PR #11: `ba61a72d6383eacbde6310524b82b8ea536a32ca`; agent handoff, CI artifacts and PWA provenance.
 
-## Feature acceptance (do not inflate)
-- Implemented: PWA catalogue, GitHub Pages deployment, CI on hosted Linux/Windows, CodeQL, Dependabot, owner-only Windows QA; offline candidate verification and F-Droid staging adapter.
-- Partial: signed APK / Windows publisher verification needs real approved fingerprints, SDK tools and real installable packages.
-- Missing: production F-Droid signer workspace and signed repository; independent actual app install/update on devices; branded Android client; Windows installer/update client; publisher portal, accounts/permissions and payment features.
-- Publisher registry is deliberately empty: catalog/trusted_signers.json. Do not fabricate registrations or release links.
-- New workflow generates provenance for PWA static bundle only, not an APK or proprietary application.
+## Confirmed check runs on PR #12
+- PR CI Linux/Windows: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41479750814 — success.
+- PR CodeQL: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41479750912 — success.
+- After merge: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41479970518 — owner Windows QA success; plus CI, Pages, PWA evidence and CodeQL successful for that merged SHA.
 
-## Inspection commands
+## Confirmed checks on PR #13 before merge
+- PR CI Linux/Windows: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41480594525 — success.
+- PR CodeQL: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41480594353 — success.
+- Main at `8ca141f2...` started runs:
+  - CI: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41480826636
+  - Owner Windows QA: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41480826520
+  - Pages: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41480826697
+  - Static PWA attestation: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41480826823
+  - CodeQL: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41480826720
+  These run IDs are immutable evidence links, but recheck their terminal status on every continuation.
+
+## Implemented (engineering)
+- Persian RTL static PWA with search/platform filters and planned catalogue.
+- GitHub Pages, CI hosted Linux/Windows, CodeQL, Dependabot, owner-only trusted main Windows runner, artifact evidence/attestation for static PWA.
+- Owner-pinned offline publisher verification via Android apksigner/aapt or Windows Authenticode; failure-closed when registry has no owner-approved signers.
+- Offline fdroidserver staging adapter, no deployment/keys.
+- `catalog/release_history.json` review-only history schema; pre-publish versionCode/SemVer monotonicity, replay, signer revocation, source/package/signature continuity.
+- `scripts/release_review.py` offline plan; no automatic owner approval or publication.
+- `scripts/validate_catalog.py` prevents unapproved binary download buttons by cross-checking trusted signer and newest approved history. CI/Pages builds fail on invalid records.
+- CODEOWNERS assigns owner review responsibility; it does not enforce branch protection without a configured ruleset.
+
+## NOT accepted: remaining production gates
+- Real approved trusted publisher fingerprints (registry empty).
+- Actual independent source-to-binary provenance and release signing attestations for each Android/Windows product.
+- Persistent offline F-Droid repo signing key, backup, signed published index, trust fingerprint.
+- Real signed APK / Authenticode installer validation against independently approved identities.
+- Android native branded client, Windows native installer/updater, safe version migration, backend publisher portal.
+- Real device install/update between two consecutive signed versions, malformed/rollback/recovery tests.
+- Web release verified-deployment origin policy and privacy/permission review.
+- Payment/multi-publisher commercial marketplace.
+- No real installable package download listed: all entries remain planned.
+
+## Commands for independent confirmation
     gh repo view rezamahrm100-ops/hamapp-store
     gh api repos/rezamahrm100-ops/hamapp-store/commits/main --jq .sha
-    gh run list -R rezamahrm100-ops/hamapp-store --limit 15
+    gh run list -R rezamahrm100-ops/hamapp-store --limit 20
     gh pr list -R rezamahrm100-ops/hamapp-store
-    gh issue list -R rezamahrm100-ops/hamapp-store
     python -m unittest discover -s tests -v
     python scripts/build_site.py
     python scripts/build_evidence.py --output dist/evidence
 
-## Run/resource policy
-Use hosted Linux and Windows for all untrusted PR code; no secrets in those jobs. Owner Windows runner label: hamapp-windows; execute trusted main only. Runner availability is dynamic; inspect each dispatched run, never assume online. Use public-hosted jobs for routine CI even if owner PC is off. Keep build artifacts short retention. Avoid caching dependency-free Python builds (no speed benefit). Protect main with required checks if repository admin capability becomes available.
+## Safety
+Self-hosted Windows only on reviewed main; no public PR head code. No secrets/keys in GitHub. GitHub PWA build attestation is not an APK signature. Approved history is user-controlled metadata, not itself cryptographic proof of a release. No fake publisher entries, URLs or signatures.
 
-## Release integrity guardrail
-The SHA256 candidate gate and publisher gate check data and signing identity under explicit trust assumptions. A declared Git commit is not provenance, a hash receipt is not a signature, a GitHub PWA attestation is not an APK certificate, and F-Droid staging is not a signed published index. Actual marketplace release requires independent signing keys, device acceptance and permission review.
-
-## Next work
-Proceed through docs/NEXT-EXECUTION.md as a coherent end-to-end batch. Update this checkpoint after each accepted milestone with precise SHA and links.
-
-## In-progress acceptance: V1 release continuity (2026-11-02)
-- Candidate-only policy: release_history.py and release_review.py reject SemVer/versionCode downgrade, hash replay, revoked signer and identity substitution. Staging bridge reads the version ledger before copying APKs.
-- This is a *development checkpoint*, not a proof the PR or main passed; inspect actual checks for the continuity PR and main before declaring acceptance.
-- Stored history and signer registries remain empty. No authentic APK, production signing environment or on-device update test has been accepted.
-
-## In-progress V1 public catalogue guard (2026-11-02)
-- New validation rejects public binary download links not matching the latest approved release history entry and pinned publisher identity.
-- Trust history and signer registry remain empty; no app was published. This checkpoint is not acceptance of PR checks; inspect the live GitHub run results before claiming the gate works.
+See NEXT-EXECUTION.md for next integrated work. After every merge record new SHA and complete workflow outcomes.
