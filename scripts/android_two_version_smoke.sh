@@ -29,6 +29,23 @@ PY
     fp2=$("$tools/apksigner" verify --print-certs "$out/v2.apk" | grep 'Signer #1 certificate SHA-256 digest' | awk '{print $NF}')
     test -n "$fp1"
     test "$fp1" = "$fp2"
+    # A separately generated, disposable identity must NEVER be allowed to replace v2.
+    keytool -genkeypair -noprompt -storetype PKCS12 \
+      -keystore "$out/untrusted-ci-only.p12" -alias untrusted \
+      -storepass "ephemeral-test-passphrase" -keypass "ephemeral-test-passphrase" \
+      -keyalg RSA -keysize 2048 -validity 1 -dname "CN=Untrusted-HamApp-CI-Test"
+    "$tools/apksigner" sign --ks "$out/untrusted-ci-only.p12" \
+      --ks-key-alias untrusted --ks-pass pass:ephemeral-test-passphrase \
+      --key-pass pass:ephemeral-test-passphrase \
+      --out "$out/v2-foreign-signer.apk" "$out/v2.apk"
+    "$tools/apksigner" verify "$out/v2-foreign-signer.apk"
+    other=$("$tools/apksigner" verify --print-certs "$out/v2-foreign-signer.apk" | grep 'Signer #1 certificate SHA-256 digest' | awk '{print $NF}')
+    test -n "$other" && test "$other" != "$fp2"
+    # A truncated signed archive must fail package integrity checks.
+    head -c 4096 "$out/v2.apk" > "$out/v2-truncated.apk"
+    if "$tools/apksigner" verify "$out/v2-truncated.apk" >/dev/null 2>&1; then
+      echo "SECURITY FAILURE: truncated APK passed signature validation" >&2; exit 1
+    fi
     echo "V1_V2_APK_BUILT_SAME_EPHEMERAL_DEBUG_CERT"
     ;;
   verify)
@@ -42,6 +59,15 @@ PY
        exit 1
     fi
     grep -Fq 'INSTALL_FAILED_VERSION_DOWNGRADE' "$out/downgrade-attempt.txt"
+    adb shell dumpsys package ir.hamapp.store | grep -Eq 'versionCode=2([[:space:]]|$)'
+    if adb install -r "$out/v2-foreign-signer.apk" > "$out/foreign-signer-attempt.txt" 2>&1; then
+      echo "SECURITY FAILURE: foreign signer was accepted as an update" >&2; exit 1
+    fi
+    grep -Fq 'INSTALL_FAILED_UPDATE_INCOMPATIBLE' "$out/foreign-signer-attempt.txt"
+    adb shell dumpsys package ir.hamapp.store | grep -Eq 'versionCode=2([[:space:]]|$)'
+    if adb install -r "$out/v2-truncated.apk" > "$out/truncated-attempt.txt" 2>&1; then
+      echo "SECURITY FAILURE: truncated APK was accepted" >&2; exit 1
+    fi
     adb shell dumpsys package ir.hamapp.store | grep -Eq 'versionCode=2([[:space:]]|$)'
     adb shell am force-stop ir.hamapp.store || true
     adb shell am start -W -n ir.hamapp.store/.MainActivity | tee "$out/activity.txt"
@@ -60,14 +86,19 @@ v2=hashlib.sha256((p/"v2.apk").read_bytes()).hexdigest()
 assert v1!=v2
 receipt={"schema_version":1,"scope":"isolated-android-emulator-debug-upgrade","package":"ir.hamapp.store",
 "version_codes":[1,2],"same_debug_signer":True,"apk_v1_sha256":v1,"apk_v2_sha256":v2,
-"real_emulator_upgrade_passed":True,"default_downgrade_rejected":True,"native_ui_after_upgrade":True,
+"real_emulator_upgrade_passed":True,"default_downgrade_rejected":True,"foreign_signer_update_rejected":True,
+"corrupt_package_update_rejected":True,"installed_v2_preserved_after_denials":True,
+"native_ui_after_upgrade":True,
 "unapproved_FDroid_install_control_disabled":True,
 "production_signer_verified":False,"fdroid_signed_repo_subscription_verified":False,
 "owner_device_upgrade_verified":False,"production_ready":False}
 (p/"report.json").write_text(json.dumps(receipt,sort_keys=True,indent=2)+"\n")
 PY
-    rm -f "$out/v1.apk" "$out/v2.apk" "$out/downgrade-attempt.txt"
-    echo "REAL_ANDROID_DEBUG_UPGRADE_AND_DOWNGRADE_REJECTION_ACCEPTED"
+    rm -f "$out/v1.apk" "$out/v2.apk" "$out/v2-foreign-signer.apk" \
+      "$out/v2-truncated.apk" "$out/untrusted-ci-only.p12" \
+      "$out/downgrade-attempt.txt" "$out/foreign-signer-attempt.txt" \
+      "$out/truncated-attempt.txt"
+    echo "REAL_ANDROID_DEBUG_UPGRADE_DOWNGRADE_SIGNER_AND_CORRUPTION_CHECKS_ACCEPTED"
     ;;
   *) echo "usage: $0 prepare|verify" >&2; exit 2 ;;
 esac

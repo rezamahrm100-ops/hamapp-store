@@ -122,3 +122,7 @@ See NEXT-EXECUTION.md for next integrated work. After every merge record new SHA
 ## In-progress two-debug-version Android emulator upgrade (2026-11-02)
 - New hosted GitHub Actions smoke tests real Android 35 install versionCode=1, upgrade versionCode=2 with same temporary debug signer, default downgrade refusal and native safe UI after upgrade. Requires actual run success + evidence artifact for acceptance.
 - No real publisher-approved app, signed F-Droid client subscription, stable production release signing or owner-device update acceptance. See docs/ANDROID-TWO-VERSION-SMOKE.md.
+
+## Android negative-install acceptance extension (implementation, not yet accepted)
+- Branch `feature/android-package-rejection-qa-20261102` adds wrong-signer APK and deliberately truncated APK rejection on real hosted Android 35 emulator after successful v1→v2 debug upgrade and default downgrade refusal. It verifies v2 remains installed after each denied update and does not upload test keys/APKs.
+- **Do not call accepted until the actual branch CI, CodeQL, and emulator run all succeed and are inspected.** Neither this test nor the previous ephemeral signed-index drill is production signing or real owner-device acceptance.
