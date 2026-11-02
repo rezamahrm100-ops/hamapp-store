@@ -45,3 +45,5 @@
 
 /scripts/fdroid_key_custody.py @rezamahrm100-ops
 /docs/FDROID-KEY-CUSTODY.md @rezamahrm100-ops
+
+/windows_client/installed_state.py @rezamahrm100-ops

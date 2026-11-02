@@ -21,3 +21,6 @@ At the next run, first examine the exact integration-branch and main action resu
 
 ### Durable signer custody extension
 Owner-only POSIX external-volume keystore backup/byte parity utility with fail-closed permissions and no secret uploads is in a separate PR (verify merged SHA and CI). **Not** evidence of a real approved signer, disconnected backup, successful restore or production signed index.
+
+### Windows native installed-version continuity extension
+The approved WinGet operation path now pre-checks registered version and blocks downgrades/ambiguous versions, then runs a second exact-ID WinGet JSON export to confirm installed version after command exit. Temporary installed-app inventory remains local. Unit tests simulate the official export and check rejection; no owner-approved package mapping or actual install is asserted. Independently verified Authenticode and real interactive system-device acceptance still remain.
