@@ -26,3 +26,24 @@ jobs:
         run: python3 scripts/build_site.py
       - name: Check built website
         run: test -s dist/site/index.html && test -s dist/site/catalog/apps.json && test -s dist/site/sw.js
+
+  windows-hosted:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test and build on clean hosted Windows
+        shell: pwsh
+        run: |
+          python -m unittest discover -s tests -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python scripts/build_site.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path 'dist/site/index.html')) { throw 'Missing website build' }
+          if (-not (Test-Path 'dist/site/catalog/apps.json')) { throw 'Missing catalogue' }
+          if (-not (Test-Path 'dist/site/sw.js')) { throw 'Missing service worker' }
