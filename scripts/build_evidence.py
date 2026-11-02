@@ -50,7 +50,8 @@ def evidence(site_dir, output_dir, sha):
     output_dir = Path(output_dir)
     out = output_dir / "hamapp-static-site.zip"
     count = archive_site(site_dir, out)
-    digest = hashlib.file_digest(out.open("rb"), "sha256").hexdigest()
+    with out.open("rb") as handle:
+        digest = hashlib.file_digest(handle, "sha256").hexdigest()
     receipt = {
         "schema_version": 1,
         "subject": "HamApp static PWA storefront ZIP (not an Android/Windows app)",

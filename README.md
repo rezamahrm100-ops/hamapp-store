@@ -9,7 +9,7 @@
 - Responsive RTL Persian PWA storefront with search, platform filters, dark/light mode, offline shell, and install prompt where supported.
 - JSON catalogue schema + security validation. Planned apps cannot advertise unverified downloads.
 - Automated tests, reproducible zero-third-party-dependency build, GitHub Actions CI, Pages deploy, Dependabot.
-- Optional owner Windows QA on a separate repository-scoped self-hosted runner label (`hamapp-windows`), dispatched manually only.
+- Owner Windows QA on a separate repository-scoped self-hosted runner label (`hamapp-windows`), triggered by trusted main changes or manually.
 - A one-file self-extracting Windows `HamApp-SETUP.cmd` bootstrap distributed separately.
 
 ## First run
@@ -59,3 +59,9 @@ A `released` catalogue item requires a semver-like `version` and HTTPS `download
 ## V1 publisher-verification foundation
 
 The new [publisher pipeline](docs/PUBLISHER-PIPELINE.md) integrates `apksigner`, `aapt`, Windows Authenticode and upstream `fdroidserver` for owner-controlled **offline release candidate intake**. The trusted signer registry is deliberately empty. This tooling does not authorize public releases, prove build-source provenance, create signing keys or deploy APKs. Real signed artifacts and device acceptance are still required.
+
+## Continuation for humans and AI agents
+
+**Start with [AGENTS.md](AGENTS.md)**, then [engineering state](docs/ENGINEERING-STATE.md), [GitHub acceleration](docs/GITHUB-ACCELERATION.md), [open-source reuse](docs/OPEN-SOURCE-REUSE.md), and [next engineering batch](docs/NEXT-EXECUTION.md). Every new chat must independently inspect the current GitHub main commit and CI; these documents are working context, not substitutes for live checks.
+
+GitHub build evidence is for the **static PWA bundle only**; it is not Android APK signing, Windows Authenticode, a production F-Droid repository or proof of real-device acceptance.
