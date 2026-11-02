@@ -82,3 +82,8 @@
 3. Identify one eligible owned app from authorized repositories, privately verify source attestation, signed APK/EXE publisher certificate and exact version hash. Request only genuinely necessary owner release approval. Do not publicize private app names or QA binaries prematurely.
 4. Complete production code signing and real device installation acceptance for Android/Windows clients, then enable approved catalog metadata atomically. No public download until all gates pass.
 5. Continue with upstream F-Droid/winget rather than writing another installer. Keep AGENTS and ENGINEERING-STATE updated with exact workflow URLs and real acceptance gaps.
+
+## After successful F-Droid disposable signed-index integration drill
+- Verify the real GitHub signed-index drill's exact main SHA/run and receipt. Distinguish this end-to-end test of a disposable key from owner-approved real signer acceptance.
+- Next engineering: build a safe private owner-controlled, durable signing workspace with isolated backup and signed-index verification against independently pinned public trust. No unsigned fallback, no owner signing keys in GitHub.
+- Select one eligible privately owned app, verify real production signer, GitHub source provenance, immutable release digests and version continuity; then test two genuine signed versions/install/update on emulator. All approvals stay disabled until independently grounded evidence.

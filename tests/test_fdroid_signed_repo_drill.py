@@ -1,0 +1,65 @@
+import importlib.util
+from pathlib import Path
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location("fdroid_signed_repo_drill", ROOT / "scripts/fdroid_signed_repo_drill.py")
+d = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(d)
+
+
+class SignedRepoDrillPolicyTests(unittest.TestCase):
+    def setUp(self):
+        self.sha = "a" * 40
+        self.fp = "B" * 64
+
+    def test_safe_receipt_has_strictly_negative_production_claims(self):
+        receipt = d.public_receipt(self.sha, self.fp, {
+            "indexed_packages": 1, "expected_package_listed": True
+        }, True, True)
+        for key in ("temporary_key_is_production", "production_repo_key_created",
+                    "production_repo_index_signed", "production_publication_performed",
+                    "approved_app_installed_or_updated", "production_ready"):
+            self.assertIs(receipt[key], False)
+        self.assertTrue(receipt["signed_index_verified_with_temporary_fingerprint"])
+        self.assertTrue(receipt["tampered_index_rejected"])
+        self.assertTrue(receipt["wrong_fingerprint_rejected"])
+        self.assertNotIn("keystorepass", receipt)
+
+    def test_no_false_receipt_without_wrong_fingerprint_rejection(self):
+        with self.assertRaises(d.DrillError):
+            d.public_receipt(self.sha, self.fp, {}, False, True)
+
+    def test_no_false_receipt_without_tampering_rejection(self):
+        with self.assertRaises(d.DrillError):
+            d.public_receipt(self.sha, self.fp, {}, True, False)
+
+    def test_no_short_source_sha(self):
+        with self.assertRaises(d.DrillError):
+            d.public_receipt("main", self.fp, {}, True, True)
+
+    def test_no_invalid_fingerprint(self):
+        with self.assertRaises(d.DrillError):
+            d.public_receipt(self.sha, "testing", {}, True, True)
+
+    def test_reject_missing_package_even_if_index_valid(self):
+        with self.assertRaises(d.DrillError):
+            d.classify_result({"repo": {}, "packages": {}}, "ir.hamapp.store")
+
+    def test_reject_missing_v2_structures(self):
+        for val in (None, [], {}, {"repo": {}}, {"packages": {}}, {"repo": {}, "packages": []}):
+            with self.subTest(value=val), self.assertRaises(d.DrillError):
+                d.classify_result(val, "ir.hamapp.store")
+
+    def test_accept_structurally_signed_package(self):
+        r = d.classify_result({"repo": {}, "packages": {"ir.hamapp.store": {}}}, "ir.hamapp.store")
+        self.assertEqual(r["indexed_packages"], 1)
+
+    def test_signing_assets_not_checked_into_public_project(self):
+        for pattern in ("**/keystore.p12", "**/keystore.jks", "**/config-secret.yml"):
+            self.assertFalse(list(ROOT.glob(pattern)), pattern)
+
+
+if __name__ == "__main__":
+    unittest.main()

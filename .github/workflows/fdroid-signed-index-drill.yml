@@ -1,0 +1,72 @@
+name: HamApp Isolated F-Droid Signed Index Drill
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/fdroid_signed_repo_drill.py'
+      - 'tests/test_fdroid_signed_repo_drill.py'
+      - '.github/workflows/fdroid-signed-index-drill.yml'
+      - 'android/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hamapp-fdroid-drill-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  signed-repository-drill:
+    if: github.repository == 'rezamahrm100-ops/hamapp-store' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Install official distro fdroidserver
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends fdroidserver
+          fdroid --version
+      - name: Ensure Android SDK platform and build-tools
+        shell: bash
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-35' 'build-tools;35.0.0'
+          echo "$ANDROID_HOME/build-tools/35.0.0" >> "$GITHUB_PATH"
+      - name: Build actual HamApp native debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -v
+          python3 scripts/build_android_catalog.py
+          gradle --no-daemon -p android :app:assembleDebug
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Create disposable signed F-Droid v2 index and reject wrong keys or tampering
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/fdroid-sandbox-evidence
+          python3 scripts/fdroid_signed_repo_drill.py \
+            --apk android/app/build/outputs/apk/debug/app-debug.apk \
+            --source-sha "$GITHUB_SHA" \
+            --receipt dist/fdroid-sandbox-evidence/signed-index-drill.json
+      - name: Upload safe receipt ONLY, never repo keystore or config
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-ephemeral-fdroid-signed-index-evidence
+          path: dist/fdroid-sandbox-evidence/signed-index-drill.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Disclose strict acceptance boundary
+        shell: bash
+        run: |
+          echo '### Real signed F-Droid index-v2 verification with a disposable CI key' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Correct key accepted; incorrect key and corrupted signed metadata rejected. No production signing key, no deployment, no approved live app and no installs. Test keystore/config destroyed before artifact upload.' >> "$GITHUB_STEP_SUMMARY"
