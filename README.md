@@ -65,3 +65,7 @@ The new [publisher pipeline](docs/PUBLISHER-PIPELINE.md) integrates `apksigner`,
 **Start with [AGENTS.md](AGENTS.md)**, then [engineering state](docs/ENGINEERING-STATE.md), [GitHub acceleration](docs/GITHUB-ACCELERATION.md), [open-source reuse](docs/OPEN-SOURCE-REUSE.md), and [next engineering batch](docs/NEXT-EXECUTION.md). Every new chat must independently inspect the current GitHub main commit and CI; these documents are working context, not substitutes for live checks.
 
 GitHub build evidence is for the **static PWA bundle only**; it is not Android APK signing, Windows Authenticode, a production F-Droid repository or proof of real-device acceptance.
+
+## Release continuity checks
+
+See [release history and rollback protections](docs/RELEASE-HISTORY.md). This is an offline release review-only policy and does not publish packages or sign the F-Droid repository. Trusted signer and historical approval registers are intentionally empty until independently reviewed.

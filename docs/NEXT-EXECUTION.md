@@ -31,3 +31,9 @@ Mission: convert verified catalog + candidate intake into a safe real publishing
 - No automatic escalation of GitHub App scopes or use of unknown credentials.
 - If owner approval/OS UAC/key creation/actual device access is unavoidable, isolate it as a single precise acceptance gate; continue all independent engineering in parallel.
 - Explicitly distinguish complete implementation, green hosted CI, owner-runner acceptance, real-device QA and public commercial readiness.
+
+## After release-continuity PR is accepted
+- Inspect owner-reviewed `catalog/release_history.json` and test promotion/revocation against real signed artifacts, not mock fixtures.
+- Set a protected workflow for promoting authenticated publisher releases with independent provenance and signer continuity; no implicit trust from a PR-provided manifest.
+- Implement Android native client upstream reuse and native Windows updater in separate coherent workstreams; use existing package-manager APIs.
+- Keep user-action gates limited to genuine signing/owner/device authorizations; never infer an installed product from green CI.

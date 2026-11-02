@@ -33,3 +33,7 @@ After verifying the same artifact and signer, it copies the APK into the existin
 CI uses synthetic/mocked tool output to test *control-flow and rejection*, and never marks a product released. Actual Android SDK signature validation, Windows Authenticode validation of real signed installers, signed F-Droid index generation, secure backup, deployment, and on-device update continuity are **not accepted** until real artifacts, known publisher identities, and owner-controlled signing environment exist.
 
 Upstream instructions: https://f-droid.org/docs/Setup_an_F-Droid_App_Repo/
+
+## Anti-rollback and revocation checks
+
+The F-Droid staging adapter now reads `catalog/release_history.json` and rejects downgrade, replay, revoked signing identities and unexpected signing/source identity changes before staging. To preflight a candidate without running signature tools, call `python scripts/release_history.py --candidate candidate.json`. To verify actual file bytes plus APK or Windows signature and produce a review-only receipt, use `python scripts/release_review.py --candidate candidate.json --artifact package.apk --receipt review.json`. These controls never append approval records or publish binaries. History/registry edits require owner review. See [RELEASE-HISTORY.md](RELEASE-HISTORY.md).
