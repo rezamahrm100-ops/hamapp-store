@@ -11,7 +11,7 @@ self.addEventListener('activate', event => event.waitUntil(
 self.addEventListener('fetch', event => {
   const u = new URL(event.request.url);
   if (event.request.method !== 'GET' || u.origin !== self.location.origin) return;
-  if (/\\.(apk|exe|msi|msix|zip)$/i.test(u.pathname)) return;
+  if (/\.(apk|exe|msi|msix|zip)$/i.test(u.pathname)) return;
   // Never cache live release metadata: offline revoked links must not become usable.
   if (u.pathname.endsWith('/catalog/apps.json')) {
     event.respondWith(fetch(event.request, {cache:'no-store'}));
