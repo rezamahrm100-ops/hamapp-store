@@ -93,3 +93,7 @@ GitHub-hosted Android debug APK and unsigned Windows EXE now produce main-only c
 ## F-Droid signed index verification preflight
 
 A separate [F-Droid signed-index verifier](docs/FDROID-INDEX-PREFLIGHT.md) now reuses fdroidserver's index-v2 verifier, demanding a separately pinned repository URL and signing key fingerprint. It rejects missing or unapproved repositories, never generates keys and does not approve package downloads. Production F-Droid key and signed index do not exist yet.
+
+## Actual F-Droid signature pipeline rehearsal
+
+A [hosted isolated signed-index drill](docs/FDROID-ISOLATED-SIGNED-INDEX-DRILL.md) builds a real signed index-v2 with upstream fdroidserver using a **disposable** signing identity; validates the correct fingerprint and rejects an altered index or wrong fingerprint. It has no release rights and never publishes signing secrets or an installable production catalogue. Acceptance requires a green run of the dedicated GitHub workflow.
