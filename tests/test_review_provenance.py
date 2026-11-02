@@ -30,6 +30,11 @@ class ProvenanceTests(unittest.TestCase):
                 "sha256": self.digest, "size_bytes": self.artifact.stat().st_size
             }
         }
+        self.registry = {"schema_version": 1, "publishers": [{
+            "app_id": "demo", "source_repo": "demo-project",
+            "platform": "android", "certificate_sha256": "b" * 64,
+            "package_id": "ir.hamapp.demo"
+        }]}
         self.verified = [{
             "verificationResult": {"statement": {
                 "predicateType": "https://slsa.dev/provenance/v1",
@@ -40,7 +45,7 @@ class ProvenanceTests(unittest.TestCase):
 
     def call(self):
         return review_provenance.verify(
-            self.candidate, self.artifact, self.workflow,
+            self.candidate, self.registry, self.artifact, self.workflow,
             "refs/tags/v1.2.3", runner=self.runner)
 
     def test_success_invokes_real_gh_with_identity_pins_and_no_approval(self):
@@ -66,7 +71,7 @@ class ProvenanceTests(unittest.TestCase):
 
     def test_unmatched_ref_rejected(self):
         with self.assertRaises(ValueError):
-            review_provenance.verify(self.candidate, self.artifact, self.workflow, "refs/heads/main", runner=self.runner)
+            review_provenance.verify(self.candidate, self.registry, self.artifact, self.workflow, "refs/heads/main", runner=self.runner)
 
     def test_failed_cli_rejected(self):
         self.runner.return_value.returncode = 1
