@@ -104,3 +104,6 @@ For a new chat: "Open AGENTS.md and docs/NEXT-EXECUTION.md at the current main S
 ## Native Android two-version emulator upgrade (pending acceptance)
 - Hosted workflow .github/workflows/android-two-version-smoke.yml builds ephemeral preview versionCode 1 and 2 under SAME debug key, installs and upgrades on real Android 35 emulator, rejects a downgrade, and confirms RTL UI still disables unapproved F-Droid button. See docs/ANDROID-TWO-VERSION-SMOKE.md; check actual Actions acceptance before claiming pass.
 - This is Android system DEBUG upgrade only, NOT an update from a signed F-Droid production repo or approved real app. No APKs or signing keys uploaded.
+
+## Android package rejection QA extension (pending acceptance)
+- The two-version emulator workflow also tests an independently debug-re-signed update and a truncated APK; both must be rejected without replacing installed v2. Only hosted CI, no owner desktop and no test keys/APKs uploaded. Require real workflow success before claiming acceptance. See docs/ANDROID-TWO-VERSION-SMOKE.md.
