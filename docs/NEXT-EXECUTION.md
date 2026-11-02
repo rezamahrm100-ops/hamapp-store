@@ -119,3 +119,6 @@ Older sections below describe historical continuation stages; they **do not auth
 ## Current integrated cross-platform batch
 - Validate actual CI/CodeQL/Android/Windows results on `feature/integrated-technical-closure-20261102`. Check that the web offline snapshot never carries released binaries, a Windows operator sees only WinGet completion rather than fake install success, and production provenance requires a real pinned `gh attestation verify`.
 - After merging, finish remaining tasks in `docs/INTEGRATED-GAP-MATRIX.md` as far as real tools permit. Do not claim whole-project engineering PASS while a real technical gap remains.
+
+## Owner-controlled signing workspace (engineering, not owner commissioning)
+- Review/accept scripts/fdroid_key_custody.py and docs/FDROID-KEY-CUSTODY.md only after green source tests; real owner key never enters public CI, tests use local dummy bytes and simulated different volumes. Actual persistent key generation/storage, encrypted separate offline medium, restore/sign test and independently pinned F-Droid public index remain unresolved external real-world gates.
