@@ -1,0 +1,67 @@
+name: HamApp Real PWA Chromium Acceptance
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - 'scripts/build_site.py'
+      - 'scripts/validate_catalog.py'
+      - 'tests/browser_pwa_smoke.mjs'
+      - '.github/workflows/pwa-browser-acceptance.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - 'scripts/build_site.py'
+      - 'scripts/validate_catalog.py'
+      - 'tests/browser_pwa_smoke.mjs'
+      - '.github/workflows/pwa-browser-acceptance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hamapp-pwa-browser-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  real-chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build safe validated static storefront
+        run: |
+          python3 -m unittest discover -s tests -v
+          python3 scripts/build_site.py
+      - name: Install pinned open-source browser test tool
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.64.1
+          npx playwright install --with-deps chromium
+      - name: Actual Chromium GUI and offline safety test
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory dist/site >/tmp/hamapp-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --fail --silent http://127.0.0.1:8765/ >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/browser_pwa_smoke.mjs
+      - name: Upload bounded public-preview screenshot only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-real-chromium-pwa-evidence
+          path: dist/pwa-browser-evidence.png
+          if-no-files-found: warn
+          retention-days: 3
+      - name: State acceptance limits
+        if: success()
+        run: |
+          echo '### Real Chromium PWA UI and offline catalogue acceptance' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Verified native details dialog, filters/search, service-worker offline fallback, and no unapproved downloads. No publisher, production APK, user device, signed index or installer was accepted.' >> "$GITHUB_STEP_SUMMARY"
