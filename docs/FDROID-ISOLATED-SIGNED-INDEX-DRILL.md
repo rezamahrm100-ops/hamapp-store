@@ -1,6 +1,6 @@
 # Isolated F-Droid signed-index-v2 integration drill
 
-This workflow uses the **official distro fdroidserver**, not a custom signature implementation. Its test runs on a GitHub-hosted ephemeral Ubuntu 24.04 runner, only for reviewed main or manual dispatch of main.
+This workflow uses the **official fdroidserver 2.4.5 in an isolated Python virtual environment, with Androguard 4.1.4**, not a custom signature implementation. Its test runs on a GitHub-hosted ephemeral Ubuntu 24.04 runner, only for reviewed main or manual dispatch of main.
 
 1. Builds the actual HamApp native Android *debug* APK from the current checkout with the existing AGP/Gradle toolchain.
 2. Uses `fdroid init` in an isolated temporary workspace, with a distinct disposable HOME, to generate a *throwaway* signing key and private config.
@@ -17,3 +17,7 @@ This work deliberately does not change catalog/android_repository.json (still nu
 **Acceptance:** the actual GitHub Actions run must show all steps successful and the named review receipt artifact. A green Python unittest suite alone is not sufficient.
 
 Upstream guidance: https://f-droid.org/docs/Setup_an_F-Droid_App_Repo/ . Keep real production signing on a separate owner-controlled system with independent offline backups; never transport signing secrets through public Actions.
+
+## Toolchain compatibility fix
+
+The first hosted execution failed in Ubuntu's older fdroidserver/Androguard package at APK resources.arsc parsing. The dedicated isolated test now pins fdroidserver==2.4.5 and androguard==4.1.4 inside a temporary venv. This is not a production signer and does not transfer a signing key. Validate the new GitHub run before claiming a successful real signed-index drill.

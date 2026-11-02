@@ -29,12 +29,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-      - name: Install official distro fdroidserver
+      - name: Install pinned current official fdroidserver and Androguard in isolated venv
         shell: bash
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends fdroidserver
-          fdroid --version
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/hamapp-fdroid-venv"
+          "$RUNNER_TEMP/hamapp-fdroid-venv/bin/python" -m pip install --disable-pip-version-check "fdroidserver==2.4.5" "androguard==4.1.4"
+          echo "$RUNNER_TEMP/hamapp-fdroid-venv/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/hamapp-fdroid-venv/bin/fdroid" --version
       - name: Ensure Android SDK platform and build-tools
         shell: bash
         run: |
