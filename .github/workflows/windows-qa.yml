@@ -1,0 +1,27 @@
+name: HamApp Owner Windows QA
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  owner-validation:
+    # Opt-in only: new isolated repo-scoped runner label; never runs on pull requests.
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, Windows, X64, hamapp-windows]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate in runner work directory
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $candidates=@('py','python')
+          $exe=$null
+          foreach($candidate in $candidates){if(Get-Command $candidate -ErrorAction SilentlyContinue){$exe=$candidate;break}}
+          if(-not $exe){throw 'Python 3 is required for HamApp Windows QA'}
+          if($exe -eq 'py') { & py -3 -m unittest discover -s tests -v; if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}; & py -3 scripts/build_site.py }
+          else { & python -m unittest discover -s tests -v; if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}; & python scripts/build_site.py }
+          if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
+          if(-not (Test-Path 'dist/site/index.html')){throw 'Missing site'}

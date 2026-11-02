@@ -1,0 +1,28 @@
+name: HamApp CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hamapp-ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  catalog-and-site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python version
+        run: python3 --version
+      - name: Test
+        run: python3 -m unittest discover -s tests -v
+      - name: Build static store
+        run: python3 scripts/build_site.py
+      - name: Check built website
+        run: test -s dist/site/index.html && test -s dist/site/catalog/apps.json && test -s dist/site/sw.js

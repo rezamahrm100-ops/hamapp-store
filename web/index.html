@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="هَماپ؛ همهٔ برنامه‌های ما، یک‌جا.">
+  <meta name="color-scheme" content="dark light">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <title>هَماپ | HamApp</title>
+</head>
+<body>
+  <a class="skip-link" href="#apps">رفتن به برنامه‌ها</a>
+  <header class="header shell">
+    <a class="brand" href="./" aria-label="صفحهٔ اصلی هَماپ">
+      <span class="brand-icon" aria-hidden="true">ه‍</span>
+      <span><strong>هَماپ</strong><small>HamApp Store</small></span>
+    </a>
+    <div class="header-actions">
+      <button id="installPwa" class="icon-button hidden" type="button">نصب فروشگاه</button>
+      <button id="toggleTheme" class="icon-button" type="button" aria-label="تغییر حالت روشنایی">◐</button>
+    </div>
+  </header>
+  <main class="shell">
+    <section class="hero" aria-labelledby="hero-heading">
+      <div class="hero-content">
+        <span class="eyebrow">فروشگاه رسمی نرم‌افزارهای مستقل</span>
+        <h1 id="hero-heading">همهٔ برنامه‌های ما، <em>یک‌جا.</em></h1>
+        <p>برنامه‌های اندروید، ویندوز و وب؛ با اطلاعات روشن دربارهٔ نسخه‌ها، وضعیت انتشار و مسیرهای دریافت معتبر.</p>
+        <a class="cta" href="#apps">مشاهدهٔ برنامه‌ها <span aria-hidden="true">←</span></a>
+      </div>
+      <div class="hero-symbol" aria-hidden="true"><span>ه‍</span><i></i></div>
+    </section>
+    <section class="directory" id="apps" aria-labelledby="apps-heading">
+      <div class="section-title"><div><span class="eyebrow">کاتالوگ</span><h2 id="apps-heading">برنامه‌ها</h2></div><p id="count" aria-live="polite"></p></div>
+      <div class="toolbar">
+        <label class="search-wrap"><span class="sr-only">جست‌وجوی برنامه</span><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="نام یا توضیح برنامه را جست‌وجو کنید..." autocomplete="off"></label>
+        <div class="filters" role="group" aria-label="فیلتر بر اساس پلتفرم">
+          <button class="chip active" type="button" data-filter="all" aria-pressed="true">همه</button>
+          <button class="chip" type="button" data-filter="android" aria-pressed="false">اندروید</button>
+          <button class="chip" type="button" data-filter="windows" aria-pressed="false">ویندوز</button>
+          <button class="chip" type="button" data-filter="web" aria-pressed="false">وب</button>
+        </div>
+      </div>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <div id="cards" class="cards"></div>
+    </section>
+    <section class="trust" aria-labelledby="trust-title"><h2 id="trust-title">انتشار شفاف</h2><div class="trust-grid"><p><strong>نسخهٔ معتبر</strong><span>لینک‌ها فقط پس از ثبت نسخهٔ تأییدشده فعال می‌شوند.</span></p><p><strong>نقشهٔ راه روشن</strong><span>محصولات درحال‌ساخت از نسخه‌های آماده متمایز هستند.</span></p><p><strong>بدون ردیابی پنهان</strong><span>این ویترین عمومی هیچ حساب کاربری یا تحلیل‌گر رفتاری ندارد.</span></p></div></section>
+  </main>
+  <footer class="footer shell"><span>© <span id="year"></span> HamApp</span><span>فروشگاه اختصاصی، بر پایهٔ فناوری‌های باز</span></footer>
+  <script src="./app.js" defer></script>
+</body>
+</html>

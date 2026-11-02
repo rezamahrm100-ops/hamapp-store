@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "store_name": "هَماپ",
+  "apps": [
+    {
+      "id": "android-soon",
+      "name_fa": "برنامهٔ اندرویدی",
+      "name_en": "Android App",
+      "description": "جایگاه نمونه برای نخستین نسخهٔ تأییدشدهٔ اندروید. هنوز فایلی برای نصب منتشر نشده است.",
+      "platforms": [
+        "android"
+      ],
+      "status": "planned",
+      "version": null,
+      "download_url": null,
+      "symbol": "ا",
+      "color": "#3b506e"
+    },
+    {
+      "id": "windows-soon",
+      "name_fa": "برنامهٔ ویندوزی",
+      "name_en": "Windows App",
+      "description": "جایگاه نمونه برای نرم‌افزار ویندوز پس از آماده‌شدن بستهٔ امضاشده.",
+      "platforms": [
+        "windows"
+      ],
+      "status": "planned",
+      "version": null,
+      "download_url": null,
+      "symbol": "و",
+      "color": "#456a63"
+    },
+    {
+      "id": "web-soon",
+      "name_fa": "برنامهٔ تحت وب",
+      "name_en": "Web App",
+      "description": "جایگاه نمونه برای محصولات تحت وب؛ لینک‌ها فقط پس از بررسی فعال می‌شوند.",
+      "platforms": [
+        "web"
+      ],
+      "status": "planned",
+      "version": null,
+      "download_url": null,
+      "symbol": "ب",
+      "color": "#6b4b64"
+    }
+  ]
+}
