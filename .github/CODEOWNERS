@@ -75,3 +75,5 @@
 /scripts/antivirus_binary_review.py @rezamahrm100-ops
 /docs/ACTUAL-ANTIVIRUS-SCREENING.md @rezamahrm100-ops
 /.github/workflows/android-binary-antivirus.yml @rezamahrm100-ops
+
+/docs/ENGINEERING-CLOSURE-2026-11-03.md @rezamahrm100-ops
