@@ -75,20 +75,56 @@ class WindowsClientTests(unittest.TestCase):
             self.assertEqual(core.command_for(sample, "show"),
                 ["winget", "show", "--id", "Example.App", "--exact", "--source", "winget"])
 
-    def test_waits_for_winget_and_does_not_claim_independent_install(self):
+    def test_winget_requires_independent_state_readback(self):
         from types import SimpleNamespace
+        from unittest.mock import Mock
         sample = dict(self.sample["apps"][0], status="available", version="1.2.3",
                       winget_id="Example.App")
-        from unittest.mock import Mock
         runner = Mock(return_value=SimpleNamespace(returncode=0))
+        versions = iter([None, "1.2.3"])
         with patch.object(core.sys, "platform", "win32"):
-            result = core.execute_operation(sample, "install", runner=runner)
-        self.assertFalse(result["installed_version_independently_verified"])
+            result = core.execute_operation(sample, "install", runner=runner,
+                                            verifier=lambda _: next(versions))
+        self.assertTrue(result["installed_version_via_winget_export_verified"])
         self.assertFalse(result["installer_signature_independently_verified"])
+        self.assertEqual(result["installed_version"], "1.2.3")
         kwargs = runner.call_args.kwargs
         self.assertFalse(kwargs["shell"])
-        self.assertFalse(kwargs["check"] is True)
+        self.assertFalse(kwargs["check"])
         self.assertEqual(kwargs["timeout"], 3600)
+
+    def test_no_false_success_on_unverified_postcondition(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        sample = dict(self.sample["apps"][0], status="available", version="1.2.3",
+                      winget_id="Example.App")
+        with patch.object(core.sys, "platform", "win32"):
+            with self.assertRaises(core.ClientError):
+                core.execute_operation(sample, "install", runner=Mock(
+                    return_value=SimpleNamespace(returncode=0)),
+                    verifier=lambda _: None)
+
+    def test_preflight_downgrade_refusal_before_running_install(self):
+        from unittest.mock import Mock
+        sample = dict(self.sample["apps"][0], status="available", version="1.2.3",
+                      winget_id="Example.App")
+        runner = Mock()
+        with patch.object(core.sys, "platform", "win32"):
+            with self.assertRaises(core.ClientError):
+                core.execute_operation(sample, "upgrade", runner=runner,
+                                       verifier=lambda _: "1.4.0")
+        runner.assert_not_called()
+
+    def test_upgrade_requires_prior_installed_identity(self):
+        from unittest.mock import Mock
+        sample = dict(self.sample["apps"][0], status="available", version="1.2.3",
+                      winget_id="Example.App")
+        runner = Mock()
+        with patch.object(core.sys, "platform", "win32"):
+            with self.assertRaises(core.ClientError):
+                core.execute_operation(sample, "upgrade", runner=runner,
+                                       verifier=lambda _: None)
+        runner.assert_not_called()
 
     def test_winget_failure_is_not_reported_as_success(self):
         from types import SimpleNamespace
@@ -98,7 +134,8 @@ class WindowsClientTests(unittest.TestCase):
         with patch.object(core.sys, "platform", "win32"):
             with self.assertRaises(core.ClientError):
                 core.execute_operation(sample, "upgrade", runner=Mock(
-                    return_value=SimpleNamespace(returncode=1)))
+                    return_value=SimpleNamespace(returncode=1)),
+                    verifier=lambda _: "1.0.0")
 
     def test_production_map_is_empty_and_store_safe(self):
         with (ROOT / "catalog/winget_packages.json").open(encoding="utf-8") as f:

@@ -9,6 +9,8 @@ import re
 import sys
 from pathlib import Path
 
+from windows_client.installed_state import read_installed_version, numeric_version, StateError
+
 APP_ID = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 WINGET_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9.-]{2,127}\Z")
 VERSION = re.compile(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?\Z")
@@ -78,13 +80,24 @@ def command_for(app, operation):
     return cmd
 
 
-def execute_operation(app, operation, runner=subprocess.run):
-    """Run official WinGet interactively and wait for its exit code.
+def execute_operation(app, operation, runner=subprocess.run, verifier=None):
+    """Preflight downgrade guard, interactive WinGet and actual installed-state readback.
 
-    Returning from WinGet is not independent installed-version or signer proof.
-    This intentionally does NOT silently elevate, suppress prompts or claim an install.
+    The independent readback comes from a separate WinGet export invocation,
+    not the install command's exit code. It still cannot prove Authenticode.
     """
     command = command_for(app, operation)
+    query = read_installed_version if verifier is None else verifier
+    previous = None
+    if operation in ("install", "upgrade"):
+        try:
+            previous = query(app["winget_id"])
+            if previous is not None and numeric_version(app["version"]) < numeric_version(previous):
+                raise ClientError("refusing requested package version downgrade")
+            if operation == "upgrade" and previous is None:
+                raise ClientError("cannot upgrade: package is not confirmed installed")
+        except StateError as exc:
+            raise ClientError("WinGet preflight cannot verify installed package state") from exc
     try:
         result = runner(command, shell=False, timeout=3600, check=False,
                         creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0))
@@ -92,7 +105,19 @@ def execute_operation(app, operation, runner=subprocess.run):
         raise ClientError("WinGet unavailable or operation timed out; inspect Windows state") from exc
     if type(result.returncode) is not int or result.returncode != 0:
         raise ClientError("WinGet returned a failure; installed state is not verified")
+    verified = False
+    registered_version = None
+    if operation in ("install", "upgrade"):
+        try:
+            registered_version = query(app["winget_id"])
+            verified = registered_version is not None and (
+                numeric_version(registered_version) == numeric_version(app["version"]))
+        except StateError as exc:
+            raise ClientError("post-operation WinGet readback was invalid") from exc
+        if not verified:
+            raise ClientError("WinGet exited successfully, but target installed version is not confirmed")
     return {"manager_exit_code": 0, "operation": operation,
             "package_id": app["winget_id"], "requested_version": app["version"],
-            "installed_version_independently_verified": False,
+            "installed_version": registered_version,
+            "installed_version_via_winget_export_verified": verified,
             "installer_signature_independently_verified": False}

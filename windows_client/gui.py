@@ -93,8 +93,12 @@ def main():
         def worker():
             try:
                 receipt = execute_operation(app, op)
-                outcome = ("WinGet بدون خطای اجرایی پایان یافت. نسخهٔ نصب‌شده و امضای بسته "
-                           "هنوز به‌صورت مستقل بررسی نشده‌اند.")
+                if receipt["installed_version_via_winget_export_verified"]:
+                    outcome = (f"نسخهٔ {receipt['installed_version']} طبق خروجی مستقل WinGet "
+                               "پس از عملیات تأیید شد. امضای نصب‌کننده هنوز مستقلاً بررسی نشده است.")
+                else:
+                    outcome = ("فرمان اطلاعات بسته در WinGet بدون خطا پایان یافت؛ "
+                               "هیچ تغییری در نصب انجام نشده است.")
                 error = False
                 del receipt
             except ClientError as exc:
