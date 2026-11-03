@@ -7,6 +7,7 @@ before any upload, never reads an owner device or writes a repo DB record.
 HTTP fetch alone is NOT evidence of repository registration.
 """
 import argparse
+from contextlib import closing
 import hashlib
 import io
 import json
@@ -33,7 +34,7 @@ def inspect_sqlite(path, expected_host=HOST):
     if not path.is_file() or path.is_symlink() or not 0 < path.stat().st_size <= MAX_DB:
         raise RepositoryPersistenceError("regular bounded SQLite file required")
     uri = path.resolve(strict=True).as_uri() + "?mode=ro"
-    with sqlite3.connect(uri, uri=True, timeout=3) as conn:
+    with closing(sqlite3.connect(uri, uri=True, timeout=3)) as conn:
         conn.execute("PRAGMA query_only=ON")
         check = conn.execute("PRAGMA quick_check(1)").fetchone()
         if not check or check[0] != "ok":
