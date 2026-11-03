@@ -37,7 +37,7 @@ def exact_sha256(path):
     return digest.hexdigest(), size
 
 
-def run(command, expected_success=True):
+def run(command, expected_success=True, phase="unspecified"):
     """No shell, no credential arguments, bounded actual subprocess execution."""
     try:
         completed = subprocess.run(command, capture_output=True, text=True,
@@ -49,7 +49,7 @@ def run(command, expected_success=True):
     if ok != expected_success:
         # Never expose upstream messages that might echo paths, key passwords,
         # signing identities or user-controlled metadata into logs.
-        raise AuthenticodeDrillError("upstream cryptographic acceptance predicate failed")
+        raise AuthenticodeDrillError("upstream cryptographic acceptance predicate failed: phase=" + phase + " exit=" + str(completed.returncode))
     return ok
 
 
@@ -103,7 +103,7 @@ def verify(path, identity, expected_success):
         "-CAfile", str(identity["pem"]),
         "-require-leaf-hash", "sha256:" + identity["fingerprint"],
         "-in", str(path)
-    ], expected_success=expected_success)
+    ], expected_success=expected_success, phase="verify-" + Path(path).stem)
 
 
 def sign(original, signed, identity):
@@ -114,7 +114,7 @@ def sign(original, signed, identity):
         "-h", "sha256",
         "-n", "HamApp CI disposable signature - never distribute",
         "-in", str(original), "-out", str(signed)
-    ])
+    ], phase="sign-" + Path(signed).stem)
 
 
 def check(unsigned, source_sha, receipt):
