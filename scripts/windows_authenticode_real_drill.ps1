@@ -67,6 +67,40 @@ try {
         }
         return @{ status = [string]$info.Status; signer = $digest }
     }
+    # This is a host-native .NET X509Chain test with an explicit in-memory
+    # isolated trust root, NOT an OS WinVerifyTrust positive signature verdict.
+    # No CurrentUser/LocalMachine certificate store is modified or imported.
+    function Test-DisposableCustomRoot(
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]$Leaf,
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]$Root
+    ) {
+        $chain = [System.Security.Cryptography.X509Certificates.X509Chain]::new()
+        try {
+            $policy = $chain.ChainPolicy
+            $policy.TrustMode = [System.Security.Cryptography.X509Certificates.X509ChainTrustMode]::CustomRootTrust
+            $policy.CustomTrustStore.Add($Root) | Out-Null
+            $policy.RevocationMode = [System.Security.Cryptography.X509Certificates.X509RevocationMode]::NoCheck
+            $policy.VerificationFlags = [System.Security.Cryptography.X509Certificates.X509VerificationFlags]::NoFlag
+            $policy.DisableCertificateDownloads = $true
+            $policy.ApplicationPolicy.Add([System.Security.Cryptography.Oid]::new(
+                '1.3.6.1.5.5.7.3.3')) | Out-Null
+            if (-not $chain.Build($Leaf)) { return $false }
+            $elements = $chain.ChainElements
+            if ($elements.Count -ne 2) { return $false }
+            return ($elements[0].Certificate.Thumbprint -eq $Leaf.Thumbprint -and
+                    $elements[1].Certificate.Thumbprint -eq $Root.Thumbprint)
+        }
+        finally { $chain.Dispose() }
+    }
+    Write-Output 'AUTHENTICODE_NATIVE_DOTNET_CUSTOM_ROOT_CHAIN_IN_MEMORY_ONLY'
+    if (-not (Test-DisposableCustomRoot $certA $rootA) -or
+        -not (Test-DisposableCustomRoot $certB $rootB)) {
+        throw 'Native .NET in-memory disposable CA-to-CodeSigning leaf chain failed'
+    }
+    if ((Test-DisposableCustomRoot $certA $rootB) -or
+        (Test-DisposableCustomRoot $certB $rootA)) {
+        throw 'Disposable wrong-root CA was accepted by in-memory native X509Chain'
+    }
     $nativeA = Observe-NativeSignature $signed
     $nativeB = Observe-NativeSignature $foreign
     if ($nativeA.signer -ne $material.a.certificate_sha256 -or $nativeB.signer -ne $material.b.certificate_sha256) {
@@ -111,6 +145,9 @@ try {
         actual_windows_native_unsigned_exe_provided = $true
         actual_official_windows_sdk_signer_produced_two_distinct_signed_exes = $true
         native_windows_os_observed_two_exact_disposable_leaf_certificates = $true
+        native_windows_in_memory_custom_root_code_signing_chains_verified = $true
+        native_windows_wrong_disposable_root_chain_rejected = $true
+        native_windows_os_positive_authenticode_status_proven = $false
         native_windows_os_did_not_accept_disposable_test_signers = $true
         native_windows_os_disposable_signer_statuses = @('UnknownError', 'UnknownError')
         precise_native_os_trust_failure_cause_verified = $false
@@ -122,7 +159,7 @@ try {
         public_release_authorized = $false
     }
     $receipt | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath 'dist/windows-authenticode-evidence/receipt.json' -Encoding utf8
-    Write-Output 'ACTUAL_NATIVE_WINDOWS_OS_REPORTED_UNKNOWN_ERROR_FOR_TWO_SIGNERS; PRECISE_TRUST_CAUSE_NOT_PROVEN; UNSIGNED_TAMPER_REJECTED'
+    Write-Output 'ACTUAL_NATIVE_WINDOWS_INMEMORY_CODE_SIGNING_CHAINS_ACCEPTED_WRONG_ROOT_REJECTED_AND_NATIVE_AUTHENTICODE_UNKNOWN_ERROR_UNCHANGED'
 }
 finally {
     Write-Output 'AUTHENTICODE_TEST_DISPOSING_CERTIFICATE_OBJECTS_AND_PRIVATE_TEMP_ONLY'
