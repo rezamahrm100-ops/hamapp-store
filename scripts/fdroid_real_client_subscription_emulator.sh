@@ -113,9 +113,22 @@ PY
 click_actual_accessible_control() {
   if adb shell uiautomator dump /sdcard/hamapp-fdroid-live.xml > "$base/uiauto-private.txt" 2>&1 \
     && adb pull /sdcard/hamapp-fdroid-live.xml "$base/window.xml" >/dev/null 2>&1; then
-    local point
+    local point x y
+    # Previously captured REAL F-Droid screenshots show an Android 13
+    # notification permission prompt covering the "Add repository" screen.
+    # On this disposable emulator, DENY that unrelated permission using its
+    # actual accessible "Don't allow" label; never silently grant it.
+    point=$(python3 scripts/fdroid_client_accessible_ui.py \
+      --xml "$base/window.xml" --deny-notification-prompt) || point=""
+    if [ -n "$point" ]; then
+      read -r x y <<< "$point"
+      if [[ "$x" =~ ^[0-9]+$ && "$y" =~ ^[0-9]+$ ]]; then
+        adb shell input tap "$x" "$y"
+        echo "OFFICIAL_FDROID_UNNECESSARY_NOTIFICATION_PERMISSION_DENIED_ON_DISPOSABLE_EMULATOR"
+        return 0
+      fi
+    fi
     point=$(python3 scripts/fdroid_client_accessible_ui.py --xml "$base/window.xml") || return 0
-    local x y
     read -r x y <<< "$point"
     if [[ "$x" =~ ^[0-9]+$ && "$y" =~ ^[0-9]+$ ]]; then
       adb shell input tap "$x" "$y"
