@@ -85,6 +85,10 @@ class RealRepoForceRefreshSelectorTests(unittest.TestCase):
                                                      "com.android.settings"), "dismiss-repo-hint"))
         self.assertIsNone(self.choice(actual.replace("[216,219][294,266]",
                                                      "[0,0][420,800]"), "dismiss-repo-hint"))
+        first_repo_visit = actual.replace('text="Filter"', 'text="Repository list"')
+        self.assertEqual(self.choice(first_repo_visit, "dismiss-repo-hint"), (255, 242))
+        self.assertIsNone(self.choice(first_repo_visit.replace("Repository list", "Unknown"),
+                                      "dismiss-repo-hint"))
 
     def test_reject_unknown_actions_and_no_host_permission(self):
         with self.assertRaisesRegex(ValueError, "unknown"):
@@ -106,8 +110,9 @@ class RealRepoForceRefreshSelectorTests(unittest.TestCase):
             self.assertTrue(signals["repositories_label_visible"])
             self.assertFalse(signals["disposable_repository_label_visible"])
             self.assertTrue(all(isinstance(x, bool) for x in signals.values()))
-            self.assertEqual(len(signals), 8)
+            self.assertEqual(len(signals), 9)
             self.assertFalse(signals["filter_tutorial_visible"])
+            self.assertFalse(signals["repo_list_tutorial_visible"])
             self.assertNotIn("Password", str(signals))
             self.assertNotIn("secret", str(signals))
 
