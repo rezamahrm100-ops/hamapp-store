@@ -22,7 +22,7 @@ class RealFdroidClientLabTests(unittest.TestCase):
             with self.assertRaises(DrillError):
                 lab.root()
         self.assertEqual(lab.PORT, 8975)
-        self.assertEqual(lab.REPO_URL, "http://10.0.2.2:8975/fdroid/repo/")
+        self.assertEqual(lab.REPO_URL, "https://10.0.2.2:8975/fdroid/repo/")
         src=(ROOT/"scripts/fdroid_client_private_repo_lab.py").read_text("utf-8")
         self.assertIn('["fdroid", "init"]',src)
         self.assertIn('["fdroid", "update", "--create-metadata"]',src)
@@ -41,6 +41,19 @@ class RealFdroidClientLabTests(unittest.TestCase):
         self.assertNotIn('shutil.copytree(private',src)
         self.assertIn("info.st_nlink != 1",src)
 
+    def test_real_temporary_https_signer_isolated_from_served_repository(self):
+        source=(ROOT/"scripts/fdroid_client_private_repo_lab.py").read_text("utf-8")
+        self.assertIn("make_ephemeral_https_identity(base)", source)
+        self.assertIn("ExtendedKeyUsageOID.SERVER_AUTH", source)
+        self.assertIn('x509.IPAddress(ipaddress.ip_address("10.0.2.2"))', source)
+        self.assertIn('directory = base / "tls"', source)
+        server=(ROOT/"scripts/fdroid_client_private_repo_server.py").read_text("utf-8")
+        self.assertIn("ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)", server)
+        self.assertIn("context.wrap_socket(server.socket", server)
+        workflow=(ROOT/".github/workflows/fdroid-real-client-signed-repo.yml").read_text("utf-8")
+        self.assertIn("-writable-system", workflow)
+        self.assertIn('https://localhost:8975/', (ROOT/"scripts/fdroid_real_client_subscription_emulator.sh").read_text("utf-8"))
+
     def test_accessible_ui_only_taps_real_fdroid_package_visible_control(self):
         with tempfile.TemporaryDirectory() as t:
             f=Path(t)/"ui.xml"
@@ -56,7 +69,10 @@ class RealFdroidClientLabTests(unittest.TestCase):
     def test_real_client_network_reachability_is_distinct_from_install_claim(self):
         sh=(ROOT/"scripts/fdroid_real_client_subscription_emulator.sh").read_text("utf-8")
         self.assertIn('adb install -r "$RUNNER_TEMP/hamapp-official-fdroid/F-Droid.apk"',sh)
-        self.assertIn('fdroidrepo://10.0.2.2:8975/fdroid/repo/',sh)
+        self.assertIn('fdroidrepos://10.0.2.2:8975/fdroid/repo/',sh)
+        self.assertIn('adb remount',sh)
+        self.assertIn('openssl x509 -subject_hash_old',sh)
+        self.assertIn('DISPOSABLE_TEST_CA_INSTALLED_ON_ROOTED_EMULATOR_ONLY',sh)
         self.assertIn('scripts/fdroid_client_accessible_ui.py',sh)
         self.assertIn('request_count',sh)
         self.assertIn('"actual_fdroid_client_app_install_verified":False',sh)
