@@ -1,0 +1,86 @@
+name: HamApp Official Signed F-Droid Client Emulator Intent
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'scripts/fdroid_official_client_emulator.sh'
+      - 'tests/test_fdroid_official_client_emulator.py'
+      - '.github/workflows/official-fdroid-client-emulator.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'scripts/fdroid_official_client_emulator.sh'
+      - 'tests/test_fdroid_official_client_emulator.py'
+      - '.github/workflows/official-fdroid-client-emulator.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hamapp-official-fdroid-client-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  official-client:
+    if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.ref == 'refs/heads/main' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Install official Android SDK tooling
+        shell: bash
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Source regression suite
+        run: python3 -m unittest discover -s tests -v
+      - name: Verify upstream official Android client GPG and APK certificate
+        shell: bash
+        run: bash scripts/fdroid_official_client_emulator.sh prepare
+      - name: Build native HamApp debug client
+        shell: bash
+        run: |
+          python3 scripts/build_android_catalog.py
+          gradle --no-daemon -p android :app:assembleDebug
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Allow hosted emulator KVM (never owner runner)
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install OFFICIAL signed F-Droid APK and resolve real repository handler intent
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          script: bash scripts/fdroid_official_client_emulator.sh verify
+      - name: Delete downloaded upstream app and cryptographic verification files
+        if: always()
+        shell: bash
+        run: rm -rf "$RUNNER_TEMP/hamapp-official-fdroid"
+      - name: Upload bounded SAFE emulator receipt and UI only (NO binaries/keys)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-official-fdroid-client-intent-evidence
+          path: |
+            dist/official-fdroid-client/receipt.json
+            dist/official-fdroid-client/ui.xml
+            dist/official-fdroid-client/client-intent.png
+          if-no-files-found: warn
+          retention-days: 5
+      - name: Release claim boundary
+        if: success()
+        run: |
+          echo '### Official F-Droid client signature and Android intent integration PASS' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Official GPG signature, exact published APK cert, installed emulator client and fdroidrepos:// intent accepted. No trusted live repo, installation/update from F-Droid, public package or physical device accepted.' >> "$GITHUB_STEP_SUMMARY"
