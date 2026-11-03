@@ -5,7 +5,10 @@ NO network admin endpoint. Never uploads secrets, creates an account, proves a
 person is a developer or approves a release. Registry lives OUTSIDE GitHub.
 """
 import argparse
-import fcntl
+try:
+    import fcntl  # POSIX-only actual cross-process advisory file lock
+except ImportError:
+    fcntl = None  # Windows source CI may import but must never run operator CLI
 import hashlib
 import json
 import os
