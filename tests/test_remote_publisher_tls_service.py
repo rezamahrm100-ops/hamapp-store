@@ -126,7 +126,7 @@ class RealRemotePublisherTLSIntegrationTests(unittest.TestCase):
         with self.assertRaises(local_submit_error()):
             self.send()
         fresh_file = self.work / "new-token-secret.txt"
-        fresh_file.write_text(changed["one_time_secret"] + "\\n", encoding="ascii")
+        fresh_file.write_text(changed["one_time_secret"] + "\n", encoding="ascii")
         fresh_file.chmod(0o600)
         # The same TLS service instance must immediately use the new token.
         second = self.send(token=fresh_file)
