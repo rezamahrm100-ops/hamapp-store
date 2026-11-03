@@ -13,13 +13,21 @@ SCRIPT=ROOT/"scripts/fdroid_official_client_emulator.sh"
 class OfficialFdroidHandoffTests(unittest.TestCase):
     def test_source_invokes_official_client_not_arbitrary_browser(self):
         src=ANDROID.read_text(encoding="utf-8")
-        self.assertIn('Uri.parse("fdroidrepos://" + pinnedRepoUrl)',src)
+        self.assertIn('.scheme("fdroidrepos")',src)
+        self.assertIn('Uri.parse(url).getHost().equals(fdroidUri.getHost())',src)
+        self.assertNotIn('Uri.parse("fdroidrepos://" + pinnedRepoUrl)',src)
         self.assertIn('intent.setPackage("org.fdroid.fdroid")',src)
         self.assertIn('if (!RepoPolicy.isAllowed(url, fingerprint))',src)
         self.assertIn('appendQueryParameter("fingerprint"',src)
         self.assertIn("new AlertDialog.Builder(this)",src)
         self.assertNotIn('new Intent(Intent.ACTION_VIEW, uri)',src)
         self.assertNotIn("ACTION_INSTALL_PACKAGE",src)
+
+    def test_emulator_fixture_uses_real_canonical_fdroidrepos_host(self):
+        source = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn('dummy="fdroidrepos://example.invalid/', source)
+        self.assertIn('example.invalid/fdroid/repo/?fingerprint=', source)
+        self.assertNotIn('dummy="fdroidrepos://https://', source)
 
     def test_unapproved_storefront_has_no_downloads(self):
         repo=json.loads((ROOT/"catalog/android_repository.json").read_text(encoding="utf-8"))
