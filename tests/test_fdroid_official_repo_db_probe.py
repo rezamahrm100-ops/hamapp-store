@@ -92,6 +92,48 @@ class OfficialFdroidRepositoryPersistenceProofTests(unittest.TestCase):
             with self.assertRaises(probe.RepositoryPersistenceError):
                 probe.validate_tar_snapshot(out.getvalue(),Path(tmp))
 
+    def test_native_core_repository_exact_der_hex_certificate_fingerprint(self):
+        import hashlib
+        certificate = bytes(range(256)) + bytes(range(80))
+        fingerprint = hashlib.sha256(certificate).hexdigest()
+        p = self.path / "core-repo.sqlite"
+        with sqlite3.connect(p) as db:
+            db.execute('CREATE TABLE CoreRepository (repoId INTEGER PRIMARY KEY, address TEXT, certificate TEXT)')
+            db.execute("INSERT INTO CoreRepository VALUES (?, ?, ?)", (
+                7, "https://10.0.2.2:8975/fdroid/repo/",
+                certificate.hex().upper()))
+            db.commit()
+        self.assertTrue(probe.inspect_repository_signer(p, fingerprint.upper()))
+        with self.assertRaisesRegex(probe.RepositoryPersistenceError, "does not match"):
+            probe.inspect_repository_signer(p, "0" * 64)
+        with self.assertRaisesRegex(probe.RepositoryPersistenceError, "exactly one"):
+            probe.inspect_repository_signer(p, fingerprint,
+                                            expected_address="https://10.0.2.2:8975/foreign/repo/")
+        with sqlite3.connect(p) as db:
+            db.execute("INSERT INTO CoreRepository VALUES (?, ?, ?)", (
+                8, "https://10.0.2.2:8975/fdroid/repo", certificate.hex()))
+            db.commit()
+        with self.assertRaisesRegex(probe.RepositoryPersistenceError, "exactly one"):
+            probe.inspect_repository_signer(p, fingerprint)
+
+    def test_native_signer_refuses_malformed_certificate_and_decoy_table(self):
+        p = self.path / "malformed-repo.sqlite"
+        with sqlite3.connect(p) as db:
+            db.execute('CREATE TABLE CoreRepository (address TEXT, certificate TEXT)')
+            db.execute("INSERT INTO CoreRepository VALUES (?,?)", (
+                "https://10.0.2.2:8975/fdroid/repo/", "Z" * 1024))
+            db.execute("CREATE TABLE OtherRepository (address TEXT, certificate TEXT)")
+            db.execute("INSERT INTO OtherRepository VALUES (?,?)", (
+                "https://10.0.2.2:8975/fdroid/repo/", "A" * 1024))
+            db.commit()
+        with self.assertRaisesRegex(probe.RepositoryPersistenceError, "not DER hex"):
+            probe.inspect_repository_signer(p, "A" * 64)
+        with sqlite3.connect(p) as db:
+            db.execute("DELETE FROM CoreRepository")
+            db.commit()
+        with self.assertRaisesRegex(probe.RepositoryPersistenceError, "exactly one"):
+            probe.inspect_repository_signer(p, "A" * 64)
+
     def test_actual_emulator_gate_denies_untrusted_host(self):
         with patch.dict(os.environ,{"GITHUB_ACTIONS":"false","RUNNER_OS":"Linux"}):
             with self.assertRaises(probe.RepositoryPersistenceError):
