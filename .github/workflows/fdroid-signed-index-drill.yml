@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/fdroid_signed_repo_drill.py'
+      - 'scripts/android_two_version_smoke.sh'
       - 'scripts/verify_fdroid_private_stage.py'
       - 'scripts/fdroid_bridge.py'
       - 'tests/test_verify_fdroid_private_stage.py'
@@ -58,19 +59,25 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m unittest discover -s tests -v
-          python3 scripts/build_android_catalog.py
-          gradle --no-daemon -p android :app:assembleDebug
-          test -s android/app/build/outputs/apk/debug/app-debug.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify android/app/build/outputs/apk/debug/app-debug.apk
+          bash scripts/android_two_version_smoke.sh prepare
+          test -s dist/android-two-version/v1.apk
+          test -s dist/android-two-version/v2.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify dist/android-two-version/v1.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify dist/android-two-version/v2.apk
       - name: Create disposable signed index v2, validate local signed JAR and exact APK; reject wrong keys/tampering
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p dist/fdroid-sandbox-evidence
           python3 scripts/fdroid_signed_repo_drill.py \
-            --apk android/app/build/outputs/apk/debug/app-debug.apk \
+            --apk dist/android-two-version/v1.apk \
+            --apk-v2 dist/android-two-version/v2.apk \
             --source-sha "$GITHUB_SHA" \
             --receipt dist/fdroid-sandbox-evidence/signed-index-drill.json
+      - name: Remove ephemeral debug APKs and synthetic test signer before artifact upload
+        if: always()
+        shell: bash
+        run: rm -rf dist/android-two-version
       - name: Upload safe receipt ONLY, never repo keystore or config
         uses: actions/upload-artifact@v4
         with:
@@ -82,4 +89,4 @@ jobs:
         shell: bash
         run: |
           echo '### Real signed F-Droid index-v2 verification with a disposable CI key' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Correct key and exact artifact matched in independently verified local signed index; wrong key/corrupted metadata rejected. No production key/deployment/owner live APK/official client install. All ephemeral keys deleted before artifact upload.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Two real debug APK versions and same disposable repo key verified across separately signed indexes, immutable APK identities, wrong key and tampered metadata rejection. No production key/deployment/owner live APK/official client install. All ephemeral keys deleted before artifact upload.' >> "$GITHUB_STEP_SUMMARY"
