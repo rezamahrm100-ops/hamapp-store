@@ -57,7 +57,9 @@ case "${1:-}" in
     echo "OFFICIAL_FDROID_LAUNCHER_EVENT_ACCEPTED"
     # Use the REAL officially signed F-Droid app as the intent target. The
     # deliberately untrusted *.invalid URL is NOT added as a repository.
-    dummy="fdroidrepos://https://example.invalid/fdroid/repo/?fingerprint=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    dummy="fdroidrepos://example.invalid/fdroid/repo/?fingerprint=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    # The host is example.invalid; fdroidrepos://https://... would incorrectly
+    # produce host=https and is NOT the canonical official-client import URL.
     if ! adb shell am start -W -a android.intent.action.VIEW \
       -c android.intent.category.BROWSABLE \
       -p org.fdroid.fdroid -d "$dummy" > "$RUNNER_TEMP/fdroid-repo-intent.txt" 2>&1; then
