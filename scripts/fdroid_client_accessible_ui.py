@@ -49,12 +49,54 @@ def select(xml):
     return None
 
 
+def select_unneeded_notification_denial(xml):
+    """Dismiss ONLY the real Android notification prompt for official F-Droid.
+
+    Never grant Android permissions, click an unrelated system permission
+    dialog, or guess a coordinate. The observed prompt is system-owned, not
+    an F-Droid view, and was blocking the official repo-add confirmation.
+    """
+    root = ET.parse(xml).getroot()
+    nodes = [node for node in root.iter("node")
+             if node.attrib.get("package") in (
+                 "com.android.permissioncontroller",
+                 "com.google.android.permissioncontroller")]
+    visible_text = " ".join((node.attrib.get("text", "")
+                             + " " + node.attrib.get("content-desc", ""))
+                            for node in nodes).lower()
+    if not ("notification" in visible_text
+            and ("f-droid" in visible_text or "fdroid" in visible_text)):
+        return None
+    for node in nodes:
+        label = (node.attrib.get("text", "") or
+                 node.attrib.get("content-desc", "")).strip().lower()
+        if label.replace("’", "'") not in ("don't allow", "deny"):
+            continue
+        target = node
+        if target.attrib.get("clickable") != "true":
+            target = next((parent for parent in nodes
+                           if parent.attrib.get("clickable") == "true"
+                           and node in list(parent.iter("node"))), None)
+        if target is None:
+            continue
+        bounds = BOUNDS.fullmatch(target.attrib.get("bounds", ""))
+        if not bounds:
+            continue
+        x1, y1, x2, y2 = map(int, bounds.groups())
+        if x1 >= x2 or y1 >= y2 or x2 > 4096 or y2 > 4096:
+            continue
+        return (x1 + x2) // 2, (y1 + y2) // 2
+    return None
+
+
 def main():
     p = argparse.ArgumentParser(description="Real official-client accessible UI selection only")
     p.add_argument("--xml", type=Path, required=True)
+    p.add_argument("--deny-notification-prompt", action="store_true")
     a = p.parse_args()
     try:
-        action = select(a.xml)
+        action = (select_unneeded_notification_denial(a.xml)
+                  if a.deny_notification_prompt else select(a.xml))
     except (OSError, ET.ParseError, ValueError):
         return 2
     if action is None:
