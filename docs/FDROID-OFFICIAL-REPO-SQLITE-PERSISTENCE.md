@@ -23,3 +23,11 @@ The test requires only a short-lived ephemeral test CA, rooted disposable emulat
 ## Exact CI acceptance requirements
 
 The PR source must pass hosted Linux and Windows CI, CodeQL, Trivy and the **actual** `HamApp Real Official F-Droid Client Signed Test Repo Fetch` Android emulator integration job on the exact final PR HEAD. The API is a read-only proof, not an installer, publisher approval or live deployment. On merge, reverify latest main checks and owner-runner status and maintain the integrated gap ledger.
+
+## Actual failed emulator diagnostic and corrective integration — 2026-11-03
+
+Exact prior [real Android CI #41626369937](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41626369937) **FAILED** after real official signed-index v1 fetch and re-signed v2 staging. The screenshot artifact exposed the root cause of an incomplete UI acceptance: after safely denying the Android 13 F-Droid notification-permission dialog (no new permission granted), the real official **“Add repository”** button was visible and had *not been tapped* at the point the earlier test accepted the first GET; later the screenshot showed **“Adding repository...”** with a spinner, so the client was still processing the addition. The DB snapshot then failed the initial overly tight 48MiB size bound. HTTP requests and a loading indicator are not proof of a committed repository record.
+
+A revised test now selects and taps ONLY the actual clickable `Add repository` node owned by `org.fdroid.fdroid` via real accessibility hierarchy (no hard-coded coordinates or system permission bypass), requires a logged positive tap result, gives the upstream client time to commit its SQLite operation, and then checks real bounded read-only native DB contents. The private SQLite/WAL archive cap is conservatively expanded for the upstream client's default catalog size, with diagnostic size reported without exposing any DB bytes. Full private archive is still destroyed before uploads. Exact final feature-head CI/CodeQL/Trivy AND true Android SQLite proof are required; previous red runs are not accepted.
+
+An untrusted external APK or production repo is never installed; this is a hosted CI-only ephemeral official-client repository-enrollment acceptance candidate.
