@@ -111,11 +111,14 @@ class RealPortableWindowsPESignatureTests(unittest.TestCase):
         self.assertIn("Get-Content -LiteralPath", windows)
         self.assertIn("Get-AuthenticodeSignature -LiteralPath", windows)
         self.assertIn("native_windows_os_trusted_authenticode_verified = $false", windows)
-        self.assertIn("native_windows_os_rejected_untrusted_disposable_ca_signers = $true", windows)
+        self.assertIn("native_windows_os_did_not_accept_disposable_test_signers = $true", windows)
+        self.assertIn("precise_native_os_trust_failure_cause_verified = $false", windows)
+        self.assertIn("$nativeA.status -ne 'UnknownError'", windows)
+        self.assertIn("$nativeB.status -ne 'UnknownError'", windows)
         self.assertIn("$env:RUNNER_ENVIRONMENT -ne 'github-hosted'", windows)
         self.assertIn('os.environ.get("RUNNER_ENVIRONMENT") != "github-hosted"', signer)
         self.assertIn("Remove-Item -LiteralPath $tempRoot -Recurse", windows)
-        self.assertIn("ACTUAL_NATIVE_WINDOWS_OS_REJECTED_BOTH_UNTRUSTED_EPHEMERAL_SIGNERS_UNSIGNED_AND_TAMPERED_PE", windows)
+        self.assertIn("ACTUAL_NATIVE_WINDOWS_OS_REPORTED_UNKNOWN_ERROR_FOR_TWO_SIGNERS", windows)
 
     def test_previous_native_windows_attempt_is_not_considered_accepted(self):
         src = (ROOT / "scripts/windows_authenticode_real_drill.py").read_text("utf-8")
