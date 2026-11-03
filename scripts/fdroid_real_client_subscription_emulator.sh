@@ -204,23 +204,29 @@ python3 scripts/fdroid_client_private_repo_lab.py --version 2 \
   --apk dist/android-two-version/v2.apk --source-sha "$GITHUB_SHA"
 v2_sha=$(sha256sum "$base/webroot/fdroid/repo/index-v2.json" | awk '{print $1}')
 test "$v1_sha" != "$v2_sha"
+# A fdroidrepos:// deep link reopens the *Add repository preview*, which
+# can HTTP GET v2 WITHOUT updating the already-saved repository metadata.
+# Require the real official installed repo Details -> "Check for updates"
+# app-owned button. Upstream RepoDetails invokes RepoUpdateWorker.updateNow().
 : > "$request_log"
-adb shell am start -W -a android.intent.action.VIEW \
-  -c android.intent.category.BROWSABLE -p org.fdroid.fdroid -d "$uri" > "$base/v2-intent-private.txt"
-for n in $(seq 1 24); do
-  click_actual_accessible_control
-  sleep 3
+python3 scripts/fdroid_official_repo_refresh_ui.py
+v2_seen=false
+for n in $(seq 1 30); do
+  sleep 2
   if [ "$(request_count)" -ge 1 ]; then
+    v2_seen=true
     break
   fi
 done
 adb exec-out screencap -p > "$out/official-client-after-index-v2.png" || true
-v2_seen=false
-if [ "$(request_count)" -ge 1 ]; then v2_seen=true; fi
 if [ "$v2_seen" != true ]; then
-  echo "OFFICIAL_FDROID_CLIENT_DID_NOT_FETCH_UPDATED_SIGNED_INDEX" >&2
+  echo "OFFICIAL_FDROID_SAVED_REPO_FORCED_REFRESH_DID_NOT_FETCH_SIGNED_INDEX_V2" >&2
   exit 1
 fi
+# The index GET is only request evidence; give the real F-Droid Room DB
+# update, post-processing and app-update calculation time to finish.
+sleep 18
+echo "REAL_OFFICIAL_FDROID_SAVED_REPO_FORCE_REFRESH_V2_HTTP_REQUEST_OBSERVED"
 # Actual app update through the official F-Droid UI only, with native Android
 # package-manager version, installed bytes, signer and APK GET checks.
 python3 scripts/fdroid_official_inclient_install_emulator.py --stage 2
