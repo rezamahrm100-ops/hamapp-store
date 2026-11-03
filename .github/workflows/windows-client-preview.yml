@@ -142,7 +142,7 @@ jobs:
           echo 'Two disposable signed real Windows EXE copies, wrong signer, unsigned and tampered checks run. Windows OS WinVerifyTrust, real production signer, installer and physical device NOT accepted.' >> "$GITHUB_STEP_SUMMARY"
 
   native-windows-authenticode:
-    name: Actual native Windows signer detection and non-Valid temporary certificate statuses
+    name: Native Windows disposable CA-chain verification and untrusted Authenticode status
     if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     needs: desktop-preview
     runs-on: windows-2022
@@ -165,7 +165,7 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check --only-binary=:all: cryptography==50.0.2
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Native signed PE signer fingerprint and untrusted-chain/unsigned/tamper rejection
+      - name: Native X509Chain in-memory correct CA/wrong root and Authenticode fail-closed PE checks
         shell: pwsh
         timeout-minutes: 8
         run: |
@@ -183,8 +183,8 @@ jobs:
       - name: Native signer scope disclosure
         shell: pwsh
         run: |
-          '### Native Windows signer identities and observed non-Valid temporary certificate status' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-          'Actual Windows-produced PE and two separate temporary CA-to-leaf signed copies are examined by native Windows Authenticode APIs. Actual hosted Windows returned native UnknownError for both unsigned-trust disposable PFX signer chains despite exact matching signer certificate bytes. We only accept the observed non-Valid result; precise trust-chain failure cause is NOT proven. Native Windows separately rejects the unsigned executable and modified PE. No Windows certificate store mutation. This is NOT acceptance of a trusted publisher, production signer, WinGet mapping or owner desktop.' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          '### Native in-memory disposable code-signing CA chain and OS non-Valid signer observation' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          'Real hosted Windows x64 SDK signed PE with two distinct disposable test roots and code-signing leaves. Native in-memory X509Chain must accept each exact local test root and reject cross-root. Windows Authenticode still reports UnknownError (NOT Valid) for both OS-untrusted test signatures, and rejects unsigned/tampered PE. CustomTrustStore exists only in process memory; no OS trust-store changes, production approved publisher certificate, WinGet release, physical owner QA or public release permission was verified.' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
   nsis-installer-sandbox:
     name: Actual isolated per-user Windows installer/upgrade/downgrade/uninstall
