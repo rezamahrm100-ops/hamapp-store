@@ -67,6 +67,25 @@ class RealRepoForceRefreshSelectorTests(unittest.TestCase):
                   'clickable="true" bounds="[245,5][300,60]"/>')
         self.assertIsNone(self.choice(body + second, "force-update"))
 
+    def test_actual_filter_tutorial_on_truncated_repo_preview_is_dismissible(self):
+        # Real emulator #41689898350 shows a truncated "Disposa...st only"
+        # top bar and Filter/Got it popup, not a visible full repository name.
+        actual = (
+            '<node package="org.fdroid.fdroid" text="Disposa...st only"/>'
+            '<node package="org.fdroid.fdroid" text="Filter"/>'
+            '<node package="org.fdroid.fdroid" text="Got it" clickable="true" '
+            'bounds="[216,219][294,266]"/>'
+        )
+        self.assertEqual(self.choice(actual, "dismiss-repo-hint"), (255, 242))
+        self.assertIsNone(self.choice(actual.replace('text="Filter"',
+                                                     'text="Other warning"'), "dismiss-repo-hint"))
+        self.assertIsNone(self.choice(actual.replace('text="Got it"',
+                                                     'text="Grant permission"'), "dismiss-repo-hint"))
+        self.assertIsNone(self.choice(actual.replace("org.fdroid.fdroid",
+                                                     "com.android.settings"), "dismiss-repo-hint"))
+        self.assertIsNone(self.choice(actual.replace("[216,219][294,266]",
+                                                     "[0,0][420,800]"), "dismiss-repo-hint"))
+
     def test_reject_unknown_actions_and_no_host_permission(self):
         with self.assertRaisesRegex(ValueError, "unknown"):
             self.choice("", "grant-anything")
@@ -87,7 +106,8 @@ class RealRepoForceRefreshSelectorTests(unittest.TestCase):
             self.assertTrue(signals["repositories_label_visible"])
             self.assertFalse(signals["disposable_repository_label_visible"])
             self.assertTrue(all(isinstance(x, bool) for x in signals.values()))
-            self.assertEqual(len(signals), 7)
+            self.assertEqual(len(signals), 8)
+            self.assertFalse(signals["filter_tutorial_visible"])
             self.assertNotIn("Password", str(signals))
             self.assertNotIn("secret", str(signals))
 
