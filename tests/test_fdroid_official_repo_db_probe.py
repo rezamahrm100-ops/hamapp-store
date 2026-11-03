@@ -66,7 +66,10 @@ class OfficialFdroidRepositoryPersistenceProofTests(unittest.TestCase):
         result=probe.validate_tar_snapshot(raw,self.path)
         self.assertEqual(len(result),1)
         self.assertEqual(probe.inspect_sqlite(result[0]),["Repository"])
-        self.assertEqual(result[0].stat().st_mode & 0o077,0)
+        # Windows mode bits are synthetic; actual hosted POSIX private 0600
+        # enforcement is separately checked by the real Android CI job.
+        if os.name == "posix":
+            self.assertEqual(result[0].stat().st_mode & 0o077,0)
 
     def test_tar_traversal_symlinks_and_duplicate_files_fail_closed(self):
         for path in ("databases/../tokens", "../private.db","databases/evil/key",
