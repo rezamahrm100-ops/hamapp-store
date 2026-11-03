@@ -251,7 +251,8 @@ class GateTests(unittest.TestCase):
                     self.candidate, self.registry, self.path, workspace,
                     trusted_workflow="rezamahrm100-ops/example-project/.github/workflows/release.yml",
                     trusted_source_ref="refs/tags/v1.2.3",
-                    permission_policy=self._fdroid_policy())
+                    permission_policy=self._fdroid_policy(),
+                    expected_repo_fingerprint="b"*64)
         self.assertFalse((workspace / "repo" / self.path.name).exists())
 
     def test_fdroid_rejects_fake_antivirus_attestation_flags(self):
@@ -290,7 +291,8 @@ class GateTests(unittest.TestCase):
                     self.candidate, self.registry, self.path, workspace,
                     trusted_workflow="rezamahrm100-ops/example-project/.github/workflows/release.yml",
                     trusted_source_ref="refs/tags/v1.2.3",
-                    permission_policy=self._fdroid_policy())
+                    permission_policy=self._fdroid_policy(),
+                    expected_repo_fingerprint="b"*64)
         self.assertFalse((workspace / "repo" / self.path.name).exists())
 
     def test_fdroid_upstream_update_failure_removes_new_file(self):
