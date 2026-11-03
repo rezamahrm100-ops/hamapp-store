@@ -166,7 +166,11 @@ class RealFdroidClientLabTests(unittest.TestCase):
         self.assertIn('request_count',sh)
         self.assertIn('"actual_fdroid_client_app_install_verified":False',sh)
         self.assertIn('"actual_fdroid_client_app_upgrade_verified":False',sh)
-        self.assertIn('"official_client_repository_persisted_in_database_verified":False',sh)
+        self.assertIn('"official_client_repository_persisted_in_database_verified":True',sh)
+        self.assertIn('"official_client_repo_signer_pin_in_database_verified":False',sh)
+        self.assertIn('db_proof["real_official_client_repo_host_saved_in_native_sqlite"] is True',sh)
+        self.assertIn('db_proof["source_sha"]==state["source_sha"]',sh)
+        self.assertIn('ACTUAL_FDROID_CLIENT_SIGNED_INDEX_V1_V2_AND_NATIVE_SQLITE_REPO_HOST_PERSISTENCE_VERIFIED',sh)
         self.assertIn('"production_ready":False',sh)
 
     def test_signed_repo_v1_v2_job_never_runs_on_owner_or_uploads_keys(self):
