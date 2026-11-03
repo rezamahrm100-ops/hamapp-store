@@ -87,8 +87,38 @@ class RealPortableWindowsPESignatureTests(unittest.TestCase):
         self.assertIn("hamapp-real-disposable-portable-authenticode-evidence", yml)
         self.assertIn("retention-days: 7", yml)
         self.assertNotIn("runs-on: self-hosted", yml)
-        self.assertNotIn("./scripts/windows_authenticode_real_drill.ps1 -UnsignedExe", yml)
+        self.assertIn("native-windows-authenticode:", yml)
+        self.assertIn("./scripts/windows_authenticode_real_drill.ps1 -UnsignedExe", yml)
+        self.assertIn("hamapp-native-windows-ephemeral-trust-evidence", yml)
+        self.assertIn("if-no-files-found: error", yml)
         self.assertNotIn("dist/windows-authenticode-evidence/receipt.json\n          path: dist/HamApp-Windows-Preview.exe", yml)
+
+    def test_native_windows_test_signing_uses_real_ca_leaf_chain_and_private_ephemeral_keys(self):
+        signer = (ROOT / "scripts/windows_ephemeral_pfx.py").read_text("utf-8")
+        windows = (ROOT / "scripts/windows_authenticode_real_drill.ps1").read_text("utf-8")
+        for marker in (
+            "ca_key = rsa.generate_private_key", "signer_key = rsa.generate_private_key",
+            "x509.BasicConstraints(ca=True, path_length=0)",
+            "x509.BasicConstraints(ca=False, path_length=None)",
+            "ExtendedKeyUsageOID.CODE_SIGNING", "sign(ca_key, hashes.SHA256())",
+            '"root_cer": str(root_path)', "signer_key, leaf, [ca]",
+        ):
+            self.assertIn(marker, signer)
+        self.assertIn("$material.a.root_cer", windows)
+        self.assertIn("$material.b.root_cer", windows)
+        self.assertNotIn("X509Store", windows)
+        self.assertNotIn("Cert:\\CurrentUser", windows)
+        self.assertIn("Get-Content -LiteralPath", windows)
+        self.assertIn("Get-AuthenticodeSignature -LiteralPath", windows)
+        self.assertIn("native_windows_os_trusted_authenticode_verified = $false", windows)
+        self.assertIn("native_windows_os_did_not_accept_disposable_test_signers = $true", windows)
+        self.assertIn("precise_native_os_trust_failure_cause_verified = $false", windows)
+        self.assertIn("$nativeA.status -ne 'UnknownError'", windows)
+        self.assertIn("$nativeB.status -ne 'UnknownError'", windows)
+        self.assertIn("$env:RUNNER_ENVIRONMENT -ne 'github-hosted'", windows)
+        self.assertIn('os.environ.get("RUNNER_ENVIRONMENT") != "github-hosted"', signer)
+        self.assertIn("Remove-Item -LiteralPath $tempRoot -Recurse", windows)
+        self.assertIn("ACTUAL_NATIVE_WINDOWS_OS_REPORTED_UNKNOWN_ERROR_FOR_TWO_SIGNERS", windows)
 
     def test_previous_native_windows_attempt_is_not_considered_accepted(self):
         src = (ROOT / "scripts/windows_authenticode_real_drill.py").read_text("utf-8")

@@ -141,6 +141,51 @@ jobs:
           echo '### Real PE Authenticode cryptography accepted on isolated Linux' >> "$GITHUB_STEP_SUMMARY"
           echo 'Two disposable signed real Windows EXE copies, wrong signer, unsigned and tampered checks run. Windows OS WinVerifyTrust, real production signer, installer and physical device NOT accepted.' >> "$GITHUB_STEP_SUMMARY"
 
+  native-windows-authenticode:
+    name: Actual native Windows signer detection and non-Valid temporary certificate statuses
+    if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    needs: desktop-preview
+    runs-on: windows-2022
+    timeout-minutes: 18
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: hamapp-windows-unsigned-preview
+          path: dist
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned public cryptography implementation for disposable signer only
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: cryptography==50.0.2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Native signed PE signer fingerprint and untrusted-chain/unsigned/tamper rejection
+        shell: pwsh
+        timeout-minutes: 8
+        run: |
+          if (-not (Test-Path 'dist/HamApp-Windows-Preview.exe' -PathType Leaf)) { throw 'Unsigned native Windows PE was not built' }
+          ./scripts/windows_authenticode_real_drill.ps1 -UnsignedExe 'dist/HamApp-Windows-Preview.exe'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path 'dist/windows-authenticode-evidence/receipt.json' -PathType Leaf)) { throw 'Actual native trust proof missing' }
+      - name: Upload ONLY non-production OS verification receipt, never PFX or signed executables
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-native-windows-ephemeral-trust-evidence
+          path: dist/windows-authenticode-evidence/receipt.json
+          if-no-files-found: error
+          retention-days: 5
+      - name: Native signer scope disclosure
+        shell: pwsh
+        run: |
+          '### Native Windows signer identities and observed non-Valid temporary certificate status' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          'Actual Windows-produced PE and two separate temporary CA-to-leaf signed copies are examined by native Windows Authenticode APIs. Actual hosted Windows returned native UnknownError for both unsigned-trust disposable PFX signer chains despite exact matching signer certificate bytes. We only accept the observed non-Valid result; precise trust-chain failure cause is NOT proven. Native Windows separately rejects the unsigned executable and modified PE. No Windows certificate store mutation. This is NOT acceptance of a trusted publisher, production signer, WinGet mapping or owner desktop.' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
   nsis-installer-sandbox:
     name: Actual isolated per-user Windows installer/upgrade/downgrade/uninstall
     if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
