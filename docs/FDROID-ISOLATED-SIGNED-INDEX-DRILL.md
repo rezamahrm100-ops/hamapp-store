@@ -25,3 +25,11 @@ The first hosted execution failed in Ubuntu's older fdroidserver/Androguard pack
 ## Library initialization repair
 
 The next real hosted run using fdroidserver 2.4.5 correctly built the signed index, but direct Python index verification required `fdroidserver.common.config` and the installed `jarsigner` path to be initialized from the temporary workspace's config.yml. The integration script now loads this configuration inside the disposable test process before calling the official index-v2 verifier. No config or key is uploaded or used for production.
+
+## Actual two-version signed F-Droid index continuity — 2026-11-03
+
+The hosted integration now builds **two real Android DEBUG APK versions** (`versionCode 1` and `2`) with one disposable Android debug signing identity, reusing `scripts/android_two_version_smoke.sh prepare`. In the same isolated upstream `fdroidserver==2.4.5` workspace, the test signs an index containing v1, verifies actual `entry.jar` and exact APK bytes, then adds the second real APK and runs `fdroid update --create-metadata` again. It rejects an unchanged index, any change to the F-Droid repository certificate, disappearance of v1, missing v2, APK SHA/version/size substitution and wrong key/tampered index. Both versions are checked using upstream JAR certificate verification and unique exact candidate matching, not inferred from test JSON.
+
+The test outputs a strictly whitelisted, no-secret receipt. The report explicitly marks `official_fdroid_client_subscribed=false`, `two_version_client_update_performed=false` and `real_owner_key_restored_or_backed_up=false`. The isolated test key is temporary; two signed indices with the same temporary key **do not** prove persistence across devices, actual offline backup/restore, owner public HTTPS origin or an F-Droid Android client performing an install/update. Actual workflow SHA and SUCCESS are mandatory before claiming acceptance.
+
+To run the complete source/real-artifact workflow on a hosted isolated runner, use `.github/workflows/fdroid-signed-index-drill.yml`. It produces disposable APKs/keys locally on GitHub, deletes them before uploading a short-lived JSON acceptance receipt, and never modifies public approved trust registries.

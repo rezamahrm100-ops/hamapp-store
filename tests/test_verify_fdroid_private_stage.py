@@ -22,6 +22,8 @@ class IndexV2Tests(unittest.TestCase):
         self.repo.mkdir()
         self.jar=self.repo/"entry.jar"
         self.jar.write_bytes(b"TEST-ONLY-NOT-A-REAL-SIGNED-JAR")
+        self.apk=self.repo/"demo.apk"
+        self.apk.write_bytes(DATA)
         self.candidate={
             "release":{"app_id":"example","platform":"android","version":"1.2.3",
                 "asset_url":"https://github.com/rezamahrm100-ops/source-demo/releases/download/v1.2.3/demo.apk",
@@ -57,6 +59,36 @@ class IndexV2Tests(unittest.TestCase):
         self.assertFalse(receipt["official_fdroid_client_install_tested"])
         self.assertFalse(receipt["production_store_ready"])
         self.assertEqual(receipt["indexed_apk_sha256"],self.candidate["release"]["sha256"])
+
+    def test_exact_signed_index_metadata_without_real_apk_file_is_rejected(self):
+        self.apk.unlink()
+        with self.assertRaises(verifier.PrivateIndexError):
+            verifier.verify(self.root,FP,self.candidate,loader=self.loader)
+
+    def test_tampered_or_symlinked_actual_indexed_apk_is_rejected(self):
+        self.apk.write_bytes(b"different bytes from signed index")
+        with self.assertRaises(verifier.PrivateIndexError):
+            verifier.verify(self.root,FP,self.candidate,loader=self.loader)
+        self.apk.unlink()
+        external=self.root/"not-a-repo.apk"
+        external.write_bytes(DATA)
+        self.apk.symlink_to(external)
+        with self.assertRaises(verifier.PrivateIndexError):
+            verifier.verify(self.root,FP,self.candidate,loader=self.loader)
+
+    def test_signed_index_path_must_be_a_single_safe_apk_basename(self):
+        version=self.index["packages"]["ir.hamapp.example"]["versions"]["version-key"]
+        for filename in ("/../demo.apk","/nested/demo.apk","/demo.exe",
+                         "https://example.invalid/demo.apk","/%2e%2e/demo.apk"):
+            with self.subTest(filename=filename):
+                version["file"]["name"]=filename
+                self.write_index()
+                with self.assertRaises(verifier.PrivateIndexError):
+                    verifier.verify(self.root,FP,self.candidate,loader=self.loader)
+        version["file"]["name"]="/demo.apk"
+        self.write_index()
+        self.assertTrue(verifier.verify(self.root,FP,self.candidate,loader=self.loader)[
+            "indexed_repo_apk_file_sha256_verified"])
 
     def test_missing_index_or_untrusted_symlink_rejected(self):
         (self.repo/"index-v2.json").unlink()

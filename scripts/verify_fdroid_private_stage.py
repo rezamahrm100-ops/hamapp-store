@@ -39,7 +39,7 @@ def _match_package(index, package_id, version_code, version_name, binary_sha, bi
     item = index["packages"].get(package_id)
     if not isinstance(item, dict) or not isinstance(item.get("versions"), dict):
         raise PrivateIndexError("intended package is not listed in signed index")
-    matches = 0
+    matching_files = []
     for version in item["versions"].values():
         if not isinstance(version, dict):
             continue
@@ -52,10 +52,14 @@ def _match_package(index, package_id, version_code, version_name, binary_sha, bi
                 and type(manifest.get("versionCode")) is int
                 and manifest["versionCode"] == version_code
                 and manifest.get("versionName") == version_name):
-            matches += 1
-    if matches != 1:
+            matching_files.append(file.get("name"))
+    if len(matching_files) != 1:
         raise PrivateIndexError("exact immutable APK version/digest not uniquely indexed")
-    return True
+    name = matching_files[0]
+    if (not isinstance(name, str) or not re.fullmatch(r"/[A-Za-z0-9._+-]+\.apk", name)
+            or ".." in name or "%" in name):
+        raise PrivateIndexError("signed index listed unsafe APK filename")
+    return name[1:]
 
 def verify(workspace, expected_fingerprint, candidate, *, loader=None):
     expected_fp = checked_sha(expected_fingerprint)
@@ -101,8 +105,21 @@ def verify(workspace, expected_fingerprint, candidate, *, loader=None):
         index = json.loads(rawindex.decode("utf-8"))
     except (UnicodeError, ValueError) as exc:
         raise PrivateIndexError("malformed signed index JSON") from exc
-    _match_package(index, candidate["package_id"], candidate["version_code"],
+    listed_filename = _match_package(index, candidate["package_id"], candidate["version_code"],
                    manifest["version"], manifest["sha256"], manifest["size_bytes"])
+    # Do not accept signed JSON metadata as a substitute for the ACTUAL local
+    # downloadable APK. The exact locally staged file must be a regular
+    # non-linked file under this repository and match the immutable candidate.
+    listed_apk = repo / listed_filename
+    if (listed_apk.is_symlink() or not listed_apk.is_file()
+            or listed_apk.stat().st_nlink != 1):
+        raise PrivateIndexError("signed index APK is absent, linked or unsafe")
+    try:
+        verified_file = release_integrity.verify_file(manifest, listed_apk)
+    except (OSError, ValueError) as exc:
+        raise PrivateIndexError("signed indexed APK bytes mismatch") from exc
+    if verified_file["sha256"] != manifest["sha256"]:
+        raise PrivateIndexError("signed indexed APK digest mismatch")
     return {
         "schema_version": 1,
         "local_index_signed_with_pinned_repository_key": True,
@@ -112,6 +129,7 @@ def verify(workspace, expected_fingerprint, candidate, *, loader=None):
         "indexed_package_id": candidate["package_id"],
         "indexed_version_code": candidate["version_code"],
         "indexed_apk_sha256": manifest["sha256"],
+        "indexed_repo_apk_file_sha256_verified": True,
         "public_https_repository_verified": False,
         "official_fdroid_client_install_tested": False,
         "owner_publishing_approved": False,
