@@ -87,6 +87,11 @@ def public_receipt(sha, fp, result, wrong_key_refused, modified_index_refused):
         "unapproved_second_version_hash_substitution_rejected",
         "official_fdroid_client_subscribed", "two_version_client_update_performed",
         "real_owner_key_restored_or_backed_up",
+        "actual_ephemeral_keystore_removed_then_restored",
+        "independent_volume_key_backup_bytes_verified",
+        "restored_key_material_ephemeral_only",
+        "real_owner_backup_or_restore_proven",
+        "restored_ephemeral_key_signed_second_real_index",
     }
     if (set(result) - fields or type(result.get("indexed_packages")) is not int
             or result["indexed_packages"] < 1
@@ -100,10 +105,15 @@ def public_receipt(sha, fp, result, wrong_key_refused, modified_index_refused):
                     "real_two_version_apk_sha256_distinct",
                     "same_disposable_repo_certificate_across_two_signed_indexes",
                     "both_exact_apk_versions_in_fresh_signed_index",
-                    "unapproved_second_version_hash_substitution_rejected"))
+                    "unapproved_second_version_hash_substitution_rejected",
+                    "actual_ephemeral_keystore_removed_then_restored",
+                    "independent_volume_key_backup_bytes_verified",
+                    "restored_key_material_ephemeral_only",
+                    "restored_ephemeral_key_signed_second_real_index"))
                 or any(result.get(flag) is not False for flag in (
                     "official_fdroid_client_subscribed", "two_version_client_update_performed",
-                    "real_owner_key_restored_or_backed_up"))):
+                    "real_owner_key_restored_or_backed_up",
+                    "real_owner_backup_or_restore_proven"))):
             raise DrillError("two-version cryptographic continuity receipt invalid")
     return {
         "schema_version": 1,
@@ -252,13 +262,78 @@ def execute(apk, *, sha, apk_v2=None):
                 finally:
                     index_path.write_bytes(original_index)
                 if apk_v2 is not None:
+                    # Real byte-loss/restore on disposable test key BEFORE signing
+                    # the v2 index. Key continuity below proves restored identity.
+                    recovery = restore_ephemeral_signer_key(config, workspace, homedir)
                     detail.update(verify_second_signed_version(
                         workspace, repodir, apk, apk_v2, fp,
                         signed_candidate, url, download_repo_index_v2, env))
+                    detail.update(recovery)
+                    detail["restored_ephemeral_key_signed_second_real_index"] = (
+                        detail["same_disposable_repo_certificate_across_two_signed_indexes"])
                 return public_receipt(sha, fp, detail, wrong_key_refused, tampered_index_refused)
             finally:
                 server.shutdown()
                 thread.join(timeout=8)
+
+
+def restore_ephemeral_signer_key(config, workspace, homedir):
+    """Prove a REAL disposable F-Droid repo key survives isolated-volume restore.
+
+    CI-only: first signed index already exists, the generated test key is
+    destroyed, an independent-volume copy is restored, and a subsequent real
+    fdroid update must sign with the ORIGINAL repository certificate.
+    Never use this function on an owner key or public release signer.
+    """
+    from fdroid_key_custody import create_backup, validate_backup
+
+    raw = config.get("keystore")
+    if not isinstance(raw, str) or not raw or raw == "NONE" or "$" in raw:
+        raise DrillError("test keystore path must be a concrete local file")
+    if raw.startswith("~/"):
+        path = Path(homedir) / raw[2:]
+    else:
+        path = Path(raw)
+        if not path.is_absolute():
+            path = Path(workspace) / path
+    if path.is_symlink() or not path.is_file():
+        raise DrillError("disposable F-Droid signer key not a real file")
+    key = path.resolve(strict=True)
+    permitted = [Path(workspace).resolve(strict=True), Path(homedir).resolve(strict=True)]
+    if not any(parent == key or parent in key.parents for parent in permitted):
+        raise DrillError("refusing recovery of key outside disposable test workspace")
+    if key.stat().st_size < 256:
+        raise DrillError("disposable signer key file is implausibly short")
+    shared_memory = Path("/dev/shm")
+    if not shared_memory.is_dir():
+        raise DrillError("independent tmpfs volume required for signer disaster-recovery drill")
+    with tempfile.TemporaryDirectory(prefix="hamapp-fdroid-independent-backup-",
+                                     dir=shared_memory) as backupdir:
+        backup_folder = Path(backupdir)
+        name = "disposable-repo-signer-backup.bin"
+        evidence = create_backup(key, backup_folder, name)
+        if evidence["byte_for_byte_backup_verified"] is not True:
+            raise DrillError("backup verification did not pass")
+        backup = backup_folder / name
+        # Deleting the original disposable key proves that subsequent signing
+        # is powered by the restored bytes, not the never-lost source key.
+        key.unlink()
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+        descriptor = os.open(key, flags, 0o600)
+        with os.fdopen(descriptor, "wb") as destination, backup.open("rb") as source:
+            for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                destination.write(chunk)
+            destination.flush()
+            os.fsync(destination.fileno())
+        after = validate_backup(key, backup)
+        if after["byte_for_byte_backup_verified"] is not True:
+            raise DrillError("actual test keystore restore byte comparison failed")
+    return {
+        "actual_ephemeral_keystore_removed_then_restored": True,
+        "independent_volume_key_backup_bytes_verified": True,
+        "restored_key_material_ephemeral_only": True,
+        "real_owner_backup_or_restore_proven": False,
+    }
 
 
 def verify_second_signed_version(workspace, repodir, apk_v1, apk_v2, pinned_fp,
