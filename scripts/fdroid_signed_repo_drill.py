@@ -78,6 +78,33 @@ def public_receipt(sha, fp, result, wrong_key_refused, modified_index_refused):
         raise DrillError("invalid test evidence")
     if wrong_key_refused is not True or modified_index_refused is not True:
         raise DrillError("negative signature-verification gates did not hold")
+    fields = {
+        "indexed_packages", "expected_package_listed",
+        "local_signed_index_v2_exact_apk_verified",
+        "actual_debug_version_codes", "real_two_version_apk_sha256_distinct",
+        "same_disposable_repo_certificate_across_two_signed_indexes",
+        "both_exact_apk_versions_in_fresh_signed_index",
+        "unapproved_second_version_hash_substitution_rejected",
+        "official_fdroid_client_subscribed", "two_version_client_update_performed",
+        "real_owner_key_restored_or_backed_up",
+    }
+    if (set(result) - fields or type(result.get("indexed_packages")) is not int
+            or result["indexed_packages"] < 1
+            or result.get("expected_package_listed") is not True):
+        raise DrillError("unverified or unexpected signed-index receipt details")
+    if "actual_debug_version_codes" in result:
+        pair = result["actual_debug_version_codes"]
+        if (not isinstance(pair, list) or len(pair) != 2
+                or any(type(v) is not int for v in pair) or not 0 < pair[0] < pair[1]
+                or any(result.get(flag) is not True for flag in (
+                    "real_two_version_apk_sha256_distinct",
+                    "same_disposable_repo_certificate_across_two_signed_indexes",
+                    "both_exact_apk_versions_in_fresh_signed_index",
+                    "unapproved_second_version_hash_substitution_rejected"))
+                or any(result.get(flag) is not False for flag in (
+                    "official_fdroid_client_subscribed", "two_version_client_update_performed",
+                    "real_owner_key_restored_or_backed_up"))):
+            raise DrillError("two-version cryptographic continuity receipt invalid")
     return {
         "schema_version": 1,
         "scope": "isolated-ephemeral-local-F-Droid-signed-index-v2-drill",
