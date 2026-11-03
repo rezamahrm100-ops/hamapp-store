@@ -98,7 +98,7 @@ def public_receipt(sha, fp, result, wrong_key_refused, modified_index_refused):
     }
 
 
-def execute(apk, *, sha):
+def execute(apk, *, sha, apk_v2=None):
     if os.name == "nt":
         raise DrillError("signed repo drill requires isolated hosted Linux")
     apk = Path(apk).resolve(strict=True)
@@ -224,22 +224,109 @@ def execute(apk, *, sha):
                         tampered_index_refused = True
                 finally:
                     index_path.write_bytes(original_index)
+                if apk_v2 is not None:
+                    detail.update(verify_second_signed_version(
+                        workspace, repodir, apk, apk_v2, fp,
+                        signed_candidate, url, download_repo_index_v2, env))
                 return public_receipt(sha, fp, detail, wrong_key_refused, tampered_index_refused)
             finally:
                 server.shutdown()
                 thread.join(timeout=8)
 
 
+def verify_second_signed_version(workspace, repodir, apk_v1, apk_v2, pinned_fp,
+                                 first_candidate, index_url, downloader, env):
+    """Verify two REAL debug APK versions under ONE disposable F-Droid repo key.
+
+    Both JAR signatures must be valid with the same pinned key. The second
+    signed index must list the exact bytes of BOTH versions, rejecting a
+    malicious version/digest substitution. No Android app is installed here.
+    """
+    from fdroidserver import common
+    from publisher_gate import AAPT
+    from verify_fdroid_private_stage import verify as verify_local_index
+    from urllib.parse import quote
+
+    second = Path(apk_v2).resolve(strict=True)
+    if (second.is_symlink() or not second.is_file() or second.suffix.lower() != ".apk"
+            or not 1000 <= second.stat().st_size < 200 * 1024 * 1024):
+        raise DrillError("second actual debug APK outside safe test bounds")
+    if hashlib.sha256(apk_v1.read_bytes()).digest() == hashlib.sha256(second.read_bytes()).digest():
+        raise DrillError("two-version test received the same APK")
+    badging = subprocess.run(["aapt", "dump", "badging", str(second)],
+                             capture_output=True, text=True, timeout=40, check=False)
+    match = AAPT.search(badging.stdout) if badging.returncode == 0 else None
+    if not match or match.group(1) != first_candidate["package_id"]:
+        raise DrillError("actual second APK package identity differs")
+    version_code = int(match.group(2))
+    version_name = match.group(3)
+    if (version_code <= first_candidate["version_code"]
+            or version_name == first_candidate["release"]["version"]):
+        raise DrillError("second actual APK must be a higher, distinct version")
+    second_candidate = {
+        "release": {
+            "app_id": first_candidate["release"]["app_id"], "platform": "android",
+            "version": version_name,
+            "asset_url": ("https://github.com/rezamahrm100-ops/hamapp-store/"
+                          "releases/download/v" + quote(version_name, safe="-._")
+                          + "/app-v2.apk"),
+            "sha256": hashlib.sha256(second.read_bytes()).hexdigest(),
+            "size_bytes": second.stat().st_size,
+        },
+        "source_repo": first_candidate["source_repo"],
+        "source_sha": first_candidate["source_sha"],
+        "package_id": first_candidate["package_id"],
+        "version_code": version_code,
+    }
+    shutil.copyfile(second, repodir / "app-v2.apk")
+    previous_index_sha = hashlib.sha256((repodir / "index-v2.json").read_bytes()).hexdigest()
+    run(["fdroid", "update", "--create-metadata"], cwd=workspace, env=env, timeout=300)
+    after_index_sha = hashlib.sha256((repodir / "index-v2.json").read_bytes()).hexdigest()
+    if previous_index_sha == after_index_sha:
+        raise DrillError("second F-Droid index failed to change with the real version")
+    if certified_fingerprint(repodir / "entry.jar") != pinned_fp:
+        raise DrillError("repository key continuity failed across signed indexes")
+    # Re-verify freshly signed JAR + committed JSON with upstream cryptography.
+    first_receipt = verify_local_index(workspace, pinned_fp, first_candidate)
+    second_receipt = verify_local_index(workspace, pinned_fp, second_candidate)
+    if (not first_receipt["local_index_signed_with_pinned_repository_key"]
+            or not second_receipt["local_index_signed_with_pinned_repository_key"]
+            or first_receipt["indexed_apk_sha256"] == second_receipt["indexed_apk_sha256"]):
+        raise DrillError("both immutable APK versions were not signed into the same index")
+    latest, _etag = downloader(index_url, verify_fingerprint=True, timeout=30)
+    classify_result(latest, first_candidate["package_id"])
+    bad_candidate = json.loads(json.dumps(second_candidate))
+    bad_candidate["release"]["sha256"] = "0" * 64
+    substituted_digest_refused = False
+    try:
+        verify_local_index(workspace, pinned_fp, bad_candidate)
+    except ValueError:
+        substituted_digest_refused = True
+    if not substituted_digest_refused:
+        raise DrillError("same-version substituted APK digest accepted")
+    return {
+        "actual_debug_version_codes": [first_candidate["version_code"], version_code],
+        "real_two_version_apk_sha256_distinct": True,
+        "same_disposable_repo_certificate_across_two_signed_indexes": True,
+        "both_exact_apk_versions_in_fresh_signed_index": True,
+        "unapproved_second_version_hash_substitution_rejected": True,
+        "official_fdroid_client_subscribed": False,
+        "two_version_client_update_performed": False,
+        "real_owner_key_restored_or_backed_up": False,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="Isolated, throwaway real F-Droid signed-index verification")
     parser.add_argument("--apk", type=Path, required=True)
+    parser.add_argument("--apk-v2", type=Path, help="second real signed DEBUG version for continuity proof")
     parser.add_argument("--source-sha", required=True)
     parser.add_argument("--receipt", type=Path, required=True)
     args = parser.parse_args()
     try:
         if args.receipt.is_symlink() or args.receipt.exists():
             raise DrillError("receipt cannot be overwritten")
-        result = execute(args.apk, sha=args.source_sha)
+        result = execute(args.apk, sha=args.source_sha, apk_v2=args.apk_v2)
         args.receipt.parent.mkdir(parents=True, exist_ok=True)
         args.receipt.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     except (OSError, ValueError, DrillError, subprocess.TimeoutExpired, ImportError) as exc:
