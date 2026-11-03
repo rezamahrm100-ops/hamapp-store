@@ -112,6 +112,35 @@ class PrivateSubmissionTests(unittest.TestCase):
             inbox.transition(self.root,self.uid,"approve")
         self.assertEqual(len(list((folder/"events").iterdir())),4)
 
+    def test_only_review_requested_exact_bytes_can_enter_real_intake(self):
+        self.stage()
+        with self.assertRaises(inbox.QuarantineError):
+            inbox.load_for_preflight(self.root, self.uid)
+        inbox.transition(self.root, self.uid, "request_review")
+        candidate, path, proof = inbox.load_for_preflight(self.root, self.uid)
+        self.assertEqual(candidate, self.candidate)
+        self.assertEqual(path.read_bytes(), self.artifact.read_bytes())
+        self.assertFalse(proof["publisher_identity_authenticated"])
+        path.write_bytes(b"tampered after quarantining")
+        with self.assertRaises(ValueError):
+            inbox.load_for_preflight(self.root, self.uid)
+
+    def test_rejected_item_never_passes_owner_intake(self):
+        self.stage()
+        inbox.transition(self.root, self.uid, "reject")
+        with self.assertRaises(inbox.QuarantineError):
+            inbox.load_for_preflight(self.root, self.uid)
+
+    def test_post_stage_source_metadata_mutation_is_rejected(self):
+        self.stage()
+        inbox.transition(self.root, self.uid, "request_review")
+        path=self.root/self.uid/"candidate.json"
+        altered=copy.deepcopy(self.candidate)
+        altered["source_sha"]="b"*40
+        path.write_text(json.dumps(altered),encoding="utf8")
+        with self.assertRaises(inbox.QuarantineError):
+            inbox.load_for_preflight(self.root, self.uid)
+
     def test_corrupted_event_chain_or_reordering_is_rejected(self):
         self.stage()
         folder=self.root/self.uid
