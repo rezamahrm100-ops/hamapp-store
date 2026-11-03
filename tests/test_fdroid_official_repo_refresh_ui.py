@@ -89,6 +89,13 @@ class RealRepoForceRefreshSelectorTests(unittest.TestCase):
         self.assertEqual(self.choice(first_repo_visit, "dismiss-repo-hint"), (255, 242))
         self.assertIsNone(self.choice(first_repo_visit.replace("Repository list", "Unknown"),
                                       "dismiss-repo-hint"))
+        details_hint = actual.replace('text="Filter"', 'text="Repository"') + (
+            '<node package="org.fdroid.fdroid" '
+            'text="A repository is a source of apps. Mirrors are used to distribute the load."/>')
+        self.assertEqual(self.choice(details_hint, "dismiss-repo-hint"), (255, 242))
+        self.assertIsNone(self.choice(
+            details_hint.replace("A repository is a source of apps.", "Grant system permissions."),
+            "dismiss-repo-hint"))
 
     def test_reject_unknown_actions_and_no_host_permission(self):
         with self.assertRaisesRegex(ValueError, "unknown"):
@@ -110,9 +117,10 @@ class RealRepoForceRefreshSelectorTests(unittest.TestCase):
             self.assertTrue(signals["repositories_label_visible"])
             self.assertFalse(signals["disposable_repository_label_visible"])
             self.assertTrue(all(isinstance(x, bool) for x in signals.values()))
-            self.assertEqual(len(signals), 9)
+            self.assertEqual(len(signals), 10)
             self.assertFalse(signals["filter_tutorial_visible"])
             self.assertFalse(signals["repo_list_tutorial_visible"])
+            self.assertFalse(signals["repo_details_tutorial_visible"])
             self.assertNotIn("Password", str(signals))
             self.assertNotIn("secret", str(signals))
 
