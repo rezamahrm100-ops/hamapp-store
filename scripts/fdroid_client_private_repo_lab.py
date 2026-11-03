@@ -98,9 +98,17 @@ def publish_files(base):
             continue
         info = path.stat()
         if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1
-                or path.suffix.lower() not in ALLOWED
                 or info.st_size > 180 * 1024 * 1024):
-            raise DrillError("private credential or unsupported file entered public repo")
+            raise DrillError("unsafe generated repository file")
+        # Upstream fdroid update may write auxiliary HTML/CSS and metadata
+        # that an Android F-Droid client never requires. Never serve these
+        # merely because fdroid generated them; strict positive allowlist.
+        if path.suffix.lower() not in ALLOWED:
+            continue
+        if (rel.parts[0] in ("config.yml", "keystore.jks")
+                or any("secret" in part.lower() or "password" in part.lower()
+                       for part in rel.parts)):
+            raise DrillError("private credential name cannot be served")
         output.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(path, output)
         output.chmod(0o600)
