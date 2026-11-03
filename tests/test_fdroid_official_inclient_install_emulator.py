@@ -54,6 +54,10 @@ class OfficialRealInstallSourceGateTests(unittest.TestCase):
         self.assertIn("OFFICIAL_FDROID_REAL_INCLIENT_DIAGNOSTIC_CAPTURED_NO_FAKE_INSTALL", source)
         self.assertIn("fdroid_target_app_name_visible", source)
         self.assertIn("fdroid_got_it_hint_visible", source)
+        self.assertIn('tap_from_real_ui(xml, "confirm-metered")', source)
+        self.assertIn('real_fdroid_metered_download_confirmation_tapped_if_visible', source)
+        self.assertIn('fdroid_metered_prompt_visible', source)
+        self.assertIn('ACTUAL_OFFICIAL_FDROID_METERED_DOWNLOAD_DIALOG_CONFIRMED', source)
         self.assertIn('"install_or_upgrade_verified": False', source)
         for forbidden in ('"adb", "install"', '"adb", "shell", "pm", "install"',
                           '"adb", "shell", "appops", "set"', "chmod 777"):
