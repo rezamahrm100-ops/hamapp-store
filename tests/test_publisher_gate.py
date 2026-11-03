@@ -176,7 +176,15 @@ class GateTests(unittest.TestCase):
         config.chmod(0o600)
         return workspace
 
-    def _reviewed_stage(self, workspace, *, preflight=None, update_runner=None):
+    def _fake_verified_local_index(self, workspace, fingerprint, candidate):
+        return {"local_index_signed_with_pinned_repository_key": True,
+                "indexed_apk_sha256": candidate["release"]["sha256"],
+                "repo_signer_fingerprint": fingerprint,
+                "indexed_package_id": candidate["package_id"],
+                "indexed_version_code": candidate["version_code"],
+                "public_https_repository_verified": False}
+
+    def _reviewed_stage(self, workspace, *, preflight=None, update_runner=None, index_verifier=None):
         if preflight is None:
             preflight = self._mock_verified_preflight()
         if update_runner is None:
@@ -188,6 +196,8 @@ class GateTests(unittest.TestCase):
                 trusted_workflow="rezamahrm100-ops/example-project/.github/workflows/release.yml",
                 trusted_source_ref="refs/tags/v1.2.3",
                 permission_policy=self._fdroid_policy(),
+                expected_repo_fingerprint="b"*64,
+                index_verifier=(self._fake_verified_local_index if index_verifier is None else index_verifier),
                 update_runner=update_runner)
         assayed.assert_called_once()
         self.assertEqual(assayed.call_args.kwargs["antivirus_scanner"], "clamscan")
@@ -262,6 +272,8 @@ class GateTests(unittest.TestCase):
         self.assertFalse(result["deployed"])
         self.assertTrue(result["signed_source_and_signer_verified"])
         self.assertTrue(result["fresh_antivirus_signature_scan_verified"])
+        self.assertTrue(result["private_index_v2_signature_and_exact_apk_verified"])
+        self.assertFalse(result["public_https_repository_verified"])
         self.assertFalse(result["f_droid_signed_repository_independently_verified"])
         self.assertFalse(result["owner_approved_for_public_distribution"])
         self.assertTrue((workspace / "repo" / self.path.name).exists())
@@ -288,6 +300,18 @@ class GateTests(unittest.TestCase):
         with self.assertRaises(gate.PublisherError):
             self._reviewed_stage(workspace, update_runner=failed)
         self.assertFalse((workspace / "repo" / self.path.name).exists())
+        self.assertTrue((workspace / "PUBLISHING_LOCKED_UNTIL_OWNER_REVIEW").exists())
+
+    def test_fdroid_rejects_unverified_private_index_and_locks_workspace(self):
+        workspace = self._private_workspace("missing-signed-index")
+        def false_index(root, fingerprint, candidate):
+            return {"local_index_signed_with_pinned_repository_key": False}
+        with self.assertRaisesRegex(gate.PublisherError, "owner review required"):
+            self._reviewed_stage(workspace, index_verifier=false_index)
+        self.assertTrue((workspace / "PUBLISHING_LOCKED_UNTIL_OWNER_REVIEW").exists())
+        self.assertFalse((workspace / "repo" / self.path.name).exists())
+        with self.assertRaisesRegex(gate.PublisherError, "locked"):
+            self._reviewed_stage(workspace)
 
 
 if __name__ == "__main__":
