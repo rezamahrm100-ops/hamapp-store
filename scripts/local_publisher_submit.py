@@ -22,7 +22,7 @@ class SubmitError(ValueError):
     pass
 
 
-def submit(candidate_path, artifact, publisher, token_file, *, port=8765):
+def submit(candidate_path, artifact, publisher, token_file, *, port=8765, verified_transport=None):
     if type(port) is not int or not 1 <= port <= 65535:
         raise SubmitError("invalid localhost port")
     if not isinstance(publisher, str) or not release_integrity.ID.fullmatch(publisher):
@@ -49,7 +49,8 @@ def submit(candidate_path, artifact, publisher, token_file, *, port=8765):
     encoded = base64.b64encode(raw).decode("ascii")
     if len(encoded) > gateway.MAX_CANDIDATE_HEADER:
         raise SubmitError("candidate cannot fit bounded transport metadata")
-    conn = http.client.HTTPConnection("127.0.0.1", port, timeout=30)
+    conn = (verified_transport if verified_transport is not None
+            else http.client.HTTPConnection("127.0.0.1", port, timeout=30))
     try:
         conn.putrequest("POST", "/v1/submissions")
         conn.putheader("Content-Type", "application/octet-stream")
