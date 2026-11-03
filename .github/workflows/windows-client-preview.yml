@@ -142,7 +142,7 @@ jobs:
           echo 'Two disposable signed real Windows EXE copies, wrong signer, unsigned and tampered checks run. Windows OS WinVerifyTrust, real production signer, installer and physical device NOT accepted.' >> "$GITHUB_STEP_SUMMARY"
 
   native-windows-authenticode:
-    name: Actual Windows OS SignTool and WinVerifyTrust with disposable CA and leaf
+    name: Actual native Windows OS rejection of untrusted signed PE test roots
     if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     needs: desktop-preview
     runs-on: windows-2022
@@ -165,7 +165,7 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check --only-binary=:all: cryptography==50.0.2
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Actual native Windows SignTool signing, OS trust and wrong-signer/tamper rejection
+      - name: Native signed PE signer fingerprint and untrusted-chain/unsigned/tamper rejection
         shell: pwsh
         timeout-minutes: 8
         run: |
@@ -183,8 +183,8 @@ jobs:
       - name: Native signer scope disclosure
         shell: pwsh
         run: |
-          '### Native Windows WinVerifyTrust and SignTool disposable CI verification' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-          'Actual Windows-produced PE and two separate disposable CA-to-leaf signer chains are verified with native Windows APIs; unsigned, foreign-signer and modified binary refused. The temporary certificates are NOT a public issuer, and no real production signing key, WinGet mapping, approved Windows release or owner device was tested.' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          '### Native Windows rejects untrusted disposable SignTool code-signing identities' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          'Actual Windows-produced PE and two separate temporary CA-to-leaf signed copies are examined by native Windows Authenticode APIs. Native Windows must REFUSE untrusted disposable signer chains, unsigned executable and modified PE. No Windows certificate store mutation. This is NOT acceptance of a trusted publisher, production signer, WinGet mapping or owner desktop.' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
   nsis-installer-sandbox:
     name: Actual isolated per-user Windows installer/upgrade/downgrade/uninstall
