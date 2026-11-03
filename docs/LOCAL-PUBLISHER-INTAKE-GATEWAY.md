@@ -35,3 +35,19 @@ To send a local candidate from an authorized POSIX command environment, encode i
 The hosted Linux tests use actual loopback HTTP and actual private temporary file copies, while tests use **synthetic bytes only** and no authorized publisher identity. Hosted Windows skips the POSIX-only service by design. Require real PR/main hosted CI, CodeQL and supply-chain checks before accepting source engineering.
 
 Production authentication, MFA, remotely authenticated publisher accounts, audit tamper resistance, TLS ingress, abuse protection, encrypted distributed object storage, trusted package signatures, private malware behavior assessment, owner PR review, persistent F-Droid signing key and official-client release/update QA, Windows Authenticode and real-device consent are **not completed by this work**. Do not infer completed marketplace engineering or enable public links.
+
+## Automated local submission client (no token in CLI arguments)
+
+A matching streaming client, `scripts/local_publisher_submit.py`, performs candidate schema and exact file SHA-256 verification before writing to the local socket, streams the binary without buffering its full size, checks the bounded server receipt and re-hashes the input after transfer. It refuses a nonprivate token file, any external destination or unverified approval claims.
+
+Once the token displayed by `provision` has been placed by the operator in a standalone owner-owned mode-`0600` file outside the public checkout, the supported command is:
+
+```bash
+python3 scripts/local_publisher_submit.py \\
+  --candidate /secure/source/candidate.json \\
+  --artifact /secure/source/candidate.apk \\
+  --publisher approved-source-repo \\
+  --token-file /secure/hamapp-local-token.txt --port 8765
+```
+
+The token must **never** be passed as an argument, stored in public GitHub/CI or printed in request logs. The client returns only the private submission ID and explicit no-release state. An additional owner-only `private_publisher_inbox.py mark --event request_review` plus `owner_candidate_intake.py` cryptographic and antivirus checks are still necessary before a candidate is even eligible for human review; those operations cannot activate publication.
