@@ -195,11 +195,19 @@ public final class MainActivity extends Activity {
                        + "هَماپ هیچ بسته‌ای را در پس‌زمینه نصب نمی‌کند. ادامه می‌دهید؟")
             .setNegativeButton("لغو", null)
             .setPositiveButton("ادامه", (dialog, which) -> {
-                Uri uri = Uri.parse(url).buildUpon().appendQueryParameter("fingerprint", fingerprint).build();
-                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                // F-Droid registers fdroidrepos:// for arbitrary approved repos.
+                // Plain HTTPS ACTION_VIEW may open a browser instead of F-Droid.
+                Uri pinnedRepoUrl = Uri.parse(url).buildUpon()
+                        .appendQueryParameter("fingerprint", fingerprint.toUpperCase(java.util.Locale.ROOT))
+                        .build();
+                Uri fdroidUri = Uri.parse("fdroidrepos://" + pinnedRepoUrl);
+                Intent intent = new Intent(Intent.ACTION_VIEW, fdroidUri);
                 intent.addCategory(Intent.CATEGORY_BROWSABLE);
+                intent.setPackage("org.fdroid.fdroid");
                 try { startActivity(intent); }
-                catch (ActivityNotFoundException ex) { showError("برای ادامه مرورگر یا F-Droid لازم است."); }
+                catch (ActivityNotFoundException ex) {
+                    showError("کلاینت رسمی F-Droid نصب نیست یا پیوند مخزن را نمی‌پذیرد.");
+                }
             }).show();
     }
 
