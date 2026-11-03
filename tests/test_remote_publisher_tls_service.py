@@ -152,7 +152,9 @@ class RealRemotePublisherTLSIntegrationTests(unittest.TestCase):
         bad_token.chmod(0o600)
         with self.assertRaises(local_submit_error()):
             self.send(token=bad_token)
-        with self.assertRaises(local_submit_error()):
+        # The local streaming client itself rejects the cross-tenant source
+        # claim before sending a single byte over the authenticated channel.
+        with self.assertRaises(inbox.QuarantineError):
             self.send(publisher_name="publisher-second")
         self.assertEqual(list(self.root.iterdir()), [])
 
