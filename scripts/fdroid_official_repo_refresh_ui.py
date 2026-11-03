@@ -183,7 +183,9 @@ def run():
             latest_signals = screen_signals(xml)
             # Prefer force-update on actual repository details. No network GET
             # or old repository preview itself authorizes claiming completion.
-            actions = ("force-update", "dismiss-repo-hint", "test-repository",
+            # Dismiss observed first-visit tutorials before tapping a
+            # possibly still accessible but visually covered update control.
+            actions = ("dismiss-repo-hint", "force-update", "test-repository",
                        "repositories", "back-from-app")
             action, point = next(
                 ((a, p) for a in actions if (p := select(xml, a)) is not None),
