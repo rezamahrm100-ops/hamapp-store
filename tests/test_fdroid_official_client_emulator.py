@@ -23,6 +23,12 @@ class OfficialFdroidHandoffTests(unittest.TestCase):
         self.assertNotIn('new Intent(Intent.ACTION_VIEW, uri)',src)
         self.assertNotIn("ACTION_INSTALL_PACKAGE",src)
 
+    def test_emulator_fixture_uses_real_canonical_fdroidrepos_host(self):
+        source = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn('dummy="fdroidrepos://example.invalid/', source)
+        self.assertIn('example.invalid/fdroid/repo/?fingerprint=', source)
+        self.assertNotIn('dummy="fdroidrepos://https://', source)
+
     def test_unapproved_storefront_has_no_downloads(self):
         repo=json.loads((ROOT/"catalog/android_repository.json").read_text(encoding="utf-8"))
         self.assertIsNone(repo["repository"])
