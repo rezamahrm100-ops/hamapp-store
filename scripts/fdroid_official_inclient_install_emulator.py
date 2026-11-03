@@ -17,6 +17,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import xml.etree.ElementTree as ET
 
 from fdroid_official_install_ui import select
 
@@ -201,6 +202,50 @@ def run(stage):
                 print(f"ACTUAL_OFFICIAL_FDROID_UI_NETWORK_NATIVE_PACKAGE_V{stage}_VERIFIED")
                 return
             time.sleep(2)
+        # Failure evidence from the disposable hosted emulator ONLY, never an
+        # owner device or complete unredacted Android settings dump. Record a
+        # bounded screenshot and boolean UI predicates, not arbitrary XML,
+        # package databases, repo private keys, tokens or test APKs.
+        output.mkdir(parents=True, exist_ok=True)
+        raw = subprocess.run(["adb", "exec-out", "screencap", "-p"],
+                             capture_output=True, timeout=20, check=False)
+        if raw.returncode == 0 and raw.stdout.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+            (output / f"official-inclient-blocker-v{stage}.png").write_bytes(raw.stdout)
+        failure_xml = dump_ui(private)
+        fdroid_labels = []
+        system_package_seen = False
+        if failure_xml is not None:
+            try:
+                tree = ET.parse(failure_xml).getroot()
+                for node in tree.iter("node"):
+                    package = node.attrib.get("package", "")
+                    if package in ("com.android.settings", "com.google.android.permissioncontroller",
+                                   "com.android.permissioncontroller"):
+                        system_package_seen = True
+                    if package == FDROID_PACKAGE:
+                        fdroid_labels.append(
+                            (node.attrib.get("text", "") or
+                             node.attrib.get("content-desc", "")).strip())
+            except (ET.ParseError, OSError):
+                pass
+        diagnostic = {
+            "schema_version": 1, "source_sha": source_sha, "requested_stage": stage,
+            "official_app_install_button_actually_tapped": clicked_client_button,
+            "system_installer_confirmation_actually_tapped": clicked_system_prompt,
+            "actual_native_installed_version_at_failure": installed_version(),
+            "fdroid_target_app_name_visible": any(
+                label in ("هَماپ", "هماپ", "HamApp") for label in fdroid_labels),
+            "fdroid_install_label_visible": "Install" in fdroid_labels,
+            "fdroid_update_label_visible": "Update" in fdroid_labels,
+            "fdroid_got_it_hint_visible": "Got it" in fdroid_labels,
+            "android_permission_or_settings_screen_seen": system_package_seen,
+            "install_or_upgrade_verified": False,
+            "public_release_authorized": False,
+        }
+        (output / f"official-inclient-blocker-v{stage}.json").write_text(
+            json.dumps(diagnostic, indent=2, sort_keys=True) + "\\n",
+            encoding="utf-8")
+        print("OFFICIAL_FDROID_REAL_INCLIENT_DIAGNOSTIC_CAPTURED_NO_FAKE_INSTALL")
     raise ClientInstallFailure(
         "official F-Droid in-app install/update did not reach exact native package "
         "version with real APK download and validated Android signer")
