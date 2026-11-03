@@ -4,6 +4,7 @@ Only the hosted Android emulator job can prove a REAL official app persisted a
 repo. These unit tests cannot create a false in-app repository registration.
 """
 import io
+from contextlib import closing
 import os
 from pathlib import Path
 import sqlite3
@@ -97,7 +98,7 @@ class OfficialFdroidRepositoryPersistenceProofTests(unittest.TestCase):
         certificate = bytes(range(256)) + bytes(range(80))
         fingerprint = hashlib.sha256(certificate).hexdigest()
         p = self.path / "core-repo.sqlite"
-        with sqlite3.connect(p) as db:
+        with closing(sqlite3.connect(p)) as db:
             db.execute('CREATE TABLE CoreRepository (repoId INTEGER PRIMARY KEY, address TEXT, certificate TEXT)')
             db.execute("INSERT INTO CoreRepository VALUES (?, ?, ?)", (
                 7, "https://10.0.2.2:8975/fdroid/repo/",
@@ -109,7 +110,7 @@ class OfficialFdroidRepositoryPersistenceProofTests(unittest.TestCase):
         with self.assertRaisesRegex(probe.RepositoryPersistenceError, "exactly one"):
             probe.inspect_repository_signer(p, fingerprint,
                                             expected_address="https://10.0.2.2:8975/foreign/repo/")
-        with sqlite3.connect(p) as db:
+        with closing(sqlite3.connect(p)) as db:
             db.execute("INSERT INTO CoreRepository VALUES (?, ?, ?)", (
                 8, "https://10.0.2.2:8975/fdroid/repo", certificate.hex()))
             db.commit()
@@ -118,7 +119,7 @@ class OfficialFdroidRepositoryPersistenceProofTests(unittest.TestCase):
 
     def test_native_signer_refuses_malformed_certificate_and_decoy_table(self):
         p = self.path / "malformed-repo.sqlite"
-        with sqlite3.connect(p) as db:
+        with closing(sqlite3.connect(p)) as db:
             db.execute('CREATE TABLE CoreRepository (address TEXT, certificate TEXT)')
             db.execute("INSERT INTO CoreRepository VALUES (?,?)", (
                 "https://10.0.2.2:8975/fdroid/repo/", "Z" * 1024))
@@ -128,7 +129,7 @@ class OfficialFdroidRepositoryPersistenceProofTests(unittest.TestCase):
             db.commit()
         with self.assertRaisesRegex(probe.RepositoryPersistenceError, "not DER hex"):
             probe.inspect_repository_signer(p, "A" * 64)
-        with sqlite3.connect(p) as db:
+        with closing(sqlite3.connect(p)) as db:
             db.execute("DELETE FROM CoreRepository")
             db.commit()
         with self.assertRaisesRegex(probe.RepositoryPersistenceError, "exactly one"):
