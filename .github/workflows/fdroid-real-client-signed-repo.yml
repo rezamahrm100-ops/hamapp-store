@@ -7,6 +7,8 @@ on:
       - 'scripts/fdroid_client_private_repo_server.py'
       - 'scripts/fdroid_client_accessible_ui.py'
       - 'scripts/fdroid_real_client_subscription_emulator.sh'
+      - 'scripts/fdroid_official_repo_db_probe.py'
+      - 'tests/test_fdroid_official_repo_db_probe.py'
       - '.github/workflows/fdroid-real-client-signed-repo.yml'
       - 'tests/test_fdroid_real_client_repo_lab.py'
       - 'android/**'
@@ -17,6 +19,8 @@ on:
       - 'scripts/fdroid_client_private_repo_server.py'
       - 'scripts/fdroid_client_accessible_ui.py'
       - 'scripts/fdroid_real_client_subscription_emulator.sh'
+      - 'scripts/fdroid_official_repo_db_probe.py'
+      - 'tests/test_fdroid_official_repo_db_probe.py'
       - '.github/workflows/fdroid-real-client-signed-repo.yml'
       - 'tests/test_fdroid_real_client_repo_lab.py'
       - 'android/**'
@@ -99,6 +103,7 @@ jobs:
           name: hamapp-real-fdroid-signed-repo-client-probe
           path: |
             dist/fdroid-real-client-probe/receipt.json
+            dist/fdroid-real-client-probe/private-repository-db-proof.json
             dist/fdroid-real-client-probe/official-client-after-repo-intent.png
             dist/fdroid-real-client-probe/official-client-after-index-v2.png
           if-no-files-found: warn
@@ -108,4 +113,4 @@ jobs:
         shell: bash
         run: |
           echo '### Actual official F-Droid Android client requests signed disposable v1/v2 indexes' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Real official upstream APK GPG+developer signer, real disposable signed repository indexes and real client network requests accepted. NOT proof of persistent client repo DB subscription, in-client app install/upgrade, live HTTPS origin or any owner production key.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Real official upstream APK GPG+developer signer, real disposable signed repository indexes, client HTTP requests and read-only on-device official F-Droid SQLite repository persistence verified. NOT proof of installed app from repo, in-client app update, live production HTTPS origin, verified persistent fingerprint in client DB, or any owner key.' >> "$GITHUB_STEP_SUMMARY"
