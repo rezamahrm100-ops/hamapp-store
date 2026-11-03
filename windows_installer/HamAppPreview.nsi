@@ -25,7 +25,6 @@ Unicode True
 Name "HamApp Windows Preview (unsigned test)"
 OutFile "${OUTPUT_EXE}"
 InstallDir "$LOCALAPPDATA\Programs\HamAppPreviewSandbox"
-InstallDirRegKey HKCU "${ROOT_REG}" "InstallDir"
 RequestExecutionLevel user
 ShowInstDetails show
 ShowUninstDetails show
