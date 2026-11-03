@@ -66,6 +66,28 @@ class RealFdroidClientLabTests(unittest.TestCase):
                          'text="Enable" bounds="[0,0][100,100]"/></hierarchy>',encoding="utf-8")
             self.assertIsNone(ui.select(f))
 
+    def test_real_fdroid_add_repository_button_requires_actual_clickable_app_node(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path=Path(temporary)/"official-add-repo.xml"
+            path.write_text(
+                '<hierarchy>'
+                '<node package="org.fdroid.fdroid" text="Add repository" clickable="false" '
+                'bounds="[16,30][210,85]"/>'
+                '<node package="org.fdroid.fdroid" text="Add repository" clickable="true" '
+                'bounds="[160,188][304,230]"/>'
+                '</hierarchy>',encoding="utf-8")
+            self.assertEqual(ui.select_actual_repository_add(path),(232,209))
+            path.write_text(
+                '<hierarchy><node package="com.google.android.permissioncontroller" '
+                'text="Add repository" clickable="true" bounds="[160,188][304,230]"/>'
+                '</hierarchy>',encoding="utf-8")
+            self.assertIsNone(ui.select_actual_repository_add(path))
+            path.write_text(
+                '<hierarchy><node package="org.fdroid.fdroid" '
+                'text="Add repository" clickable="false" bounds="[160,188][304,230]"/>'
+                '</hierarchy>',encoding="utf-8")
+            self.assertIsNone(ui.select_actual_repository_add(path))
+
     def test_android_system_notification_overlay_is_denied_only_when_actual_ui_matches(self):
         with tempfile.TemporaryDirectory() as temporary:
             xml=Path(temporary)/"system-notification.xml"
@@ -106,6 +128,8 @@ class RealFdroidClientLabTests(unittest.TestCase):
         self.assertIn('DISPOSABLE_TEST_CA_INSTALLED_ON_ROOTED_EMULATOR_ONLY',sh)
         self.assertIn('scripts/fdroid_client_accessible_ui.py',sh)
         self.assertIn('--deny-notification-prompt',sh)
+        self.assertIn('--confirm-repository-add',sh)
+        self.assertIn('OFFICIAL_FDROID_NATIVE_ADD_REPOSITORY_BUTTON_ACTUALLY_TAPPED',sh)
         self.assertIn('OFFICIAL_FDROID_UNNECESSARY_NOTIFICATION_PERMISSION_DENIED_ON_DISPOSABLE_EMULATOR',sh)
         self.assertIn('request_count',sh)
         self.assertIn('"actual_fdroid_client_app_install_verified":False',sh)
