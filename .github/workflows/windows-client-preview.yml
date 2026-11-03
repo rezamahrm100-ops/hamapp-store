@@ -8,6 +8,12 @@ on:
       - 'scripts/build_windows_client_catalog.py'
       - 'catalog/**'
       - 'tests/test_windows_client.py'
+      - 'tests/test_windows_authenticode_real_drill.py'
+      - 'scripts/windows_authenticode_real_drill.py'
+      - 'scripts/windows_authenticode_real_drill.ps1'
+      - 'scripts/windows_ephemeral_pfx.py'
+      - 'scripts/portable_authenticode_drill.py'
+      - 'scripts/publisher_gate.py'
       - '.github/workflows/windows-client-preview.yml'
   push:
     branches: [main]
@@ -17,6 +23,12 @@ on:
       - 'scripts/build_windows_client_catalog.py'
       - 'catalog/**'
       - 'tests/test_windows_client.py'
+      - 'tests/test_windows_authenticode_real_drill.py'
+      - 'scripts/windows_authenticode_real_drill.py'
+      - 'scripts/windows_authenticode_real_drill.ps1'
+      - 'scripts/windows_ephemeral_pfx.py'
+      - 'scripts/portable_authenticode_drill.py'
+      - 'scripts/publisher_gate.py'
       - '.github/workflows/windows-client-preview.yml'
   workflow_dispatch:
 permissions:
@@ -28,7 +40,7 @@ jobs:
   desktop-preview:
     permissions:
       contents: read
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
@@ -67,7 +79,57 @@ jobs:
         shell: pwsh
         run: |
           "### UNSIGNED WINDOWS CLIENT PREVIEW ONLY" | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-          "This is not a production release. No real publishers are registered, no packages are installable yet, and no code signing or actual device install was accepted." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          "The Windows preview is UNSIGNED. The separately gated hosted Linux job signs independent temporary PE copies with disposable OpenSSL keys and verifies real Authenticode cryptography, not native Windows OS trust or a production publisher identity. No owner-device installation." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+  portable-authenticode:
+    name: Real offline PE Authenticode with two disposable publishers
+    needs: desktop-preview
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: hamapp-windows-unsigned-preview
+          path: dist/native-input
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install real upstream PE Authenticode validator
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends osslsigncode
+          osslsigncode -v
+          python -m pip install --disable-pip-version-check --only-binary=:all: cryptography==50.0.2
+      - name: Real portable signing, exact signer pin and negative signature verification
+        shell: bash
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          test -s dist/native-input/HamApp-Windows-Preview.exe
+          python scripts/portable_authenticode_drill.py \
+            --unsigned dist/native-input/HamApp-Windows-Preview.exe \
+            --source-sha "$GITHUB_SHA" \
+            --receipt dist/windows-authenticode-evidence/receipt.json
+          test -s dist/windows-authenticode-evidence/receipt.json
+      - name: Upload only non-production cryptographic receipt; no test PFX or signed PE
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-real-disposable-portable-authenticode-evidence
+          path: dist/windows-authenticode-evidence/receipt.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Accurate native OS trust boundary
+        shell: bash
+        run: |
+          echo '### Real PE Authenticode cryptography accepted on isolated Linux' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Two disposable signed real Windows EXE copies, wrong signer, unsigned and tampered checks run. Windows OS WinVerifyTrust, real production signer, installer and physical device NOT accepted.' >> "$GITHUB_STEP_SUMMARY"
 
   attest-and-verify:
     name: Verify trusted-main unsigned Windows EXE provenance
