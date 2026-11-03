@@ -67,7 +67,7 @@ def candidate(data, source_sha):
         "release": {
             "app_id": "hamapp-store", "platform": "android",
             "version": data["version_name"],
-            "asset_url": "https://github.com/rezamahrm100-ops/hamapp-store/releases/download/"
+            "asset_url": "https://github.com/rezamahrm100-ops/hamapp-store/releases/download/v"
                          + quote(data["version_name"], safe="-._") + "/app-debug.apk",
             "sha256": data["sha256"], "size_bytes": data["size"],
         },
