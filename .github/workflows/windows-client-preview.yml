@@ -13,6 +13,9 @@ on:
       - 'scripts/windows_authenticode_real_drill.ps1'
       - 'scripts/windows_ephemeral_pfx.py'
       - 'scripts/portable_authenticode_drill.py'
+      - 'windows_installer/**'
+      - 'scripts/windows_nsis_sandbox_acceptance.ps1'
+      - 'tests/test_windows_nsis_sandbox.py'
       - 'scripts/publisher_gate.py'
       - '.github/workflows/windows-client-preview.yml'
   push:
@@ -28,6 +31,9 @@ on:
       - 'scripts/windows_authenticode_real_drill.ps1'
       - 'scripts/windows_ephemeral_pfx.py'
       - 'scripts/portable_authenticode_drill.py'
+      - 'windows_installer/**'
+      - 'scripts/windows_nsis_sandbox_acceptance.ps1'
+      - 'tests/test_windows_nsis_sandbox.py'
       - 'scripts/publisher_gate.py'
       - '.github/workflows/windows-client-preview.yml'
   workflow_dispatch:
@@ -130,6 +136,53 @@ jobs:
         run: |
           echo '### Real PE Authenticode cryptography accepted on isolated Linux' >> "$GITHUB_STEP_SUMMARY"
           echo 'Two disposable signed real Windows EXE copies, wrong signer, unsigned and tampered checks run. Windows OS WinVerifyTrust, real production signer, installer and physical device NOT accepted.' >> "$GITHUB_STEP_SUMMARY"
+
+  nsis-installer-sandbox:
+    name: Actual isolated per-user Windows installer/upgrade/downgrade/uninstall
+    if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    needs: desktop-preview
+    runs-on: windows-2022
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: hamapp-windows-unsigned-preview
+          path: dist
+      - name: Verify real native Windows PyInstaller input is present
+        shell: pwsh
+        run: |
+          if (-not (Test-Path 'dist/HamApp-Windows-Preview.exe' -PathType Leaf)) { throw 'Missing genuine hosted Windows EXE' }
+          Get-FileHash 'dist/HamApp-Windows-Preview.exe' -Algorithm SHA256 | Format-List
+      - name: Install pinned free upstream NSIS 3.11 compiler on hosted Windows only
+        shell: pwsh
+        run: |
+          choco install nsis --version=3.11.0 -y --no-progress --limit-output
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Real per-user NSIS install, installer-v2 upgrade, deny downgrade, exact EXE hash and uninstall
+        shell: pwsh
+        timeout-minutes: 8
+        run: |
+          ./scripts/windows_nsis_sandbox_acceptance.ps1 -UnsignedExe 'dist/HamApp-Windows-Preview.exe'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path 'dist/windows-installer-evidence/receipt.json' -PathType Leaf)) { throw 'Missing actual native install receipt' }
+      - name: Upload bounded SAFE install verification receipt, never unapproved installer EXEs
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-real-hosted-nsis-install-qa
+          path: dist/windows-installer-evidence/receipt.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Disclose Windows installer release gate
+        if: success()
+        shell: pwsh
+        run: |
+          "### Real hosted Windows unsigned NSIS per-user installer QA PASS" | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          "Actual per-user v1 install, version-2 installer upgrade, older installer downgrade refused, exact installed PyInstaller EXE digest and real uninstall/registry cleanup. Both installers are UNSIGNED test-only; no production Authenticode/WinGet, actual distinct app v2, owner-device consent or public release." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
   attest-and-verify:
     name: Verify trusted-main unsigned Windows EXE provenance
