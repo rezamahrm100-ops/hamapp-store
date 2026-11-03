@@ -1,0 +1,124 @@
+name: HamApp Owner Installable Previews (Android APK + Windows EXE Setup)
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/owner-installable-previews.yml'
+      - 'scripts/package_owner_preview.py'
+      - 'tests/test_package_owner_preview.py'
+      - 'android/**'
+      - 'windows_client/**'
+      - 'windows_installer/**'
+      - 'run_windows_client.py'
+      - 'catalog/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/owner-installable-previews.yml'
+      - 'scripts/package_owner_preview.py'
+      - 'tests/test_package_owner_preview.py'
+      - 'android/**'
+      - 'windows_client/**'
+      - 'windows_installer/**'
+      - 'run_windows_client.py'
+      - 'catalog/**'
+permissions:
+  contents: read
+jobs:
+  android:
+    if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Compile Android native app and check signed debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -v
+          python3 scripts/build_android_catalog.py
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-35' 'build-tools;35.0.0'
+          gradle --no-daemon -p android :app:assembleDebug :app:lintDebug
+          apk=android/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$apk" | grep -F "package: name='ir.hamapp.store'"
+          mkdir -p dist/owner-preview/android
+          cp "$apk" dist/owner-preview/android/HamApp-Android-Preview-debug.apk
+          python3 scripts/package_owner_preview.py --platform android --directory dist/owner-preview/android
+      - name: Upload APK, SHA256 and Persian installation notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: HamApp-Android-Owner-Test-APK
+          path: dist/owner-preview/android/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Report owner-only test scope
+        if: success()
+        shell: bash
+        run: |
+          echo "### HamApp Android native DEBUG APK (owner test)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Source SHA: $GITHUB_SHA. Build/signature checked, NOT production-signed, installed on owner phone, or approved for public release. Download Android Owner Test artifact." >> "$GITHUB_STEP_SUMMARY"
+
+  windows:
+    if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: windows-2022
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile portable native Windows GUI
+        shell: pwsh
+        run: |
+          python -m unittest discover -s tests -v
+          if ($LASTEXITCODE -ne 0) { throw 'Tests failed' }
+          python scripts/build_windows_client_catalog.py
+          if ($LASTEXITCODE -ne 0) { throw 'Manifest generation failed' }
+          python -m pip install --disable-pip-version-check pyinstaller==6.22.3
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned PyInstaller failed' }
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name HamApp-Windows-Preview --add-data "dist/windows-client/windows-client-catalog.json:." run_windows_client.py
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path 'dist/HamApp-Windows-Preview.exe' -PathType Leaf)) { throw 'Portable EXE build failed' }
+          New-Item -ItemType Directory -Force 'dist/owner-preview/windows' | Out-Null
+          Copy-Item 'dist/HamApp-Windows-Preview.exe' 'dist/owner-preview/windows/HamApp-Windows-Preview.exe'
+      - name: Compile per-user NSIS installer without executing on owner device
+        shell: pwsh
+        run: |
+          choco install nsis --version=3.11.0 -y --no-progress --limit-output
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned NSIS unavailable' }
+          $pf86 = [Environment]::GetFolderPath('ProgramFilesX86')
+          $candidates = @((Join-Path $pf86 'NSIS\makensis.exe'), (Join-Path $env:ProgramFiles 'NSIS\makensis.exe'))
+          $compiler = $candidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+          if (-not $compiler) { throw 'NSIS not found' }
+          $inputExe = (Resolve-Path 'dist/HamApp-Windows-Preview.exe').Path
+          $outputExe = (Join-Path (Resolve-Path 'dist/owner-preview/windows').Path 'HamApp-Preview-Setup-UNSIGNED.exe')
+          & $compiler '/V3' '/DPACKAGE_CODE=1' "/DINPUT_EXE=$inputExe" "/DOUTPUT_EXE=$outputExe" 'windows_installer/HamAppPreview.nsi'
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $outputExe -PathType Leaf)) { throw 'NSIS setup compilation failed' }
+          python scripts/package_owner_preview.py --platform windows --directory 'dist/owner-preview/windows'
+          if ($LASTEXITCODE -ne 0) { throw 'Manifest failed' }
+      - name: Upload portable EXE, per-user Setup, SHA256 and Persian notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: HamApp-Windows-Owner-Test-EXE-Setup
+          path: dist/owner-preview/windows/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Report owner-only test scope
+        if: success()
+        shell: pwsh
+        run: |
+          '### HamApp Windows portable EXE + unsigned per-user NSIS installer (owner test)' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          "Source SHA: $env:GITHUB_SHA. This is NOT production Authenticode signed, publicly approved or owner-device verified." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
