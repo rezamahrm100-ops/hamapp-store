@@ -209,7 +209,7 @@ def run(stage):
         output.mkdir(parents=True, exist_ok=True)
         raw = subprocess.run(["adb", "exec-out", "screencap", "-p"],
                              capture_output=True, timeout=20, check=False)
-        if raw.returncode == 0 and raw.stdout.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+        if raw.returncode == 0 and raw.stdout[:8] == bytes((137, 80, 78, 71, 13, 10, 26, 10)):
             (output / f"official-inclient-blocker-v{stage}.png").write_bytes(raw.stdout)
         failure_xml = dump_ui(private)
         fdroid_labels = []
@@ -243,7 +243,7 @@ def run(stage):
             "public_release_authorized": False,
         }
         (output / f"official-inclient-blocker-v{stage}.json").write_text(
-            json.dumps(diagnostic, indent=2, sort_keys=True) + "\\n",
+            json.dumps(diagnostic, indent=2, sort_keys=True) + chr(10),
             encoding="utf-8")
         print("OFFICIAL_FDROID_REAL_INCLIENT_DIAGNOSTIC_CAPTURED_NO_FAKE_INSTALL")
     raise ClientInstallFailure(
