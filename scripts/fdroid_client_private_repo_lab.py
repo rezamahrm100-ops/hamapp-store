@@ -166,6 +166,18 @@ def stage(version, apk, source_sha):
         raise DrillError("real APK version already staged")
     shutil.copyfile(apk, copied)
     run(["fdroid", "update", "--create-metadata"], cwd=private, env=env, timeout=300)
+    # Official fdroidserver.index.get_index_from_jar requires the upstream
+    # jarsigner config initialized explicitly for direct Python API calls.
+    # fdroid CLI itself does this, but the imported library does not.
+    from fdroidserver import common
+    previous = Path.cwd()
+    try:
+        os.chdir(private)
+        common.config = common.read_config()
+    finally:
+        os.chdir(previous)
+    if not isinstance(common.config, dict) or not common.config.get("jarsigner"):
+        raise DrillError("upstream F-Droid JAR verifier has no actual jarsigner config")
     fingerprint = certified_fingerprint(private / "repo" / "entry.jar")
     if version == 1:
         state["fingerprint"] = fingerprint
