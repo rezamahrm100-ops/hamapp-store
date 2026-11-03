@@ -164,7 +164,11 @@ class RealRepoForceRefreshSelectorTests(unittest.TestCase):
         self.assertIn('actions = ("dismiss-repo-hint", "force-update"', src)
         self.assertIn("check for updates", src)
         self.assertIn("test-repository", src)
-        self.assertIn('"repositories" not in transitions', src)
+        # Actual F-Droid back stack may land directly in native RepoDetails.
+        # Acceptance must depend on the exact repo UI, not an artificial route.
+        self.assertIn('latest_signals["disposable_repository_label_visible"]', src)
+        self.assertIn('latest_signals["native_check_for_updates_visible"]', src)
+        self.assertNotIn('repository update did not follow genuine navigation', src)
         for forbidden in ('"adb", "install"', 'appops', "settings put",
                           'pm install', 'sqlite3', 'WRITE_SECURE_SETTINGS'):
             if forbidden in ("sqlite3", 'WRITE_SECURE_SETTINGS'):
