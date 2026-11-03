@@ -7,6 +7,7 @@ Signing key and config live ONLY inside a TemporaryDirectory. They are never
 used for production, backed up, uploaded, registered or published.
 """
 import argparse
+import hashlib
 from functools import partial
 import http.server
 import json
@@ -174,6 +175,36 @@ def execute(apk, *, sha):
                 data, _etag = download_repo_index_v2(
                     url, verify_fingerprint=True, timeout=30)
                 detail = classify_result(data, "ir.hamapp.store")
+                # Second independent path: verify the *local* signed entry.jar,
+                # its committed index-v2 SHA256, and the exact binary identity.
+                from publisher_gate import AAPT
+                from verify_fdroid_private_stage import verify as verify_local_index
+                badging = subprocess.run(["aapt", "dump", "badging", str(apk)],
+                                         capture_output=True, text=True, timeout=40, check=False)
+                match = AAPT.search(badging.stdout) if badging.returncode == 0 else None
+                if not match or match.group(1) != "ir.hamapp.store":
+                    raise DrillError("actual APK manifest identity unavailable")
+                version_code = int(match.group(2))
+                version_name = match.group(3)
+                from urllib.parse import quote
+                quoted_version = quote(version_name, safe="-._")
+                signed_candidate = {
+                    "release": {
+                        "app_id": "hamapp-store", "platform": "android",
+                        "version": version_name,
+                        "asset_url": ("https://github.com/rezamahrm100-ops/hamapp-store/"
+                                      "releases/download/v" + quoted_version + "/app-debug.apk"),
+                        "sha256": hashlib.sha256(apk.read_bytes()).hexdigest(),
+                        "size_bytes": apk.stat().st_size,
+                    },
+                    "source_repo": "hamapp-store", "source_sha": sha,
+                    "package_id": "ir.hamapp.store", "version_code": version_code,
+                }
+                independent_local = verify_local_index(workspace, fp, signed_candidate)
+                if (independent_local["local_index_signed_with_pinned_repository_key"] is not True
+                        or independent_local["indexed_apk_sha256"] != signed_candidate["release"]["sha256"]):
+                    raise DrillError("independent private index signing and exact APK verification failed")
+                detail["local_signed_index_v2_exact_apk_verified"] = True
                 other = "B" * 64 if fp != "B" * 64 else "A" * 64
                 wrong_key_refused = False
                 try:

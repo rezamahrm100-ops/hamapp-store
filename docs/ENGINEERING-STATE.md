@@ -192,3 +192,6 @@ Read [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md) for 
 
 ## F-Droid private staged-release preflight anti-bypass (2026-11-03, acceptance pending)
 - Source now requires genuine GitHub SLSA producer signature, independently registered APK developer certificate, actual aapt permissions, archive and fresh antivirus, and secure owner-only POSIX workspace before `fdroid update`; it verifies bytes before/after. The signer-only legacy direct staging pathway is removed. This is engineering code to be checked by actual CI and CodeQL; no real production-approved app, repository key, official F-Droid client subscription or public release has been provisioned.
+
+## Signed index-v2 private repository integrity (implementation pending exact Actions checks)
+- Independent official fdroidserver JAR verification validates private repo signer fingerprint and signed index-v2 file hash/size, with package/versionCode/versionName/APK hash/size presence. `fdroid_bridge` fails closed and locks private workspace if generated signed metadata fails checks. Disposable hosted CI exercise intended, not proof of owner-signed live HTTPS origin or client update. See `docs/FDROID-LOCAL-SIGNED-INDEX-ACCEPTANCE.md`.

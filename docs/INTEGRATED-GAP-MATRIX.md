@@ -57,3 +57,6 @@ New proposed release-governance transaction tooling can generate coordinated no-
 
 ### No-bypass F-Droid staging safety
 - Owner-local F-Droid bridge has strict private signer workspace, immutable verified source-to-binary attestation, actual publisher signature, aapt permissions, CRC and ClamAV gates BEFORE upstream index generation, rejecting missing trust evidence. Do not count this as stable production F-Droid signer/index or authorized official F-Droid client subscription. Follow remaining owner-only key and external device gates.
+
+### Local signed F-Droid index bound to approved APK
+- Owner-private index-v2 JAR cryptographic signature plus exact package identity/size/hash check added as mandatory `fdroid update` postcondition; failures quarantine private workspace rather than silently accepting/rolling back signed metadata. Requires genuine independent owner key fingerprint and actual hosted signed-index drill success; production public origin/official F-Droid client install remains unmet.

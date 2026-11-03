@@ -21,6 +21,7 @@ import publisher_gate
 import release_history
 import release_integrity
 import review_provenance
+import verify_fdroid_private_stage
 
 
 class FdroidStageError(publisher_gate.PublisherError):
@@ -40,6 +41,8 @@ def _private_workspace(workspace, apk):
     mode = resolved.stat()
     if not stat.S_ISDIR(mode.st_mode) or mode.st_uid != os.geteuid() or (mode.st_mode & 0o077):
         raise FdroidStageError("private F-Droid workspace must be owner-owned and mode 0700")
+    if (resolved / "PUBLISHING_LOCKED_UNTIL_OWNER_REVIEW").exists():
+        raise FdroidStageError("previous index validation failed: private workspace locked")
     config = resolved / "config.yml"
     if config.is_symlink() or not config.is_file() or config.stat().st_mode & 0o077:
         raise FdroidStageError("existing private config.yml (0600) required")
@@ -58,7 +61,8 @@ def _private_workspace(workspace, apk):
 def stage(candidate, registry, apk, workspace, *,
           trusted_workflow=None, trusted_source_ref=None, permission_policy=None,
           runner=None, gh_runner=None, aapt_runner=None, antivirus_runner=None,
-          antivirus_scanner="clamscan", update_runner=subprocess.run, history=None):
+          antivirus_scanner="clamscan", update_runner=subprocess.run, history=None,
+          expected_repo_fingerprint=None, index_verifier=None):
     """Stage strictly after actual independent review (never merely a JSON flag).
 
     Runners are injectable for isolated unit tests only. Real command-line
@@ -79,6 +83,9 @@ def stage(candidate, registry, apk, workspace, *,
     if not isinstance(permission_policy, dict):
         raise FdroidStageError("independently approved Android manifest permission policy required")
     android_permission_review.validate_policy(permission_policy)
+    if not isinstance(expected_repo_fingerprint, str):
+        raise FdroidStageError("independently pinned repository signer SHA-256 required")
+    expected_repo_fingerprint = verify_fdroid_private_stage.checked_sha(expected_repo_fingerprint)
     if not isinstance(antivirus_scanner, str) or not antivirus_scanner.strip():
         raise FdroidStageError("actual fresh ClamAV scanner required; cannot disable")
     opts = {"permission_policy": permission_policy, "antivirus_scanner": antivirus_scanner}
@@ -111,6 +118,7 @@ def stage(candidate, registry, apk, workspace, *,
         raise FdroidStageError("unexpected publication-authorization flag in preflight")
 
     repo.mkdir(mode=0o700, exist_ok=True)
+    update_attempted = False
     try:
         with dest.open("xb") as output, Path(apk).open("rb") as source:
             shutil.copyfileobj(source, output, length=1024 * 1024)
@@ -121,21 +129,44 @@ def stage(candidate, registry, apk, workspace, *,
         # official fdroid tooling. No user-provided success receipt is trusted.
         release_integrity.verify_file(candidate["release"], dest)
         release_integrity.verify_file(candidate["release"], apk)
+        update_attempted = True
         done = update_runner(["fdroid", "update", "--create-metadata"],
                              cwd=str(resolved), capture_output=True, text=True,
                              timeout=300, check=False)
         if done.returncode != 0:
             raise FdroidStageError("upstream fdroid update failed; check private workspace logs")
         release_integrity.verify_file(candidate["release"], dest)
+        verified_index = (verify_fdroid_private_stage.verify if index_verifier is None else index_verifier)(
+            resolved, expected_repo_fingerprint, candidate)
+        if (not isinstance(verified_index, dict)
+                or verified_index.get("local_index_signed_with_pinned_repository_key") is not True
+                or verified_index.get("indexed_apk_sha256") != candidate["release"]["sha256"]
+                or verified_index.get("repo_signer_fingerprint") != expected_repo_fingerprint
+                or verified_index.get("indexed_package_id") != candidate["package_id"]
+                or verified_index.get("indexed_version_code") != candidate["version_code"]):
+            raise FdroidStageError("signed F-Droid index failed owner-pinned exact APK verification")
     except (OSError, subprocess.TimeoutExpired, ValueError) as exc:
         dest.unlink(missing_ok=True)
-        raise FdroidStageError("verified F-Droid staging failed and new APK was removed") from exc
+        if update_attempted:
+            # The signer/index may already have changed before verification
+            # failed. Quarantine the private workspace until an owner repairs
+            # and independently verifies it; never silently claim rollback.
+            lock = resolved / "PUBLISHING_LOCKED_UNTIL_OWNER_REVIEW"
+            if not lock.exists():
+                with lock.open("x", encoding="utf-8") as handle:
+                    handle.write("F-Droid private index update failed verification. Do NOT publish or reuse.\n")
+            lock.chmod(0o600)
+        raise FdroidStageError("verified F-Droid staging/index rejected; no publication; owner review required") from exc
     return {
         "schema_version": 1, "staged_filename": dest.name,
         "sha256": candidate["release"]["sha256"],
         "signed_source_and_signer_verified": True,
         "archive_and_permission_checks_verified": True,
         "fresh_antivirus_signature_scan_verified": True,
+        "private_index_v2_signature_and_exact_apk_verified": True,
+        "owner_repo_fingerprint_pinned_input": expected_repo_fingerprint,
+        "public_https_repository_verified": False,
+        "owner_repo_fingerprint_out_of_band_approval_proven": False,
         "f_droid_signed_repository_independently_verified": False,
         "owner_approved_for_public_distribution": False,
         "deployed": False, "review_required": True
@@ -153,6 +184,7 @@ def main():
     p.add_argument("--trusted-source-ref", required=True)
     p.add_argument("--android-permissions-policy", type=Path, required=True)
     p.add_argument("--antivirus-scanner", default="clamscan")
+    p.add_argument("--expected-repo-fingerprint", required=True)
     p.add_argument("--receipt", type=Path, required=True)
     a = p.parse_args()
     try:
@@ -165,6 +197,7 @@ def main():
                         trusted_workflow=a.trusted_workflow,
                         trusted_source_ref=a.trusted_source_ref,
                         permission_policy=policy, antivirus_scanner=a.antivirus_scanner,
+                        expected_repo_fingerprint=a.expected_repo_fingerprint,
                         history=release_history.load_history(a.history))
         a.receipt.parent.mkdir(parents=True, exist_ok=True)
         with a.receipt.open("x", encoding="utf-8") as out:

@@ -161,3 +161,6 @@ Older sections below describe historical continuation stages; they **do not auth
 
 ## Actual F-Droid staging integration security boundary
 - `fdroid_bridge.py` previously accepted signer/size alone. Verify new staging gate requiring full `owner_candidate_intake.assess` source-to-actual-package plus archive+permission+fresh antivirus results before invoking upstream `fdroid update`, with exact SHA recopy and private 0700/0600 signing workspace. Never claim synthetic CI tests are real producer attestation/production signed index. See `docs/FDROID-STRICT-VERIFIED-STAGING.md`.
+
+## Signed F-Droid index-v2 / APK byte binding
+- Verify `fdroid_bridge.py` now refuses staging completion without real signature verification of private `entry.jar`, owner-pinned repo fingerprint, signed index-v2 sha256/size and exact candidate package/versionCode/versionName/SHA. On mismatch it removes new APK and creates a BLOCKING marker; do not claim a changed signed index was rolled back. Hosted disposable F-Droid real signature drill must pass at PR SHA. Still no production owner key or client install.
