@@ -14,6 +14,8 @@ $tempRoot = Join-Path $env:RUNNER_TEMP 'hamapp-ephemeral-authenticode'
 if (Test-Path -LiteralPath $tempRoot) { throw 'Refusing existing key workspace' }
 $certA = $null
 $certB = $null
+$rootA = $null
+$rootB = $null
 try {
     Write-Output 'AUTHENTICODE_TEST_GENERATING_DISPOSABLE_OPENSSL_PFX'
     & python scripts/windows_ephemeral_pfx.py --directory $tempRoot
@@ -23,16 +25,26 @@ try {
         [IO.File]::ReadAllBytes($material.a.cer))
     $certB = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
         [IO.File]::ReadAllBytes($material.b.cer))
-    if ($certA.Thumbprint -eq $certB.Thumbprint) { throw 'Synthetic test certificates unexpectedly identical' }
-    # Import PUBLIC cert only; do not provision a Windows CNG private key.
-    # Temporary CurrentUser-only trust on this disposable hosted VM.
-    foreach ($storeName in @('Root', 'TrustedPublisher')) {
-        $store = [System.Security.Cryptography.X509Certificates.X509Store]::new(
-            $storeName, [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser)
-        $store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
-        try { $store.Add($certA); $store.Add($certB) }
-        finally { $store.Close() }
+    $rootA = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+        [IO.File]::ReadAllBytes($material.a.root_cer))
+    $rootB = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+        [IO.File]::ReadAllBytes($material.b.root_cer))
+    if ($certA.Thumbprint -eq $certB.Thumbprint -or $rootA.Thumbprint -eq $rootB.Thumbprint) {
+        throw 'Two independent disposable CA and leaf identities required'
     }
+    # Trust only throwaway CA public certificates in CurrentUser Root, and
+    # only code-signing leaf public certificates in CurrentUser TrustedPublisher.
+    # No private key enters Windows cert stores. The runner is disposable.
+    $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+        'Root', [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser)
+    $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+    try { $rootStore.Add($rootA); $rootStore.Add($rootB) }
+    finally { $rootStore.Close() }
+    $publisherStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+        'TrustedPublisher', [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser)
+    $publisherStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+    try { $publisherStore.Add($certA); $publisherStore.Add($certB) }
+    finally { $publisherStore.Close() }
     $kits = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin'
     if (-not (Test-Path -LiteralPath $kits)) { throw 'Official Windows SDK SignTool is unavailable' }
     $signer = Get-ChildItem -LiteralPath $kits -Filter 'signtool.exe' -Recurse -File |
@@ -64,12 +76,14 @@ try {
 }
 finally {
     Write-Output 'AUTHENTICODE_TEST_REMOVING_DISPOSABLE_CERTIFICATES_AND_PFX'
-    foreach ($cert in @($certA, $certB)) {
+    foreach ($record in @(@{ name = 'TrustedPublisher'; cert = $certA },
+                           @{ name = 'TrustedPublisher'; cert = $certB },
+                           @{ name = 'Root'; cert = $rootA },
+                           @{ name = 'Root'; cert = $rootB })) {
+        $cert = $record.cert
         if ($null -eq $cert) { continue }
-        foreach ($storeName in @('Root', 'TrustedPublisher')) {
-            $certPath = 'Cert:\CurrentUser\' + $storeName + '\' + $cert.Thumbprint
-            Remove-Item -LiteralPath $certPath -Force -Confirm:$false -ErrorAction SilentlyContinue
-        }
+        $certPath = 'Cert:\CurrentUser\' + $record.name + '\' + $cert.Thumbprint
+        Remove-Item -LiteralPath $certPath -Force -Confirm:$false -ErrorAction SilentlyContinue
         $cert.Dispose()
     }
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -Confirm:$false -ErrorAction SilentlyContinue
