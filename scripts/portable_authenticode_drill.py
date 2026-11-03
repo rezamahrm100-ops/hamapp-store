@@ -143,7 +143,7 @@ def verify(path, identity, expected_success):
     return run([
         "osslsigncode", "verify", "-ignore-cdp",
         "-CAfile", str(identity["pem"]),
-        "-require-leaf-hash", "sha2:" + identity["fingerprint"],
+        "-require-leaf-hash", "sha256:" + identity["fingerprint"],
         "-in", str(path)
     ], expected_success=expected_success, phase="verify-" + Path(path).stem)
 
