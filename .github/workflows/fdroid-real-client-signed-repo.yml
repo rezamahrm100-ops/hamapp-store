@@ -122,6 +122,8 @@ jobs:
             dist/fdroid-real-client-probe/official-inclient-blocker-v2.json
             dist/fdroid-real-client-probe/official-client-after-repo-intent.png
             dist/fdroid-real-client-probe/official-client-after-index-v2.png
+            dist/fdroid-real-client-probe/official-repo-force-refresh-blocker.png
+            dist/fdroid-real-client-probe/official-repo-force-refresh-blocker.json
           if-no-files-found: warn
           retention-days: 5
       - name: Precise acceptance boundary
