@@ -128,6 +128,19 @@ click_actual_accessible_control() {
         return 0
       fi
     fi
+    # A real official F-Droid Filter tutorial blocks v2 refresh on Android 33.
+    # This was captured in failed post-merge main run #41648433814. Dismiss
+    # ONLY its actual small F-Droid-owned visible "Got it" control.
+    point=$(python3 scripts/fdroid_client_accessible_ui.py \
+      --xml "$base/window.xml" --dismiss-onboarding) || point=""
+    if [ -n "$point" ]; then
+      read -r x y <<< "$point"
+      if [[ "$x" =~ ^[0-9]+$ && "$y" =~ ^[0-9]+$ ]]; then
+        adb shell input tap "$x" "$y"
+        echo "OFFICIAL_FDROID_REAL_ONBOARDING_TIP_DISMISSED"
+        return 0
+      fi
+    fi
     point=$(python3 scripts/fdroid_client_accessible_ui.py --xml "$base/window.xml") || return 0
     read -r x y <<< "$point"
     if [[ "$x" =~ ^[0-9]+$ && "$y" =~ ^[0-9]+$ ]]; then
@@ -179,8 +192,7 @@ echo "OFFICIAL_FDROID_NATIVE_ADD_REPOSITORY_BUTTON_ACTUALLY_TAPPED"
 # Let F-Droid's real repository addition/SQLite transaction complete before
 # independently signing/serving the v2 index. Do not infer commit from a GET.
 sleep 14
-# Only real official F-Droid on-device UI may initiate the first APK install.
-# The installer is never invoked through adb install or private SQL changes.
+# Genuine upstream F-Droid UI only: no direct ADB APK install or PM injection.
 python3 scripts/fdroid_official_inclient_install_emulator.py --stage 1
 
 # Re-sign actual index with same throwaway repository key after placing
@@ -206,7 +218,8 @@ if [ "$v2_seen" != true ]; then
   echo "OFFICIAL_FDROID_CLIENT_DID_NOT_FETCH_UPDATED_SIGNED_INDEX" >&2
   exit 1
 fi
-# Require REAL native F-Droid app update before any success receipt.
+# Actual app update through the official F-Droid UI only, with native Android
+# package-manager version, installed bytes, signer and APK GET checks.
 python3 scripts/fdroid_official_inclient_install_emulator.py --stage 2
 # Unlike observing index GET requests, the client itself must have durably
 # recorded the test repository under its REAL private Room/SQLite DB.

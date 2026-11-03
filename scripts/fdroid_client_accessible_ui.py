@@ -89,6 +89,44 @@ def select_actual_repository_add(xml):
     return candidates[0][1], candidates[0][2]
 
 
+def select_onboarding_hint_dismissal(xml):
+    """Dismiss actual official F-Droid onboarding tooltip using live XML only.
+
+    The genuine post-enrollment Discover screen sometimes displays the Filter
+    tutorial above every refresh control. A network GET alone cannot tell us
+    whether the UI is blocked. Never guess its button coordinates or touch
+    Android system permission dialogs.
+    """
+    root = ET.parse(xml).getroot()
+    parents = {child: parent for parent in root.iter("node")
+               for child in parent.findall("node")}
+    candidates = []
+    for node in root.iter("node"):
+        if node.attrib.get("package") != PACKAGE:
+            continue
+        label = (node.attrib.get("text", "") or
+                 node.attrib.get("content-desc", "")).strip().casefold()
+        if label != "got it":
+            continue
+        current = node
+        while current is not None and current.attrib.get("package") == PACKAGE:
+            if current.attrib.get("clickable") == "true":
+                bounds = BOUNDS.fullmatch(current.attrib.get("bounds", ""))
+                if bounds:
+                    x1, y1, x2, y2 = map(int, bounds.groups())
+                    w, h = x2 - x1, y2 - y1
+                    if (0 <= x1 < x2 <= 4096 and 0 <= y1 < y2 <= 4096
+                            and 24 <= w <= 650 and 20 <= h <= 180):
+                        candidates.append((w * h, (x1 + x2) // 2,
+                                           (y1 + y2) // 2))
+                break
+            current = parents.get(current)
+    if not candidates:
+        return None
+    candidates.sort()
+    return candidates[0][1], candidates[0][2]
+
+
 def select_unneeded_notification_denial(xml):
     """Dismiss ONLY the real Android notification prompt for official F-Droid.
 
@@ -133,13 +171,17 @@ def main():
     p = argparse.ArgumentParser(description="Real official-client accessible UI selection only")
     p.add_argument("--xml", type=Path, required=True)
     p.add_argument("--deny-notification-prompt", action="store_true")
+    p.add_argument("--dismiss-onboarding", action="store_true")
     p.add_argument("--confirm-repository-add", action="store_true")
     a = p.parse_args()
     try:
-        if a.deny_notification_prompt and a.confirm_repository_add:
+        if sum((a.deny_notification_prompt, a.confirm_repository_add,
+                a.dismiss_onboarding)) > 1:
             raise ValueError("only one restricted UI selector is allowed")
         action = (select_unneeded_notification_denial(a.xml)
                   if a.deny_notification_prompt else
+                  select_onboarding_hint_dismissal(a.xml)
+                  if a.dismiss_onboarding else
                   select_actual_repository_add(a.xml)
                   if a.confirm_repository_add else select(a.xml))
     except (OSError, ET.ParseError, ValueError):

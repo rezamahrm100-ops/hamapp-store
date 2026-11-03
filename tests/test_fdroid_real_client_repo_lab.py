@@ -120,6 +120,29 @@ class RealFdroidClientLabTests(unittest.TestCase):
                 '</node></hierarchy>', encoding="utf-8")
             self.assertIsNone(ui.select_actual_repository_add(path))
 
+    def test_actual_fdroid_filter_tooltip_dismissal_is_bounded_and_owned(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"live-ui.xml"
+            path.write_text(
+                '<hierarchy><node package="org.fdroid.fdroid" clickable="true" '
+                'bounds="[160,220][300,264]">'
+                '<node package="org.fdroid.fdroid" text="Got it" clickable="false" '
+                'bounds="[195,228][270,256]"/></node></hierarchy>',encoding="utf-8")
+            self.assertEqual(ui.select_onboarding_hint_dismissal(path),(230,242))
+            path.write_text(
+                '<hierarchy><node package="org.fdroid.fdroid" text="Got it" '
+                'clickable="false" bounds="[160,220][300,264]"/></hierarchy>',encoding="utf-8")
+            self.assertIsNone(ui.select_onboarding_hint_dismissal(path))
+            path.write_text(
+                '<hierarchy><node package="com.android.permissioncontroller" '
+                'text="Got it" clickable="true" bounds="[160,220][300,264]"/>'
+                '</hierarchy>',encoding="utf-8")
+            self.assertIsNone(ui.select_onboarding_hint_dismissal(path))
+            path.write_text(
+                '<hierarchy><node package="org.fdroid.fdroid" text="Got it" '
+                'clickable="true" bounds="[0,0][320,800]"/></hierarchy>',encoding="utf-8")
+            self.assertIsNone(ui.select_onboarding_hint_dismissal(path))
+
     def test_android_system_notification_overlay_is_denied_only_when_actual_ui_matches(self):
         with tempfile.TemporaryDirectory() as temporary:
             xml=Path(temporary)/"system-notification.xml"
@@ -162,6 +185,8 @@ class RealFdroidClientLabTests(unittest.TestCase):
         self.assertIn('scripts/fdroid_official_inclient_install_emulator.py --stage 1',sh)
         self.assertIn('scripts/fdroid_official_inclient_install_emulator.py --stage 2',sh)
         self.assertIn('--deny-notification-prompt',sh)
+        self.assertIn('--dismiss-onboarding',sh)
+        self.assertIn('OFFICIAL_FDROID_REAL_ONBOARDING_TIP_DISMISSED',sh)
         self.assertIn('--confirm-repository-add',sh)
         self.assertIn('OFFICIAL_FDROID_NATIVE_ADD_REPOSITORY_BUTTON_ACTUALLY_TAPPED',sh)
         self.assertIn('OFFICIAL_FDROID_UNNECESSARY_NOTIFICATION_PERMISSION_DENIED_ON_DISPOSABLE_EMULATOR',sh)
