@@ -141,6 +141,44 @@ class PrivateSubmissionTests(unittest.TestCase):
         with self.assertRaises(inbox.QuarantineError):
             inbox.load_for_preflight(self.root, self.uid)
 
+    def test_private_queue_feeds_existing_owner_cli_without_publishing(self):
+        from unittest.mock import patch
+        import owner_candidate_intake
+        self.stage()
+        inbox.transition(self.root,self.uid,"request_review")
+        output=self.workspace/"unpublished-review"
+        argv=["owner_candidate_intake.py","--private-inbox-root",str(self.root),
+              "--submission-id",self.uid,"--trusted-workflow",
+              "rezamahrm100-ops/example-repo/.github/workflows/release.yml",
+              "--trusted-source-ref","refs/tags/v1.2.3",
+              "--output-dir",str(output)]
+        safe_review={"public_distribution_authorized":False,"files_committed":False}
+        with patch.object(owner_candidate_intake,"assess",return_value=safe_review) as assess, \
+             patch.object(sys,"argv",argv):
+            owner_candidate_intake.main()
+        receipt=json.loads((output/"review-only-receipt.json").read_text(encoding="utf8"))
+        self.assertEqual(receipt["private_quarantine_submission_id"],self.uid)
+        self.assertFalse(receipt["publisher_authentication_from_quarantine"])
+        self.assertFalse(receipt["public_distribution_authorized"])
+        self.assertEqual(assess.call_args.args[0],self.candidate)
+        self.assertTrue(str(assess.call_args.args[3]).endswith("/candidate.apk"))
+
+    def test_owner_cli_rejects_mixing_untrusted_raw_and_private_queue(self):
+        from unittest.mock import patch
+        import owner_candidate_intake
+        self.stage()
+        inbox.transition(self.root,self.uid,"request_review")
+        output=self.workspace/"should-not-exist"
+        argv=["owner_candidate_intake.py","--private-inbox-root",str(self.root),
+              "--submission-id",self.uid,"--candidate",str(self.artifact),
+              "--trusted-workflow","dummy","--trusted-source-ref","dummy",
+              "--output-dir",str(output)]
+        with patch.object(sys,"argv",argv):
+            with self.assertRaises(SystemExit) as fatal:
+                owner_candidate_intake.main()
+        self.assertNotEqual(fatal.exception.code,0)
+        self.assertFalse(output.exists())
+
     def test_corrupted_event_chain_or_reordering_is_rejected(self):
         self.stage()
         folder=self.root/self.uid
