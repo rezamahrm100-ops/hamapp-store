@@ -71,7 +71,11 @@ def select(xml_path, action):
             return None
         names = {"check for updates"}
     elif action == "dismiss-repo-hint":
-        if ("repositories" not in labels and REPO_TITLE.casefold() not in labels):
+        # Real hosted Android #41689898350 screenshot showed the upstream
+        # "Filter" tutorial with "Got it" above a truncated repository-preview
+        # title, so the full repo name is not in live accessibility. Scope
+        # dismissal to this exact app-owned tutorial, not any generic dialog.
+        if "filter" not in labels or "got it" not in labels:
             return None
         names = {"got it"}
     else:
@@ -124,6 +128,7 @@ def screen_signals(xml):
         "hamapp_title_visible": bool({"hamapp", "هَماپ", "هماپ"} & labels),
         "back_accessibility_visible": "back" in labels,
         "got_it_onboarding_visible": "got it" in labels,
+        "filter_tutorial_visible": "filter" in labels,
     }
 
 
