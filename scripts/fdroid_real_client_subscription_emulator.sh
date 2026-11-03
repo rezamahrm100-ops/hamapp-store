@@ -45,9 +45,17 @@ sleep 3
 # fdroidrepo:// is the official HTTP emulator-only deep-link. HTTPS production
 # uses fdroidrepos://. NEVER embed 'http://' after fdroidrepo://.
 uri="fdroidrepo://10.0.2.2:8975/fdroid/repo/?fingerprint=$fp"
-adb shell am start -W -a android.intent.action.VIEW \
-  -c android.intent.category.BROWSABLE -p org.fdroid.fdroid -d "$uri" > "$base/intent-private.txt"
-grep -Fq 'Status: ok' "$base/intent-private.txt"
+if ! adb shell am start -W -a android.intent.action.VIEW \
+  -c android.intent.category.BROWSABLE -p org.fdroid.fdroid -d "$uri" > "$base/intent-private.txt" 2>&1; then
+  echo "OFFICIAL_FDROID_REPO_HTTP_INTENT_REJECTED_BY_ANDROID" >&2
+  sed -E 's/fingerprint=[[:xdigit:]]{64}/fingerprint=[EPHEMERAL-PUBLIC-PIN]/g' "$base/intent-private.txt" | tail -n 14 >&2
+  exit 1
+fi
+if ! grep -Fq 'Status: ok' "$base/intent-private.txt"; then
+  echo "OFFICIAL_FDROID_REPO_HTTP_INTENT_NON_OK_STATUS" >&2
+  sed -E 's/fingerprint=[[:xdigit:]]{64}/fingerprint=[EPHEMERAL-PUBLIC-PIN]/g' "$base/intent-private.txt" | tail -n 14 >&2
+  exit 1
+fi
 echo "OFFICIAL_FDROID_REAL_SIGNED_REPO_ADD_INTENT_SENT"
 request_count() {
   python3 - "$request_log" <<'PY'
