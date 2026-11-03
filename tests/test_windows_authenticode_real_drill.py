@@ -70,6 +70,8 @@ class RealPortableWindowsPESignatureTests(unittest.TestCase):
         self.assertIn("fingerprint", src)
         self.assertIn("expected_success=False", src)
         self.assertIn('"sha2:" + identity["fingerprint"]', src)
+        self.assertIn('"-ignore-cdp"', src)
+        self.assertNotIn('"-ignore-crl"', src)
         self.assertNotIn('"sha256:" + identity["fingerprint"]', src)
         self.assertNotIn('"public_release_authorized": True', src)
 
