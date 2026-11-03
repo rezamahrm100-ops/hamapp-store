@@ -36,15 +36,53 @@ def _point(node):
     return (x1 + x2) // 2, (y1 + y2) // 2
 
 
+
+def source_settings_state(xml_file):
+    """Inspect ONLY a real F-Droid-scoped Android Settings permission screen.
+
+    Return true/false for a unique actual visible system switch. Never
+    infer permission from sending a tap, a screenshot or a shell appop.
+    """
+    root = ET.parse(xml_file).getroot()
+    nodes = [node for node in root.iter("node")
+             if node.get("package") == "com.android.settings"]
+    labels = { _text(node).casefold() for node in nodes if _text(node) }
+    if not ({"f-droid", "install unknown apps", "allow from this source"} <= labels):
+        return None
+    switches = [node for node in nodes
+                if "switch" in node.get("class", "").casefold()
+                and node.get("checked") in ("true", "false")
+                and node.get("enabled") == "true"
+                and _point(node) is not None]
+    if len(switches) != 1:
+        return None
+    return switches[0].get("checked") == "true"
+
+
+
 def select(xml_file, action):
-    if action not in ("install", "update", "dismiss-hint", "confirm-installer", "confirm-metered"):
+    if action not in ("install", "update", "dismiss-hint", "confirm-installer",
+                      "confirm-metered", "open-source-settings", "allow-source-settings"):
         raise ValueError("restricted action required")
     root = ET.parse(xml_file).getroot()
     nodes = list(root.iter("node"))
     parents = {node: parent for parent in nodes for node in parent.findall("node")}
-    allowed = INSTALLER_PACKAGES if action == "confirm-installer" else frozenset((FDROID,))
+    if action == "open-source-settings":
+        allowed = INSTALLER_PACKAGES
+    elif action == "allow-source-settings":
+        allowed = frozenset(("com.android.settings",))
+        if source_settings_state(xml_file) is not False:
+            return None
+    else:
+        allowed = INSTALLER_PACKAGES if action == "confirm-installer" else frozenset((FDROID,))
     scoped = [node for node in nodes if node.get("package") in allowed]
-    if action == "confirm-metered":
+    if action == "open-source-settings":
+        visible = " ".join(_text(node) for node in scoped).casefold()
+        if "f-droid" not in visible or "unknown apps from this source" not in visible:
+            return None
+    elif action == "allow-source-settings":
+        pass  # exact settings page and unique unchecked switch above
+    elif action == "confirm-metered":
         # Official F-Droid upstream MeteredConnectionDialog: only proceed
         # when the real application-owned prompt title and button coexist.
         # The only network here is the disposable isolated test repository;
@@ -62,10 +100,17 @@ def select(xml_file, action):
         "dismiss-hint": ("got it",),
         "confirm-installer": ("install", "update"),
         "confirm-metered": ("download",),
+        "open-source-settings": ("settings",),
+        "allow-source-settings": (),
     }[action]
     candidates = []
     for node in scoped:
-        if _text(node).casefold() not in desired:
+        if action == "allow-source-settings":
+            if not ("switch" in node.get("class", "").casefold()
+                    and node.get("checked") == "false"
+                    and node.get("enabled") == "true"):
+                continue
+        elif _text(node).casefold() not in desired:
             continue
         current = node
         while current is not None and current.get("package") in allowed:
@@ -87,7 +132,8 @@ def main():
     parser = argparse.ArgumentParser(description="Official client actual bounded UI control")
     parser.add_argument("--xml", type=Path, required=True)
     parser.add_argument("--action", choices=("install", "update", "dismiss-hint",
-                                           "confirm-installer", "confirm-metered"), required=True)
+                                           "confirm-installer", "confirm-metered",
+                                           "open-source-settings", "allow-source-settings"), required=True)
     args = parser.parse_args()
     try:
         point = select(args.xml, args.action)
