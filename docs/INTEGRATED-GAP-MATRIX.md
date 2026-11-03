@@ -54,3 +54,6 @@ New proposed release-governance transaction tooling can generate coordinated no-
 
 ### Private publisher intake local queue (2026-11-03)
 - Added owner-local POSIX private quarantine file/metadata custody for untrusted publisher submissions, no owner-approval transition, exact byte-hash checks, symlink/duplicate/replay rejection and handoff into actual signed-source/antivirus preflight. This **is not** an authenticated private publisher web portal or an approved commercial marketplace; production auth/tenant quota/storage, signed real packages and admin branch review remain outstanding.
+
+### No-bypass F-Droid staging safety
+- Owner-local F-Droid bridge has strict private signer workspace, immutable verified source-to-binary attestation, actual publisher signature, aapt permissions, CRC and ClamAV gates BEFORE upstream index generation, rejecting missing trust evidence. Do not count this as stable production F-Droid signer/index or authorized official F-Droid client subscription. Follow remaining owner-only key and external device gates.

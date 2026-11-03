@@ -65,18 +65,6 @@ class GateTests(unittest.TestCase):
         self.assertFalse(receipt['source_commit_verified'])
         self.assertEqual(receipt['source_sha_claimed'], 'a' * 40)
 
-    def test_fdroid_symlink_repo_rejected(self):
-        workspace = pathlib.Path(self.temp.name) / 'private_link'
-        workspace.mkdir()
-        config = workspace / 'config.yml'
-        config.write_text('# test only\n', encoding='utf8')
-        if sys.platform != 'win32': config.chmod(0o600)
-        link = workspace / 'repo'
-        try: link.symlink_to(self.path.parent, target_is_directory=True)
-        except OSError: self.skipTest('symlink unavailable')
-        with self.assertRaisesRegex(gate.PublisherError, 'symlink'):
-            fdroid_bridge.stage(self.candidate, self.registry, self.path, workspace, runner=MockRunner())
-
     def test_reject_windows_missing_authenticode(self):
         if sys.platform != 'win32': self.skipTest('requires Windows')
         file = pathlib.Path(self.temp.name) / 'unsigned.exe'
@@ -162,50 +150,145 @@ class GateTests(unittest.TestCase):
         with self.assertRaises(gate.PublisherError):
             gate.verify_authenticode(self.path)
 
-    def test_fdroid_rejects_missing_private_config(self):
-        with self.assertRaisesRegex(gate.PublisherError, 'config.yml'):
-            fdroid_bridge.stage(self.candidate, self.registry, self.path, self.temp.name, runner=MockRunner())
+    def _fdroid_policy(self):
+        return {"schema_version": 1, "package_id": "ir.hamapp.example",
+                "version_code": 7, "version_name": "1.2.3", "allowed_permissions": []}
 
-    def test_fdroid_staging_does_not_deploy(self):
-        workspace = pathlib.Path(self.temp.name) / 'private'
-        workspace.mkdir()
-        config = workspace / 'config.yml'
-        config.write_text('# test only\n', encoding='utf8')
-        if sys.platform != 'win32': config.chmod(0o600)
-        def fdroid(command, **kwargs):
-            self.assertEqual(command, ['fdroid', 'update', '--create-metadata'])
-            self.assertEqual(pathlib.Path(kwargs['cwd']).resolve(), workspace.resolve())
-            return subprocess.CompletedProcess(command, 0, '', '')
-        result = fdroid_bridge.stage(self.candidate, self.registry, self.path, workspace, runner=MockRunner(), update_runner=fdroid)
-        self.assertFalse(result['deployed'])
-        self.assertTrue((workspace / 'repo' / self.path.name).exists())
+    def _mock_verified_preflight(self):
+        digest = self.candidate["release"]["sha256"]
+        return {"developer_signature_and_github_provenance_checked": True,
+                "verified_artifact_sha256": digest,
+                "actual_archive": {"actual_archive_crc_and_paths_checked": True},
+                "actual_android_permissions": {"requested_permissions_allowlist_checked": True},
+                "actual_antivirus_signature_scan": {
+                    "actual_signature_scan_completed_without_detection": True,
+                    "artifact_sha256": digest},
+                "public_distribution_authorized": False}
 
-    def test_fdroid_rechecks_copied_file(self):
-        workspace = pathlib.Path(self.temp.name) / 'private_toctou'
-        workspace.mkdir()
-        config = workspace / 'config.yml'
-        config.write_text('# test only\n', encoding='utf8')
-        if sys.platform != 'win32': config.chmod(0o600)
-        source = self.path
-        class MutatingRunner(MockRunner):
-            def __call__(self, command, **kwargs):
-                result = super().__call__(command, **kwargs)
-                if command[0] == 'aapt': source.write_bytes(b'altered after initial hash')
-                return result
-        with self.assertRaisesRegex(gate.PublisherError, 'staging failed'):
-            fdroid_bridge.stage(self.candidate, self.registry, self.path, workspace, runner=MutatingRunner())
-        self.assertFalse((workspace / 'repo' / self.path.name).exists())
+    def _private_workspace(self, name="private"):
+        if sys.platform == "win32":
+            self.skipTest("POSIX private key custody is required")
+        workspace = pathlib.Path(self.temp.name) / name
+        workspace.mkdir(mode=0o700)
+        workspace.chmod(0o700)
+        config = workspace / "config.yml"
+        config.write_text("# dummy non-signing config\n", encoding="utf8")
+        config.chmod(0o600)
+        return workspace
 
-    def test_fdroid_failure_removes_new_file(self):
-        workspace = pathlib.Path(self.temp.name) / 'private'
-        workspace.mkdir()
-        config = workspace / 'config.yml'
-        config.write_text('# test only\n', encoding='utf8')
-        if sys.platform != 'win32': config.chmod(0o600)
-        def failed(command, **kwargs): return subprocess.CompletedProcess(command, 1, '', '')
+    def _reviewed_stage(self, workspace, *, preflight=None, update_runner=None):
+        if preflight is None:
+            preflight = self._mock_verified_preflight()
+        if update_runner is None:
+            update_runner = lambda cmd, **opts: subprocess.CompletedProcess(cmd, 0, "", "")
+        with patch.object(fdroid_bridge.owner_candidate_intake, "assess",
+                          return_value=preflight) as assayed:
+            result = fdroid_bridge.stage(
+                self.candidate, self.registry, self.path, workspace,
+                trusted_workflow="rezamahrm100-ops/example-project/.github/workflows/release.yml",
+                trusted_source_ref="refs/tags/v1.2.3",
+                permission_policy=self._fdroid_policy(),
+                update_runner=update_runner)
+        assayed.assert_called_once()
+        self.assertEqual(assayed.call_args.kwargs["antivirus_scanner"], "clamscan")
+        return result
+
+    def test_fdroid_private_workspace_is_required(self):
         with self.assertRaises(gate.PublisherError):
-            fdroid_bridge.stage(self.candidate, self.registry, self.path, workspace, runner=MockRunner(), update_runner=failed)
-        self.assertFalse((workspace / 'repo' / self.path.name).exists())
+            fdroid_bridge.stage(self.candidate, self.registry, self.path,
+                                self.temp.name)
+        if sys.platform == "win32":
+            return
+        workspace = self._private_workspace("private-symlink")
+        link = workspace / "repo"
+        try:
+            link.symlink_to(self.path.parent, target_is_directory=True)
+        except OSError:
+            self.skipTest("symlink unavailable")
+        with self.assertRaisesRegex(gate.PublisherError, "symlink"):
+            self._reviewed_stage(workspace)
+
+    def test_fdroid_requires_real_producer_and_manifest_policy(self):
+        workspace = self._private_workspace("unverified")
+        called = []
+        def update(*args, **kwargs):
+            called.append(args)
+            return subprocess.CompletedProcess(args,0,"","")
+        for kwargs in (
+            {},
+            {"trusted_workflow": "rezamahrm100-ops/example-project/.github/workflows/release.yml",
+             "trusted_source_ref": "refs/tags/v1.2.3"},
+            {"trusted_workflow": "attacker/repo/.github/workflows/release.yml",
+             "trusted_source_ref": "refs/tags/v1.2.3",
+             "permission_policy": self._fdroid_policy()},
+            {"trusted_workflow": "rezamahrm100-ops/example-project/.github/workflows/release.yml",
+             "trusted_source_ref": "refs/tags/v1.2.3",
+             "permission_policy": self._fdroid_policy(),
+             "antivirus_scanner": None}
+        ):
+            with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
+                fdroid_bridge.stage(self.candidate, self.registry, self.path, workspace,
+                                    update_runner=update, **kwargs)
+        self.assertEqual(called, [])
+        self.assertFalse((workspace / "repo" / self.path.name).exists())
+
+    def test_fdroid_real_preflight_failure_does_not_stage(self):
+        workspace = self._private_workspace("failed-preflight")
+        with patch.object(fdroid_bridge.owner_candidate_intake, "assess",
+                          side_effect=ValueError("source attestation unavailable")):
+            with self.assertRaisesRegex(ValueError, "source attestation"):
+                fdroid_bridge.stage(
+                    self.candidate, self.registry, self.path, workspace,
+                    trusted_workflow="rezamahrm100-ops/example-project/.github/workflows/release.yml",
+                    trusted_source_ref="refs/tags/v1.2.3",
+                    permission_policy=self._fdroid_policy())
+        self.assertFalse((workspace / "repo" / self.path.name).exists())
+
+    def test_fdroid_rejects_fake_antivirus_attestation_flags(self):
+        workspace = self._private_workspace("fake-av")
+        forged = self._mock_verified_preflight()
+        forged["actual_antivirus_signature_scan"]["artifact_sha256"] = "d"*64
+        with self.assertRaisesRegex(gate.PublisherError, "incomplete"):
+            self._reviewed_stage(workspace, preflight=forged)
+        self.assertFalse((workspace / "repo" / self.path.name).exists())
+
+    def test_fdroid_staging_only_after_integrated_checks(self):
+        workspace = self._private_workspace("success")
+        def update(command, **kwargs):
+            self.assertEqual(command, ["fdroid","update","--create-metadata"])
+            self.assertEqual(pathlib.Path(kwargs["cwd"]).resolve(), workspace.resolve())
+            return subprocess.CompletedProcess(command, 0, "", "")
+        result = self._reviewed_stage(workspace, update_runner=update)
+        self.assertFalse(result["deployed"])
+        self.assertTrue(result["signed_source_and_signer_verified"])
+        self.assertTrue(result["fresh_antivirus_signature_scan_verified"])
+        self.assertFalse(result["f_droid_signed_repository_independently_verified"])
+        self.assertFalse(result["owner_approved_for_public_distribution"])
+        self.assertTrue((workspace / "repo" / self.path.name).exists())
+
+    def test_fdroid_rechecks_copied_file_after_preflight(self):
+        workspace = self._private_workspace("tampered")
+        def mutate_then_return(*args, **kwargs):
+            self.path.write_bytes(b"changed after signed-source review")
+            return self._mock_verified_preflight()
+        with patch.object(fdroid_bridge.owner_candidate_intake, "assess",
+                          side_effect=mutate_then_return):
+            with self.assertRaises(gate.PublisherError):
+                fdroid_bridge.stage(
+                    self.candidate, self.registry, self.path, workspace,
+                    trusted_workflow="rezamahrm100-ops/example-project/.github/workflows/release.yml",
+                    trusted_source_ref="refs/tags/v1.2.3",
+                    permission_policy=self._fdroid_policy())
+        self.assertFalse((workspace / "repo" / self.path.name).exists())
+
+    def test_fdroid_upstream_update_failure_removes_new_file(self):
+        workspace = self._private_workspace("update-failure")
+        def failed(command, **kwargs):
+            return subprocess.CompletedProcess(command, 1, "", "")
+        with self.assertRaises(gate.PublisherError):
+            self._reviewed_stage(workspace, update_runner=failed)
+        self.assertFalse((workspace / "repo" / self.path.name).exists())
 
 
-if __name__ == '__main__': unittest.main()
+if __name__ == "__main__":
+    unittest.main()

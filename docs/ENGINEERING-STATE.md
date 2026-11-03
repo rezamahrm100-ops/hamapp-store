@@ -189,3 +189,6 @@ Read [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md) for 
 
 ## Owner-local private publisher quarantined intake (implementation awaiting checks)
 - Proposed 0700 POSIX owner-owned vault, 0600 per-submission bytes, exact source/declaration hash/size, binary structure validation, untrusted claimed publisher labels, explicit non-approving review event chain and no public GitHub upload. `owner_candidate_intake.py` can verify only locally review-requested bytes via full signer, producer attestation, aapt/ClamAV. No authenticated account, remote upload service, encrypted private cloud, production signer or publisher authorization introduced. Check exact PR CI/CodeQL and post-merge SHA.
+
+## F-Droid private staged-release preflight anti-bypass (2026-11-03, acceptance pending)
+- Source now requires genuine GitHub SLSA producer signature, independently registered APK developer certificate, actual aapt permissions, archive and fresh antivirus, and secure owner-only POSIX workspace before `fdroid update`; it verifies bytes before/after. The signer-only legacy direct staging pathway is removed. This is engineering code to be checked by actual CI and CodeQL; no real production-approved app, repository key, official F-Droid client subscription or public release has been provisioned.

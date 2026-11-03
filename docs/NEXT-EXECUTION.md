@@ -158,3 +158,6 @@ Older sections below describe historical continuation stages; they **do not auth
 
 ## Private untrusted publisher submissions
 - Read `docs/PRIVATE-PUBLISHER-QUARANTINE.md`, inspect exact CI for real POSIX disk isolation, actual byte copy/hash, validation, event quarantine/rejection and owner local crypto-check integration. Native Windows scanner must run on an authorized Windows session on same hash; private POSIX inbox alone is not Authenticode. Full authenticated private tenant submission service, owner approval and encrypted production storage are still unimplemented.
+
+## Actual F-Droid staging integration security boundary
+- `fdroid_bridge.py` previously accepted signer/size alone. Verify new staging gate requiring full `owner_candidate_intake.assess` source-to-actual-package plus archive+permission+fresh antivirus results before invoking upstream `fdroid update`, with exact SHA recopy and private 0700/0600 signing workspace. Never claim synthetic CI tests are real producer attestation/production signed index. See `docs/FDROID-STRICT-VERIFIED-STAGING.md`.
