@@ -141,7 +141,7 @@ def make_identity(directory, slug):
 
 def verify(path, identity, expected_success):
     return run([
-        "osslsigncode", "verify", "-ignore-cdp", "-ignore-crl",
+        "osslsigncode", "verify", "-ignore-cdp",
         "-CAfile", str(identity["pem"]),
         "-require-leaf-hash", "sha2:" + identity["fingerprint"],
         "-in", str(path)
