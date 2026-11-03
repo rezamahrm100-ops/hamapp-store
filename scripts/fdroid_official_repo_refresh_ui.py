@@ -78,7 +78,14 @@ def select(xml_path, action):
         # Official Repositories.kt also presents a separate first-visit
         # "Repository list" / "Got it" tutorial on entry to the repo list.
         # Only these two actual upstream tutorial titles may be dismissed.
-        if "got it" not in labels or not ({"filter", "repository list"} & labels):
+        # RepoDetails.kt has a THIRD first-visit tooltip titled
+        # "Repository" with a specific explanatory "A repository is..." text.
+        # Require both markers; never click arbitrary permission dialogs.
+        details_hint = ("repository" in labels and
+                        any(v.startswith("a repository is a source of apps.")
+                            for v in labels))
+        if "got it" not in labels or not (({"filter", "repository list"} & labels)
+                                             or details_hint):
             return None
         names = {"got it"}
     else:
@@ -133,6 +140,9 @@ def screen_signals(xml):
         "got_it_onboarding_visible": "got it" in labels,
         "filter_tutorial_visible": "filter" in labels,
         "repo_list_tutorial_visible": "repository list" in labels,
+        "repo_details_tutorial_visible": (
+            "repository" in labels and
+            any(v.startswith("a repository is a source of apps.") for v in labels)),
     }
 
 
