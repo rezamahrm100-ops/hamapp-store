@@ -16,6 +16,7 @@ import antivirus_binary_review
 import binary_archive_review
 import release_governance
 import release_history
+import private_publisher_inbox
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -94,8 +95,10 @@ def assess(candidate, registry, history, artifact, workflow, ref, *,
 
 def main():
     p = argparse.ArgumentParser(description="Owner-local actual candidate preflight, no publication")
-    p.add_argument("--candidate", required=True, type=Path)
-    p.add_argument("--artifact", required=True, type=Path)
+    p.add_argument("--candidate", type=Path)
+    p.add_argument("--artifact", type=Path)
+    p.add_argument("--private-inbox-root", type=Path)
+    p.add_argument("--submission-id")
     p.add_argument("--publisher-registry", type=Path,
                    default=ROOT / "catalog/trusted_signers.json")
     p.add_argument("--release-history", type=Path,
@@ -113,15 +116,29 @@ def main():
         if (output.is_symlink() or output.exists()
                 or path == ROOT or ROOT in path.parents):
             raise IntakeError("output must be a new directory outside public source checkout")
-        candidate = json.loads(a.candidate.read_text(encoding="utf-8"))
+        if a.private_inbox_root is not None or a.submission_id is not None:
+            if (a.private_inbox_root is None or a.submission_id is None
+                    or a.candidate is not None or a.artifact is not None):
+                raise IntakeError("provide exact private inbox reference OR candidate/artifact")
+            candidate, artifact, untrusted_submission = private_publisher_inbox.load_for_preflight(
+                a.private_inbox_root, a.submission_id)
+        else:
+            if a.candidate is None or a.artifact is None:
+                raise IntakeError("candidate and artifact required without private inbox")
+            candidate = json.loads(a.candidate.read_text(encoding="utf-8"))
+            artifact = a.artifact
+            untrusted_submission = None
         registry = json.loads(a.publisher_registry.read_text(encoding="utf-8"))
         history = release_history.load_history(a.release_history)
         policy = (json.loads(a.android_permissions_policy.read_text(encoding="utf-8"))
                   if a.android_permissions_policy else None)
-        receipt = assess(candidate, registry, history, a.artifact,
+        receipt = assess(candidate, registry, history, artifact,
                          a.trusted_workflow, a.trusted_source_ref,
                          permission_policy=policy, aapt=a.aapt,
                          antivirus_scanner=a.antivirus_scanner)
+        if untrusted_submission is not None:
+            receipt["private_quarantine_submission_id"] = untrusted_submission["submission_id"]
+            receipt["publisher_authentication_from_quarantine"] = False
         output.mkdir(parents=True, exist_ok=False)
         with (output / "review-only-receipt.json").open("x", encoding="utf-8") as stream:
             json.dump(receipt, stream, ensure_ascii=False, sort_keys=True, indent=2)
