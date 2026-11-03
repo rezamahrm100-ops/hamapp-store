@@ -60,8 +60,20 @@ class RealFdroidClientLabTests(unittest.TestCase):
             f.write_text('<hierarchy><node package="com.android.settings" clickable="true" '
                          'text="Allow" bounds="[10,20][90,80]"/>'
                          '<node package="org.fdroid.fdroid" clickable="true" '
-                         'text="Enable" bounds="[100,200][300,260]"/></hierarchy>',encoding="utf-8")
+                         'text="Refresh" bounds="[100,200][300,260]"/></hierarchy>',encoding="utf-8")
             self.assertEqual(ui.select(f),(200,230))
+            # Real failed emulator #41653381148 showed "Adding repository"
+            # because generic select had already clicked the Add button.
+            # Only the dedicated selector may make that authorization tap.
+            f.write_text('<hierarchy><node package="org.fdroid.fdroid" clickable="true" '
+                         'text="Add repository" bounds="[100,200][300,260]"/></hierarchy>',
+                         encoding="utf-8")
+            self.assertIsNone(ui.select(f))
+            self.assertEqual(ui.select_actual_repository_add(f),(200,230))
+            f.write_text('<hierarchy><node package="org.fdroid.fdroid" clickable="true" '
+                         'text="Allow" bounds="[100,200][300,260]"/></hierarchy>',
+                         encoding="utf-8")
+            self.assertIsNone(ui.select(f))
             f.write_text('<hierarchy><node package="com.android.settings" clickable="true" '
                          'text="Enable" bounds="[0,0][100,100]"/></hierarchy>',encoding="utf-8")
             self.assertIsNone(ui.select(f))
