@@ -142,7 +142,7 @@ jobs:
           echo 'Two disposable signed real Windows EXE copies, wrong signer, unsigned and tampered checks run. Windows OS WinVerifyTrust, real production signer, installer and physical device NOT accepted.' >> "$GITHUB_STEP_SUMMARY"
 
   native-windows-authenticode:
-    name: Actual native Windows OS rejection of untrusted signed PE test roots
+    name: Actual native Windows signer detection and non-Valid temporary certificate statuses
     if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     needs: desktop-preview
     runs-on: windows-2022
@@ -183,8 +183,8 @@ jobs:
       - name: Native signer scope disclosure
         shell: pwsh
         run: |
-          '### Native Windows rejects untrusted disposable SignTool code-signing identities' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-          'Actual Windows-produced PE and two separate temporary CA-to-leaf signed copies are examined by native Windows Authenticode APIs. Native Windows must REFUSE untrusted disposable signer chains, unsigned executable and modified PE. No Windows certificate store mutation. This is NOT acceptance of a trusted publisher, production signer, WinGet mapping or owner desktop.' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          '### Native Windows signer identities and observed non-Valid temporary certificate status' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          'Actual Windows-produced PE and two separate temporary CA-to-leaf signed copies are examined by native Windows Authenticode APIs. Actual hosted Windows returned native UnknownError for both unsigned-trust disposable PFX signer chains despite exact matching signer certificate bytes. We only accept the observed non-Valid result; precise trust-chain failure cause is NOT proven. Native Windows separately rejects the unsigned executable and modified PE. No Windows certificate store mutation. This is NOT acceptance of a trusted publisher, production signer, WinGet mapping or owner desktop.' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
   nsis-installer-sandbox:
     name: Actual isolated per-user Windows installer/upgrade/downgrade/uninstall
