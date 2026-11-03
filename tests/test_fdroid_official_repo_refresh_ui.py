@@ -127,6 +127,7 @@ class RealRepoForceRefreshSelectorTests(unittest.TestCase):
     def test_no_client_database_or_installer_shortcuts(self):
         src = (ROOT / "scripts/fdroid_official_repo_refresh_ui.py").read_text("utf-8")
         self.assertIn("REAL_OFFICIAL_FDROID_REPO_DETAIL_FORCE_UPDATE_BUTTON_TAPPED", src)
+        self.assertIn('actions = ("dismiss-repo-hint", "force-update"', src)
         self.assertIn("check for updates", src)
         self.assertIn("test-repository", src)
         self.assertIn('"repositories" not in transitions', src)
