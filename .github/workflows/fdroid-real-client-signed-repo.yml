@@ -10,6 +10,8 @@ on:
       - 'scripts/fdroid_official_repo_db_probe.py'
       - 'scripts/fdroid_official_install_ui.py'
       - 'scripts/fdroid_official_inclient_install_emulator.py'
+      - 'scripts/fdroid_official_repo_refresh_ui.py'
+      - 'tests/test_fdroid_official_repo_refresh_ui.py'
       - 'tests/test_fdroid_official_install_ui.py'
       - 'tests/test_fdroid_official_inclient_install_emulator.py'
       - 'tests/test_fdroid_official_repo_db_probe.py'
@@ -19,6 +21,8 @@ on:
   push:
     branches: [main]
     paths:
+      - 'scripts/fdroid_official_repo_refresh_ui.py'
+      - 'tests/test_fdroid_official_repo_refresh_ui.py'
       - 'scripts/fdroid_client_private_repo_lab.py'
       - 'scripts/fdroid_client_private_repo_server.py'
       - 'scripts/fdroid_client_accessible_ui.py'
