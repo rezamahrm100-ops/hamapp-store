@@ -97,6 +97,40 @@ class RealRepoForceRefreshSelectorTests(unittest.TestCase):
             details_hint.replace("A repository is a source of apps.", "Grant system permissions."),
             "dismiss-repo-hint"))
 
+    def test_real_f_droid_metered_repo_download_dialog_only(self):
+        actual = (
+            '<hierarchy><node package="org.fdroid.fdroid" '
+            'text="Continue with mobile data?"/>'
+            '<node package="org.fdroid.fdroid" text="Download" '
+            'clickable="true" bounds="[185,390][290,438]"/></hierarchy>'
+        )
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "real.xml"
+            def show(xml):
+                path.write_text(xml, encoding="utf-8")
+                return path
+            with patch.object(ui, "dump", side_effect=lambda dest: show(actual)), \\
+                 patch.object(ui, "adb") as adb, \\
+                 patch.object(ui.time, "sleep"):
+                self.assertTrue(ui.confirm_visible_repo_download_dialog(path))
+                adb.assert_called_once_with("shell", "input", "tap", "237", "414")
+            for bad in (
+                actual.replace("Continue with mobile data?", "Grant install permissions?"),
+                actual.replace("org.fdroid.fdroid", "com.android.settings"),
+            ):
+                with patch.object(ui, "dump", side_effect=lambda dest: show(bad)), \\
+                     patch.object(ui, "adb") as adb, \\
+                     patch.object(ui.time, "sleep"):
+                    self.assertFalse(ui.confirm_visible_repo_download_dialog(path))
+                    adb.assert_not_called()
+            with patch.object(ui, "dump", side_effect=lambda dest: show(
+                    actual.replace('clickable="true"', 'clickable="false"'))), \\
+                 patch.object(ui, "adb") as adb, \\
+                 patch.object(ui.time, "sleep"):
+                with self.assertRaisesRegex(RuntimeError, "metered"):
+                    ui.confirm_visible_repo_download_dialog(path)
+                adb.assert_not_called()
+
     def test_reject_unknown_actions_and_no_host_permission(self):
         with self.assertRaisesRegex(ValueError, "unknown"):
             self.choice("", "grant-anything")
