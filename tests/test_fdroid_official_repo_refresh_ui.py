@@ -74,6 +74,23 @@ class RealRepoForceRefreshSelectorTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "isolated"):
                 ui.run()
 
+    def test_navigation_failure_receipt_has_only_test_screen_flags(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ui.xml"
+            path.write_text(
+                '<hierarchy><node package="org.fdroid.fdroid" text="F-Droid"/>'
+                '<node package="org.fdroid.fdroid" text="Repositories"/>'
+                '<node package="com.android.settings" text="Password: secret"/></hierarchy>',
+                encoding="utf-8")
+            signals = ui.screen_signals(path)
+            self.assertTrue(signals["official_fdroid_title_visible"])
+            self.assertTrue(signals["repositories_label_visible"])
+            self.assertFalse(signals["disposable_repository_label_visible"])
+            self.assertTrue(all(isinstance(x, bool) for x in signals.values()))
+            self.assertEqual(len(signals), 7)
+            self.assertNotIn("Password", str(signals))
+            self.assertNotIn("secret", str(signals))
+
     def test_no_client_database_or_installer_shortcuts(self):
         src = (ROOT / "scripts/fdroid_official_repo_refresh_ui.py").read_text("utf-8")
         self.assertIn("REAL_OFFICIAL_FDROID_REPO_DETAIL_FORCE_UPDATE_BUTTON_TAPPED", src)
