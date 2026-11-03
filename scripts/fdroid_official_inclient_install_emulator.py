@@ -88,6 +88,47 @@ def count_client_apk_get(path, basename):
     )
 
 
+def on_device_failure_signals():
+    """Emit only bounded Boolean categories, never raw private Android logs."""
+    try:
+        proc = subprocess.run(
+            ["adb", "logcat", "-d", "-t", "3000", "-v", "brief"],
+            capture_output=True, text=True, errors="replace", timeout=20,
+            check=False)
+        raw = (proc.stdout or "")[:2_000_000] if proc.returncode == 0 else ""
+    except (OSError, subprocess.TimeoutExpired):
+        raw = ""
+    return {
+        "fdroid_log_started_real_install": "Started install of ir.hamapp.store" in raw,
+        "fdroid_log_missing_repository_metadata": (
+            "Can't install app without metadata for ir.hamapp.store" in raw),
+        "fdroid_log_download_failed": (
+            "Download failed:" in raw or "Error downloading" in raw),
+        "fdroid_log_preapproval_error": (
+            "Error requesting pre-approval for ir.hamapp.store" in raw),
+        "fdroid_log_install_confirmation_needed": (
+            "Requesting user confirmation" in raw or
+            "STATUS_PENDING_USER_ACTION" in raw),
+        "android_runtime_security_exception_seen": "SecurityException" in raw,
+    }
+
+
+def safe_test_only_screenshot(output):
+    """One screenshot of disposable F-Droid CI emulator, never owner UI."""
+    try:
+        raw = subprocess.run(["adb", "exec-out", "screencap", "-p"],
+                             capture_output=True, timeout=20, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    if (raw.returncode != 0 or len(raw.stdout) > 2_000_000
+            or raw.stdout[:8] != bytes((137, 80, 78, 71, 13, 10, 26, 10))):
+        return False
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with output.open("xb") as fp:
+        fp.write(raw.stdout)
+    return True
+
+
 def cert_fingerprint(apk):
     output = invoke(["apksigner", "verify", "--print-certs", str(apk)], limit=35)
     match = APK_FP.search(output)
@@ -180,6 +221,11 @@ def run(stage):
             elif xml and not clicked_client_button and tap_from_real_ui(
                     xml, "install" if stage == 1 else "update"):
                 clicked_client_button = True
+                # The input event is NOT proof of the F-Droid callback. Capture
+                # its immediate live aftermath before dialogs can disappear.
+                time.sleep(2)
+                safe_test_only_screenshot(
+                    output / f"official-inclient-after-first-action-v{stage}.png")
             if clicked_client_button and installed_version() == stage:
                 if count_client_apk_get(base / "requests.jsonl",
                                         f"hamapp-v{stage}.apk") < 1:
@@ -238,7 +284,10 @@ def run(stage):
                 pass
         diagnostic = {
             "schema_version": 1, "source_sha": source_sha, "requested_stage": stage,
-            "official_app_install_button_actually_tapped": clicked_client_button,
+            "official_app_install_button_coordinate_tap_sent": clicked_client_button,
+            "actual_client_versioned_apk_get_count": count_client_apk_get(
+                base / "requests.jsonl", f"hamapp-v{stage}.apk"),
+            **on_device_failure_signals(),
             "system_installer_confirmation_actually_tapped": clicked_system_prompt,
             "real_fdroid_metered_download_confirmation_tapped": clicked_metered_confirmation,
             "actual_native_installed_version_at_failure": installed_version(),
