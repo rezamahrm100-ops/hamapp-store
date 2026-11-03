@@ -16,6 +16,7 @@ on:
       - 'windows_installer/**'
       - 'scripts/windows_nsis_sandbox_acceptance.ps1'
       - 'scripts/windows_v2_native_ci_entry.py'
+      - 'scripts/windows_build_distinct_v2_ci.ps1'
       - 'tests/test_windows_nsis_sandbox.py'
       - 'scripts/publisher_gate.py'
       - '.github/workflows/windows-client-preview.yml'
@@ -35,6 +36,7 @@ on:
       - 'windows_installer/**'
       - 'scripts/windows_nsis_sandbox_acceptance.ps1'
       - 'scripts/windows_v2_native_ci_entry.py'
+      - 'scripts/windows_build_distinct_v2_ci.ps1'
       - 'tests/test_windows_nsis_sandbox.py'
       - 'scripts/publisher_gate.py'
       - '.github/workflows/windows-client-preview.yml'
@@ -160,6 +162,15 @@ jobs:
         run: |
           if (-not (Test-Path 'dist/HamApp-Windows-Preview.exe' -PathType Leaf)) { throw 'Missing genuine hosted Windows EXE' }
           Get-FileHash 'dist/HamApp-Windows-Preview.exe' -Algorithm SHA256 | Format-List
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build two actually distinct native Windows GUI executable sources
+        shell: pwsh
+        timeout-minutes: 12
+        run: |
+          ./scripts/windows_build_distinct_v2_ci.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Install pinned free upstream NSIS 3.11 compiler on hosted Windows only
         shell: pwsh
         run: |
