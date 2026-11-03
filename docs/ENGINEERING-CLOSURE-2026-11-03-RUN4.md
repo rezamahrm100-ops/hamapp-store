@@ -21,7 +21,7 @@
 
 Main `562d4cd808a73e11a139ab52f5ee4adbe50ef107`. Main workflows: [CI #41587826520](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41587826520), [CodeQL #41587826638](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41587826638), [Trivy source #41587826484](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41587826484), [real disposable signed-index F-Droid #41587826636](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41587826636), [owner trusted-main Windows QA #41587826538](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41587826538), [Pages #41587826597](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41587826597), and [reproducible build #41587826480](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41587826480).
 
-**Always inspect exact terminal `conclusion` values on the live main before upgrading status.** Do not treat queued/in-progress main runs as success. The full feature-branch evidence above is already verified.
+**Live reconciliation (2026-11-03):** six of seven listed workflows completed **SUCCESS** on exact `main` SHA `562d4cd808a73e11a139ab52f5ee4adbe50ef107`: hosted CI, CodeQL, Trivy, real disposable F-Droid signed-index + exact APK, Pages and reproducible build. **Owner self-hosted Windows QA run #41587826538 remains QUEUED**, not a PASS, and it executes only trusted main. No claim of complete seven-of-seven main QA or owner physical-device acceptance.
 
 ## Engineering status: PARTIAL. Production publication NOT authorized
 
