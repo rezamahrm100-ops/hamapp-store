@@ -52,12 +52,15 @@ def change_registry(path, action, publisher):
     lock_path = parent / (registry.name + ".lock")
     if lock_path.is_symlink():
         raise CredentialOperationError("unsafe publisher token lock path")
-    if not lock_path.exists():
-        descriptor = os.open(lock_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
-                             getattr(os, "O_NOFOLLOW", 0), 0o600)
-        os.close(descriptor)
-    lock_path = _secure_owner_lock(lock_path)
-    with lock_path.open("rb") as lock:
+    # Concurrent owner-admin processes use the same stable lock inode.
+    # Never truncate, follow a symbolic link or reuse a non-private lock.
+    flags = os.O_CREAT | os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(lock_path, flags, 0o600)
+    with os.fdopen(descriptor, "r+b") as lock:
+        info = os.fstat(lock.fileno())
+        if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1
+                or info.st_uid != os.geteuid() or info.st_mode & 0o077):
+            raise CredentialOperationError("private lock must be owner-owned 0600 regular inode")
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
         try:
             # Reopen *inside* file lock. One immutable lock identity prevents
