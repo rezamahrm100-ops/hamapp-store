@@ -2,20 +2,29 @@
 # Real per-user installer lifecycle only on short-lived GitHub-hosted Windows.
 # Unsigned NSIS preview; never owner runner or trusted public installer release.
 [CmdletBinding()]
-param([Parameter(Mandatory=$true)][string]$UnsignedExe)
+param(
+    [Parameter(Mandatory=$true)][string]$UnsignedExe,
+    [Parameter(Mandatory=$true)][string]$SecondUnsignedExe
+)
 
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_OS -ne 'Windows' -or -not $env:RUNNER_TEMP) {
     throw 'Actual isolated GitHub-hosted Windows runner is mandatory'
 }
-if (-not (Test-Path -LiteralPath $UnsignedExe -PathType Leaf)) {
-    throw 'Real PyInstaller Windows executable missing'
+if (-not (Test-Path -LiteralPath $UnsignedExe -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $SecondUnsignedExe -PathType Leaf)) {
+    throw 'Both distinct real PyInstaller Windows executables are required'
 }
 if (-not $env:GITHUB_SHA -or $env:GITHUB_SHA -notmatch '^[a-f0-9]{40}$') {
     throw 'Exact producing GitHub source SHA missing'
 }
 $origin = (Resolve-Path -LiteralPath $UnsignedExe).Path
+$origin2 = (Resolve-Path -LiteralPath $SecondUnsignedExe).Path
 $expected = (Get-FileHash -LiteralPath $origin -Algorithm SHA256).Hash.ToLowerInvariant()
+$expected2 = (Get-FileHash -LiteralPath $origin2 -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($origin -eq $origin2 -or $expected -eq $expected2) {
+    throw 'Second Windows native app must have different real executable bytes'
+}
 $root = Join-Path $env:LOCALAPPDATA 'Programs\HamAppPreviewSandbox'
 $reg = 'HKCU:\Software\HamAppPreviewSandbox'
 $uninstallReg = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\HamAppPreviewSandbox'
@@ -42,7 +51,7 @@ try {
     Write-Output 'NSIS_REAL_TWO_TEST_INSTALLERS_BUILDING'
     & $makensis '/V3' "/DPACKAGE_CODE=1" "/DINPUT_EXE=$origin" "/DOUTPUT_EXE=$setup1" $sourceScript
     if ($LASTEXITCODE -ne 0) { throw 'NSIS actual installer v1 compilation failed' }
-    & $makensis '/V3' "/DPACKAGE_CODE=2" "/DINPUT_EXE=$origin" "/DOUTPUT_EXE=$setup2" $sourceScript
+    & $makensis '/V3' "/DPACKAGE_CODE=2" "/DINPUT_EXE=$origin2" "/DOUTPUT_EXE=$setup2" $sourceScript
     if ($LASTEXITCODE -ne 0) { throw 'NSIS actual installer v2 compilation failed' }
     if (-not (Test-Path -LiteralPath $setup1 -PathType Leaf) -or -not (Test-Path -LiteralPath $setup2 -PathType Leaf)) {
         throw 'Real NSIS output EXEs are missing'
@@ -67,8 +76,8 @@ try {
     if ($v2.ExitCode -ne 0) { throw 'Real version-two installer failed' }
     $observed2 = (Get-ItemProperty -LiteralPath $reg -Name VersionCode).VersionCode
     if ($observed2 -ne 2) { throw 'Windows registry did not record upgraded installer version 2' }
-    if ((Get-FileHash -LiteralPath $installed -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) {
-        throw 'Installer upgrade altered expected native binary bytes'
+    if ((Get-FileHash -LiteralPath $installed -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected2) {
+        throw 'Installer upgrade did not install the second distinct native GUI app bytes'
     }
     Write-Output 'NSIS_REAL_SANDBOX_DOWNGRADE_REJECTION'
     $downgrade = Start-Process -FilePath $setup1 -ArgumentList $args -Wait -PassThru -NoNewWindow
@@ -76,8 +85,8 @@ try {
     if ((Get-ItemProperty -LiteralPath $reg -Name VersionCode).VersionCode -ne 2) {
         throw 'Denied downgrade corrupted current installed version'
     }
-    if ((Get-FileHash -LiteralPath $installed -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) {
-        throw 'Denied downgrade corrupted installed executable bytes'
+    if ((Get-FileHash -LiteralPath $installed -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected2) {
+        throw 'Denied downgrade corrupted the installed v2 native app bytes'
     }
     Write-Output 'NSIS_REAL_SANDBOX_UNINSTALL'
     if (-not (Test-Path -LiteralPath $uninstall -PathType Leaf)) { throw 'Real registered uninstaller missing' }
@@ -98,6 +107,7 @@ try {
         scope = 'real-hosted-windows-per-user-NSIS-installer-lifecycle'
         source_sha = $env:GITHUB_SHA
         source_windows_exe_sha256 = $expected
+        actual_distinct_windows_exe_v2_sha256 = $expected2
         installer_v1_sha256 = $installerHash1
         installer_v2_sha256 = $installerHash2
         actual_hosted_windows_v1_install_passed = $true
@@ -105,14 +115,14 @@ try {
         installed_exe_sha256_continuity_passed = $true
         actual_older_installer_downgrade_refused = $true
         actual_uninstaller_and_registry_cleanup_passed = $true
-        product_binary_v2_content_change_verified = $false
+        product_binary_v2_content_change_verified = $true
         native_installer_authenticode_production_verified = $false
         elevation_UAC_or_owner_device_acceptance = $false
         public_release_approved = $false
         production_ready = $false
     }
     $receipt | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath $evidencePath -Encoding utf8
-    Write-Output 'ACTUAL_WINDOWS_NSIS_INSTALL_UPGRADE_DENY_DOWNGRADE_UNINSTALL_ACCEPTED; NO_PRODUCTION_RELEASE'
+    Write-Output 'ACTUAL_WINDOWS_NSIS_DISTINCT_APP_V1_TO_V2_UPGRADE_DENY_DOWNGRADE_UNINSTALL_ACCEPTED; NO_PRODUCTION_RELEASE'
 }
 finally {
     # Only cleanup files/registry proven to have been created by THIS isolated

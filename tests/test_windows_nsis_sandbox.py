@@ -30,13 +30,30 @@ class RealWindowsInstallerGateTests(unittest.TestCase):
             "$env:RUNNER_TEMP", "Start-Process", "Get-FileHash",
             "VersionCode", "actual_hosted_windows_v2_installer_upgrade_passed",
             "actual_older_installer_downgrade_refused", "uninstall",
-            "product_binary_v2_content_change_verified = $false",
+            "product_binary_v2_content_change_verified = $true",
             "native_installer_authenticode_production_verified = $false",
             "public_release_approved = $false",
         ):
             self.assertIn(expected,src)
+        self.assertIn("$SecondUnsignedExe",src)
+        self.assertIn("$expected2",src)
+        self.assertIn('actual_distinct_windows_exe_v2_sha256 = $expected2',src)
+        self.assertIn('"/DINPUT_EXE=$origin2"',src)
         self.assertNotIn("HKLM",src)
         self.assertNotIn("Remove-Item -Path C:",src)
+
+    def test_second_app_build_has_real_distinct_compiled_source_marker(self):
+        gui=(ROOT/"windows_client/gui.py").read_text("utf-8")
+        entry=(ROOT/"scripts/windows_v2_native_ci_entry.py").read_text("utf-8")
+        builder=(ROOT/"scripts/windows_build_distinct_v2_ci.ps1").read_text("utf-8")
+        self.assertIn('def main(build_label="preview-v1")',gui)
+        self.assertIn('root.title("هَماپ | فروشگاه ویندوز | " + build_label)',gui)
+        self.assertIn('main(build_label="ci-test-v2")',entry)
+        self.assertIn('PyInstaller',builder)
+        self.assertIn('HamApp-Windows-V2-CI-ONLY',builder)
+        self.assertIn('$sha1 -eq $sha2',builder)
+        self.assertIn("HOSTED",builder.upper())
+        self.assertNotIn("RequestExecutionLevel admin",builder)
 
     def test_actual_hosted_pipeline_reuses_exact_previous_native_exe(self):
         src=(ROOT/".github/workflows/windows-client-preview.yml").read_text("utf-8")
@@ -48,6 +65,8 @@ class RealWindowsInstallerGateTests(unittest.TestCase):
         self.assertIn("hamapp-windows-unsigned-preview",src)
         self.assertIn("scripts/windows_nsis_sandbox_acceptance.ps1",src)
         self.assertIn("hamapp-real-hosted-nsis-install-qa",src)
+        self.assertIn("scripts/windows_build_distinct_v2_ci.ps1",src)
+        self.assertIn("-SecondUnsignedExe",src)
         self.assertNotIn("runs-on: self-hosted",src)
 
 

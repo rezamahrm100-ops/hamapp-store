@@ -5,7 +5,7 @@ import sys
 from windows_client.core import ClientError, load_manifest, command_for, execute_operation
 
 
-def main():
+def main(build_label="preview-v1"):
     if sys.platform != "win32":
         raise SystemExit("HamApp Windows desktop preview runs only on Windows")
     try:
@@ -15,7 +15,11 @@ def main():
         raise SystemExit("Tkinter unavailable in this Windows build") from exc
 
     root = tk.Tk()
-    root.title("هَماپ | فروشگاه ویندوز")
+    # An actual compiled source marker makes the two hosted installer test
+    # versions observably different Windows EXE APPLICATION builds.
+    if build_label not in ("preview-v1", "ci-test-v2"):
+        raise ValueError("unsupported Windows preview build label")
+    root.title("هَماپ | فروشگاه ویندوز | " + build_label)
     root.geometry("880x610")
     root.minsize(670, 470)
     root.configure(bg="#111827")
