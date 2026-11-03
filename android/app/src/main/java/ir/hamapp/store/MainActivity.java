@@ -197,10 +197,19 @@ public final class MainActivity extends Activity {
             .setPositiveButton("ادامه", (dialog, which) -> {
                 // F-Droid registers fdroidrepos:// for arbitrary approved repos.
                 // Plain HTTPS ACTION_VIEW may open a browser instead of F-Droid.
-                Uri pinnedRepoUrl = Uri.parse(url).buildUpon()
+                // F-Droid's fdroidrepos:// is a URI SCHEME replacing https://,
+                // not a prefix to the full URL (which would make host="https").
+                // Keep the independently approved host/path and exact signer pin.
+                Uri fdroidUri = Uri.parse(url).buildUpon()
+                        .scheme("fdroidrepos")
                         .appendQueryParameter("fingerprint", fingerprint.toUpperCase(java.util.Locale.ROOT))
                         .build();
-                Uri fdroidUri = Uri.parse("fdroidrepos://" + pinnedRepoUrl);
+                if (!"fdroidrepos".equals(fdroidUri.getScheme())
+                        || !Uri.parse(url).getHost().equals(fdroidUri.getHost())
+                        || !"/fdroid/repo/".equals(fdroidUri.getPath())) {
+                    showError("نشانی انتقال به F-Droid نامعتبر است.");
+                    return;
+                }
                 Intent intent = new Intent(Intent.ACTION_VIEW, fdroidUri);
                 intent.addCategory(Intent.CATEGORY_BROWSABLE);
                 intent.setPackage("org.fdroid.fdroid");
