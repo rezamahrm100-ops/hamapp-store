@@ -13,7 +13,9 @@ SCRIPT=ROOT/"scripts/fdroid_official_client_emulator.sh"
 class OfficialFdroidHandoffTests(unittest.TestCase):
     def test_source_invokes_official_client_not_arbitrary_browser(self):
         src=ANDROID.read_text(encoding="utf-8")
-        self.assertIn('Uri.parse("fdroidrepos://" + pinnedRepoUrl)',src)
+        self.assertIn('.scheme("fdroidrepos")',src)
+        self.assertIn('Uri.parse(url).getHost().equals(fdroidUri.getHost())',src)
+        self.assertNotIn('Uri.parse("fdroidrepos://" + pinnedRepoUrl)',src)
         self.assertIn('intent.setPackage("org.fdroid.fdroid")',src)
         self.assertIn('if (!RepoPolicy.isAllowed(url, fingerprint))',src)
         self.assertIn('appendQueryParameter("fingerprint"',src)
