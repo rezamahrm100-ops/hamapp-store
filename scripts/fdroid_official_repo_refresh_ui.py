@@ -7,6 +7,7 @@ live, context-bound accessibility controls in the official application.
 No ADB database writes, intent to an unexported worker, APK install or
 permission grants. Exact index fetch and actual PM v2 readback happen outside.
 """
+import json
 import os
 from pathlib import Path
 import re
@@ -109,6 +110,39 @@ def dump(dest):
     return dest
 
 
+
+def screen_signals(xml):
+    """Only booleans for known public test screen labels, never raw UI/private XML."""
+    root = ET.parse(xml).getroot()
+    labels = {_label(n).casefold() for n in root.iter("node")
+              if n.get("package") == FDROID and _label(n)}
+    return {
+        "official_fdroid_title_visible": "f-droid" in labels,
+        "repositories_label_visible": "repositories" in labels,
+        "disposable_repository_label_visible": REPO_TITLE.casefold() in labels,
+        "native_check_for_updates_visible": "check for updates" in labels,
+        "hamapp_title_visible": bool({"hamapp", "هَماپ", "هماپ"} & labels),
+        "back_accessibility_visible": "back" in labels,
+        "got_it_onboarding_visible": "got it" in labels,
+    }
+
+
+def safe_disposable_screenshot():
+    out = Path("dist/fdroid-real-client-probe/official-repo-force-refresh-blocker.png")
+    try:
+        response = subprocess.run(["adb", "exec-out", "screencap", "-p"],
+                                  capture_output=True, timeout=15, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    if (response.returncode != 0 or len(response.stdout) > 2000000 or
+            not response.stdout.startswith(bytes((137, 80, 78, 71, 13, 10, 26, 10)))):
+        return False
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(response.stdout)
+    return True
+
+
+
 def run():
     if (os.environ.get("GITHUB_ACTIONS") != "true"
             or os.environ.get("RUNNER_OS") != "Linux"
@@ -120,12 +154,14 @@ def run():
     with tempfile.TemporaryDirectory(prefix="hamapp-official-ui-refresh-") as tmp:
         xml = Path(tmp) / "live.xml"
         transitions = []
+        latest_signals = {}
         for attempt in range(24):
             try:
                 dump(xml)
             except (OSError, subprocess.TimeoutExpired, RuntimeError):
                 time.sleep(2)
                 continue
+            latest_signals = screen_signals(xml)
             # Prefer force-update on actual repository details. No network GET
             # or old repository preview itself authorizes claiming completion.
             actions = ("force-update", "dismiss-repo-hint", "test-repository",
@@ -138,6 +174,8 @@ def run():
                 continue
             adb("shell", "input", "tap", str(point[0]), str(point[1]))
             transitions.append(action)
+            print("REAL_OFFICIAL_FDROID_REPO_UI_ACTION_" + action.upper().replace("-", "_"),
+                  flush=True)
             if action == "force-update":
                 if ("repositories" not in transitions or
                         "test-repository" not in transitions):
@@ -145,6 +183,26 @@ def run():
                 print("REAL_OFFICIAL_FDROID_REPO_DETAIL_FORCE_UPDATE_BUTTON_TAPPED")
                 return
             time.sleep(2)
+        # Failure-only, reproducible and non-sensitive synthetic-emulator evidence.
+        # Never copy raw Android UI XML or private F-Droid Room DB into artifacts.
+        output = Path("dist/fdroid-real-client-probe")
+        output.mkdir(parents=True, exist_ok=True)
+        receipt = {
+            "schema_version": 1,
+            "scope": "official-disposable-FDroid-repo-UI-navigation-failure-only",
+            "attempts": 24,
+            "clicked_repositories": "repositories" in transitions,
+            "clicked_exact_test_repo": "test-repository" in transitions,
+            "clicked_onboarding_dismissal": "dismiss-repo-hint" in transitions,
+            "clicked_back_from_app": "back-from-app" in transitions,
+            "clicked_native_force_update": False,
+            "last_known_screen_signals": latest_signals,
+            "public_release_authorized": False,
+            "owner_device_tested": False
+        }
+        (output / "official-repo-force-refresh-blocker.json").write_text(
+            json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        safe_disposable_screenshot()
     raise RuntimeError("REAL_OFFICIAL_FDROID_REPO_FORCE_UPDATE_UI_NOT_REACHED")
 
 
