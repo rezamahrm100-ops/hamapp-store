@@ -8,6 +8,10 @@ on:
       - 'scripts/build_windows_client_catalog.py'
       - 'catalog/**'
       - 'tests/test_windows_client.py'
+      - 'tests/test_windows_authenticode_real_drill.py'
+      - 'scripts/windows_authenticode_real_drill.py'
+      - 'scripts/windows_authenticode_real_drill.ps1'
+      - 'scripts/publisher_gate.py'
       - '.github/workflows/windows-client-preview.yml'
   push:
     branches: [main]
@@ -17,6 +21,10 @@ on:
       - 'scripts/build_windows_client_catalog.py'
       - 'catalog/**'
       - 'tests/test_windows_client.py'
+      - 'tests/test_windows_authenticode_real_drill.py'
+      - 'scripts/windows_authenticode_real_drill.py'
+      - 'scripts/windows_authenticode_real_drill.ps1'
+      - 'scripts/publisher_gate.py'
       - '.github/workflows/windows-client-preview.yml'
   workflow_dispatch:
 permissions:
@@ -56,6 +64,19 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path dist/HamApp-Windows-Preview.exe)) { throw "Preview EXE not produced" }
           Get-FileHash dist/HamApp-Windows-Preview.exe -Algorithm SHA256 | Format-List
+      - name: REAL native Authenticode signature, wrong signer and damaged EXE negative checks
+        shell: pwsh
+        run: |
+          ./scripts/windows_authenticode_real_drill.ps1 -UnsignedExe 'dist/HamApp-Windows-Preview.exe'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path 'dist/windows-authenticode-evidence/receipt.json')) { throw 'Missing signed executable receipt' }
+      - name: Upload safe ephemeral signing receipt ONLY (never signed test executable or keys)
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-real-ephemeral-windows-authenticode-evidence
+          path: dist/windows-authenticode-evidence/receipt.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Upload short-lived unsigned preview for owner QA only
         uses: actions/upload-artifact@v4
         with:
@@ -67,7 +88,7 @@ jobs:
         shell: pwsh
         run: |
           "### UNSIGNED WINDOWS CLIENT PREVIEW ONLY" | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-          "This is not a production release. No real publishers are registered, no packages are installable yet, and no code signing or actual device install was accepted." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          "The unsigned preview remains UNSIGNED for distribution; separate temporary CI copies were genuinely Authenticode signed and negatively tested with throwaway keys. No approved production publisher certificate, real installer deployment, or owner-device install was accepted." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
   attest-and-verify:
     name: Verify trusted-main unsigned Windows EXE provenance
