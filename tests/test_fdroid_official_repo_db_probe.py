@@ -25,12 +25,15 @@ class OfficialFdroidRepositoryPersistenceProofTests(unittest.TestCase):
         self.path=Path(work.name)
 
     def _sqlite(self, host="10.0.2.2:8975", *, table="Repository"):
-        p=self.path/"fdroid.sqlite"
-        with sqlite3.connect(p) as db:
+        p=self.path/"source.sqlite"
+        db=sqlite3.connect(p)
+        try:
             db.execute('CREATE TABLE "'+table+'" (id INTEGER PRIMARY KEY, url TEXT NOT NULL)')
             db.execute('INSERT INTO "'+table+'" (id,url) VALUES (?,?)',
                        (3,"https://"+host+"/fdroid/repo/"))
             db.commit()
+        finally:
+            db.close()
         return p
 
     def _tar(self, paths):
@@ -46,8 +49,11 @@ class OfficialFdroidRepositoryPersistenceProofTests(unittest.TestCase):
         p=self._sqlite()
         self.assertEqual(probe.inspect_sqlite(p),["Repository"])
         self.assertEqual(probe.inspect_sqlite(p,"10.0.2.2:9001"),[])
-        with sqlite3.connect(p) as db:
+        db=sqlite3.connect(p)
+        try:
             rows=db.execute("SELECT COUNT(*) FROM Repository").fetchone()
+        finally:
+            db.close()
         self.assertEqual(rows,(1,))
 
     def test_mismatched_non_repo_table_does_not_count(self):
