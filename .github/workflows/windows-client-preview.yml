@@ -12,6 +12,7 @@ on:
       - 'scripts/windows_authenticode_real_drill.py'
       - 'scripts/windows_authenticode_real_drill.ps1'
       - 'scripts/windows_ephemeral_pfx.py'
+      - 'scripts/portable_authenticode_drill.py'
       - 'scripts/publisher_gate.py'
       - '.github/workflows/windows-client-preview.yml'
   push:
@@ -26,6 +27,7 @@ on:
       - 'scripts/windows_authenticode_real_drill.py'
       - 'scripts/windows_authenticode_real_drill.ps1'
       - 'scripts/windows_ephemeral_pfx.py'
+      - 'scripts/portable_authenticode_drill.py'
       - 'scripts/publisher_gate.py'
       - '.github/workflows/windows-client-preview.yml'
   workflow_dispatch:
@@ -66,25 +68,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path dist/HamApp-Windows-Preview.exe)) { throw "Preview EXE not produced" }
           Get-FileHash dist/HamApp-Windows-Preview.exe -Algorithm SHA256 | Format-List
-      - name: Install pinned upstream OpenSSL-backed certificate generator (test only)
-        shell: pwsh
-        run: |
-          python -m pip install --disable-pip-version-check --only-binary=:all: cryptography==50.0.2
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: REAL native Authenticode signature, wrong signer and damaged EXE negative checks
-        shell: pwsh
-        timeout-minutes: 8
-        run: |
-          ./scripts/windows_authenticode_real_drill.ps1 -UnsignedExe 'dist/HamApp-Windows-Preview.exe'
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          if (-not (Test-Path 'dist/windows-authenticode-evidence/receipt.json')) { throw 'Missing signed executable receipt' }
-      - name: Upload safe ephemeral signing receipt ONLY (never signed test executable or keys)
-        uses: actions/upload-artifact@v4
-        with:
-          name: hamapp-real-ephemeral-windows-authenticode-evidence
-          path: dist/windows-authenticode-evidence/receipt.json
-          if-no-files-found: error
-          retention-days: 7
       - name: Upload short-lived unsigned preview for owner QA only
         uses: actions/upload-artifact@v4
         with:
@@ -96,7 +79,57 @@ jobs:
         shell: pwsh
         run: |
           "### UNSIGNED WINDOWS CLIENT PREVIEW ONLY" | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-          "The unsigned preview remains UNSIGNED for distribution; separate temporary CI copies were genuinely Authenticode signed and negatively tested with throwaway keys. No approved production publisher certificate, real installer deployment, or owner-device install was accepted." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          "The Windows preview is UNSIGNED. The separately gated hosted Linux job signs independent temporary PE copies with disposable OpenSSL keys and verifies real Authenticode cryptography, not native Windows OS trust or a production publisher identity. No owner-device installation." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+  portable-authenticode:
+    name: Real offline PE Authenticode with two disposable publishers
+    needs: desktop-preview
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: hamapp-windows-unsigned-preview
+          path: dist/native-input
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install real upstream PE Authenticode validator
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends osslsigncode
+          osslsigncode -v
+          python -m pip install --disable-pip-version-check --only-binary=:all: cryptography==50.0.2
+      - name: Real portable signing, exact signer pin and negative signature verification
+        shell: bash
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          test -s dist/native-input/HamApp-Windows-Preview.exe
+          python scripts/portable_authenticode_drill.py \
+            --unsigned dist/native-input/HamApp-Windows-Preview.exe \
+            --source-sha "$GITHUB_SHA" \
+            --receipt dist/windows-authenticode-evidence/receipt.json
+          test -s dist/windows-authenticode-evidence/receipt.json
+      - name: Upload only non-production cryptographic receipt; no test PFX or signed PE
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-real-disposable-portable-authenticode-evidence
+          path: dist/windows-authenticode-evidence/receipt.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Accurate native OS trust boundary
+        shell: bash
+        run: |
+          echo '### Real PE Authenticode cryptography accepted on isolated Linux' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Two disposable signed real Windows EXE copies, wrong signer, unsigned and tampered checks run. Windows OS WinVerifyTrust, real production signer, installer and physical device NOT accepted.' >> "$GITHUB_STEP_SUMMARY"
 
   attest-and-verify:
     name: Verify trusted-main unsigned Windows EXE provenance
