@@ -73,7 +73,12 @@ class SignedRepoDrillPolicyTests(unittest.TestCase):
             "unapproved_second_version_hash_substitution_rejected": True,
             "official_fdroid_client_subscribed": False,
             "two_version_client_update_performed": False,
-            "real_owner_key_restored_or_backed_up": False
+            "real_owner_key_restored_or_backed_up": False,
+            "actual_ephemeral_keystore_removed_then_restored": True,
+            "independent_volume_key_backup_bytes_verified": True,
+            "restored_key_material_ephemeral_only": True,
+            "restored_ephemeral_key_signed_second_real_index": True,
+            "real_owner_backup_or_restore_proven": False
         }
         accepted = d.public_receipt(self.sha, self.fp, two, True, True)
         self.assertTrue(accepted["both_exact_apk_versions_in_fresh_signed_index"])
@@ -83,6 +88,15 @@ class SignedRepoDrillPolicyTests(unittest.TestCase):
             d.public_receipt(self.sha, self.fp, two, True, True)
         two["actual_debug_version_codes"] = [1, 2]
         two["official_fdroid_client_subscribed"] = True
+        with self.assertRaises(d.DrillError):
+            d.public_receipt(self.sha, self.fp, two, True, True)
+
+        two["official_fdroid_client_subscribed"] = False
+        two["restored_ephemeral_key_signed_second_real_index"] = False
+        with self.assertRaises(d.DrillError):
+            d.public_receipt(self.sha, self.fp, two, True, True)
+        two["restored_ephemeral_key_signed_second_real_index"] = True
+        two["real_owner_backup_or_restore_proven"] = True
         with self.assertRaises(d.DrillError):
             d.public_receipt(self.sha, self.fp, two, True, True)
 
