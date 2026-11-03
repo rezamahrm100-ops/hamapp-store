@@ -72,8 +72,12 @@ try {
     if ($nativeA.signer -ne $material.a.certificate_sha256 -or $nativeB.signer -ne $material.b.certificate_sha256) {
         throw 'Windows native OS returned unexpected signer fingerprints'
     }
-    if ($nativeA.status -ne 'NotTrusted' -or $nativeB.status -ne 'NotTrusted') {
-        throw ('Disposable CA is not valid trusted Windows signer; statuses=' + $nativeA.status + ',' + $nativeB.status)
+    # Actual hosted Windows returned UnknownError for each correctly embedded
+    # signer in #41644214183. That is NOT proof of the precise trust-chain
+    # failure; it is only proof that Windows did not mark either as Valid.
+    # For this pinned disposable test require the exact observed failure.
+    if ($nativeA.status -ne 'UnknownError' -or $nativeB.status -ne 'UnknownError') {
+        throw ('Unexpected native Windows status for isolated disposable PFX; statuses=' + $nativeA.status + ',' + $nativeB.status)
     }
     $nativeUnsigned = Observe-NativeSignature $UnsignedExe
     if ($nativeUnsigned.status -ne 'NotSigned' -or $null -ne $nativeUnsigned.signer) {
@@ -107,7 +111,9 @@ try {
         actual_windows_native_unsigned_exe_provided = $true
         actual_official_windows_sdk_signer_produced_two_distinct_signed_exes = $true
         native_windows_os_observed_two_exact_disposable_leaf_certificates = $true
-        native_windows_os_rejected_untrusted_disposable_ca_signers = $true
+        native_windows_os_did_not_accept_disposable_test_signers = $true
+        native_windows_os_disposable_signer_statuses = @('UnknownError', 'UnknownError')
+        precise_native_os_trust_failure_cause_verified = $false
         native_windows_os_rejected_unsigned_exe = $true
         native_windows_os_rejected_modified_signed_exe = $true
         production_authenticode_certificate_verified = $false
@@ -116,7 +122,7 @@ try {
         public_release_authorized = $false
     }
     $receipt | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath 'dist/windows-authenticode-evidence/receipt.json' -Encoding utf8
-    Write-Output 'ACTUAL_NATIVE_WINDOWS_OS_REJECTED_BOTH_UNTRUSTED_EPHEMERAL_SIGNERS_UNSIGNED_AND_TAMPERED_PE; NOT_TRUSTED_PRODUCTION'
+    Write-Output 'ACTUAL_NATIVE_WINDOWS_OS_REPORTED_UNKNOWN_ERROR_FOR_TWO_SIGNERS; PRECISE_TRUST_CAUSE_NOT_PROVEN; UNSIGNED_TAMPER_REJECTED'
 }
 finally {
     Write-Output 'AUTHENTICODE_TEST_DISPOSING_CERTIFICATE_OBJECTS_AND_PRIVATE_TEMP_ONLY'
