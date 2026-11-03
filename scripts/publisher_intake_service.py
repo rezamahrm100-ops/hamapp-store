@@ -170,7 +170,8 @@ class IntakeHandler(BaseHTTPRequestHandler):
         raw_length = self.headers.get("Content-Length", "")
         if (self.headers.get("Transfer-Encoding") or
                 self.headers.get("Content-Type") != "application/octet-stream"
-                or not raw_length.isdecimal() or not 0 < int(raw_length) <= MAX_UPLOAD
+                or not raw_length.isascii() or not raw_length.isdigit()
+                or not 1 <= len(raw_length) <= 10 or not 0 < int(raw_length) <= MAX_UPLOAD
                 or len(encoded) > MAX_CANDIDATE_HEADER):
             self._reply(422, {"error": "invalid_upload_envelope"})
             return
