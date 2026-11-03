@@ -38,6 +38,24 @@ class OfficialRealInstallSourceGateTests(unittest.TestCase):
             self.assertEqual(probe.count_client_apk_get(p, "hamapp-v2.apk"), 1)
             self.assertEqual(probe.count_client_apk_get(p, "missing.apk"), 0)
 
+    def test_log_diagnostics_are_bounded_booleans_and_only_failure_evidence(self):
+        with patch("subprocess.run") as command:
+            command.return_value.returncode = 0
+            command.return_value.stdout = (
+                "Started install of ir.hamapp.store\\n"
+                "Download failed: SSLHandshakeException\\n"
+                "Error requesting pre-approval for ir.hamapp.store\\n"
+                "SecurityException"
+            )
+            result = probe.on_device_failure_signals()
+            self.assertTrue(result["fdroid_log_started_real_install"])
+            self.assertTrue(result["fdroid_log_download_failed"])
+            self.assertTrue(result["fdroid_log_preapproval_error"])
+            self.assertTrue(result["android_runtime_security_exception_seen"])
+            self.assertTrue(all(isinstance(value, bool) for value in result.values()))
+            self.assertEqual(len(result), 6)
+            self.assertIn("3000", command.call_args.args[0])
+
     def test_real_inclient_flow_never_uses_adb_install_or_fake_sqlite(self):
         source = (ROOT / "scripts/fdroid_official_inclient_install_emulator.py").read_text("utf-8")
         for required in (
@@ -57,6 +75,12 @@ class OfficialRealInstallSourceGateTests(unittest.TestCase):
         self.assertIn('tap_from_real_ui(xml, "confirm-metered")', source)
         self.assertIn('real_fdroid_metered_download_confirmation_tapped_if_visible', source)
         self.assertIn('fdroid_metered_prompt_visible', source)
+        self.assertIn("official-inclient-after-first-action-v", source)
+        self.assertIn("actual_client_versioned_apk_get_count", source)
+        self.assertIn("on_device_failure_signals()", source)
+        self.assertIn("fdroid_log_started_real_install", source)
+        self.assertIn("official_app_install_button_coordinate_tap_sent", source)
+        self.assertNotIn("official_app_install_button_actually_tapped", source)
         self.assertIn('ACTUAL_OFFICIAL_FDROID_METERED_DOWNLOAD_DIALOG_CONFIRMED', source)
         self.assertIn('"install_or_upgrade_verified": False', source)
         for forbidden in ('"adb", "install"', '"adb", "shell", "pm", "install"',
