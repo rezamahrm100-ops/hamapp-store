@@ -110,6 +110,8 @@ jobs:
             dist/fdroid-real-client-probe/private-repository-db-proof.json
             dist/fdroid-real-client-probe/official-inclient-installed-v1.json
             dist/fdroid-real-client-probe/official-inclient-installed-v2.json
+            dist/fdroid-real-client-probe/official-inclient-after-first-action-v1.png
+            dist/fdroid-real-client-probe/official-inclient-after-first-action-v2.png
             dist/fdroid-real-client-probe/official-inclient-blocker-v1.png
             dist/fdroid-real-client-probe/official-inclient-blocker-v2.png
             dist/fdroid-real-client-probe/official-inclient-blocker-v1.json
