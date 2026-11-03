@@ -69,6 +69,8 @@ class RealPortableWindowsPESignatureTests(unittest.TestCase):
         self.assertIn("signer_key, leaf, [root]", src)
         self.assertIn("fingerprint", src)
         self.assertIn("expected_success=False", src)
+        self.assertIn('"sha2:" + identity["fingerprint"]', src)
+        self.assertNotIn('"sha256:" + identity["fingerprint"]', src)
         self.assertNotIn('"public_release_authorized": True', src)
 
     def test_hosted_pipeline_builds_real_windows_PE_first_then_uses_real_linux_validator(self):
