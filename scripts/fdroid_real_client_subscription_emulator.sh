@@ -48,12 +48,12 @@ fi
 adb reboot
 adb wait-for-device
 for boot_attempt in $(seq 1 45); do
-  if [ "$(adb shell getprop sys.boot_completed | tr -d '\\r')" = 1 ]; then
+  if [ $(adb shell getprop sys.boot_completed | grep -q '^1') ]; then
     break
   fi
   sleep 2
 done
-test "$(adb shell getprop sys.boot_completed | tr -d '\\r')" = 1
+test $(adb shell getprop sys.boot_completed | grep -q '^1')
 adb root > "$base/emulator-root-after-reboot.txt" 2>&1
 adb wait-for-device
 if ! adb remount > "$base/emulator-remount-only.txt" 2>&1; then
