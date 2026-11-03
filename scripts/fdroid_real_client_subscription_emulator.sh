@@ -128,6 +128,19 @@ click_actual_accessible_control() {
         return 0
       fi
     fi
+    # A real official F-Droid Filter tutorial blocks v2 refresh on Android 33.
+    # This was captured in failed post-merge main run #41648433814. Dismiss
+    # ONLY its actual small F-Droid-owned visible "Got it" control.
+    point=$(python3 scripts/fdroid_client_accessible_ui.py \
+      --xml "$base/window.xml" --dismiss-onboarding) || point=""
+    if [ -n "$point" ]; then
+      read -r x y <<< "$point"
+      if [[ "$x" =~ ^[0-9]+$ && "$y" =~ ^[0-9]+$ ]]; then
+        adb shell input tap "$x" "$y"
+        echo "OFFICIAL_FDROID_REAL_ONBOARDING_TIP_DISMISSED"
+        return 0
+      fi
+    fi
     point=$(python3 scripts/fdroid_client_accessible_ui.py --xml "$base/window.xml") || return 0
     read -r x y <<< "$point"
     if [[ "$x" =~ ^[0-9]+$ && "$y" =~ ^[0-9]+$ ]]; then
