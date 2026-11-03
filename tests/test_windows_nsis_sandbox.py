@@ -17,10 +17,6 @@ class RealWindowsInstallerGateTests(unittest.TestCase):
         self.assertIn('Section "Uninstall"',src)
         self.assertIn("DeleteRegKey HKCU",src)
         self.assertIn('File /oname=HamApp-Windows-Preview.exe',src)
-        self.assertIn("$SecondUnsignedExe",src)
-        self.assertIn("$expected2",src)
-        self.assertIn('actual_distinct_windows_exe_v2_sha256 = $expected2',src)
-        self.assertIn('"/DINPUT_EXE=$origin2"',src)
         self.assertNotIn("HKLM",src)
         self.assertNotIn("RequestExecutionLevel admin",src)
         self.assertNotIn("ExecWait",src)
@@ -39,6 +35,10 @@ class RealWindowsInstallerGateTests(unittest.TestCase):
             "public_release_approved = $false",
         ):
             self.assertIn(expected,src)
+        self.assertIn("$SecondUnsignedExe",src)
+        self.assertIn("$expected2",src)
+        self.assertIn('actual_distinct_windows_exe_v2_sha256 = $expected2',src)
+        self.assertIn('"/DINPUT_EXE=$origin2"',src)
         self.assertNotIn("HKLM",src)
         self.assertNotIn("Remove-Item -Path C:",src)
 
