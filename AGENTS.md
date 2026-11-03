@@ -166,3 +166,6 @@ At main `eb08797a42fdde5cfacd0f6542ee0100d02bb680`, actual GitHub Actions runs f
 
 ## Actual ClamAV on real APK/EXE bytes (2026-11-03; acceptance pending)
 - Read docs/ACTUAL-ANTIVIRUS-SCREENING.md: owner local intake runs real ClamAV with recent signature DB and exact artifact rehash, fails on detections/errors; hosted first-party debug APK workflow refreshes DB and scans real APK. A non-detection never proves malware absence or authorizes public release. Verify real CI and scanner receipts before accepting.
+
+## Integrated 2026-11-03 actual binary/security/deployment execution — accepted
+- **Read `docs/ENGINEERING-CLOSURE-2026-11-03.md` as the latest engineering ledger**. Source PRs #43/#44/#45 merged, final main `e11f32ae3773e7b5488545230a1e96e27ed8dae4`, all eight exact-main workflows SUCCESS. Verified a real first-party APK ZIP/archive CRC+traversal/ZIP-bomb check, owner-local developer signer+GitHub provenance+Android permissions+SHA preflight, actual fresh ClamAV DEBUG APK signature scan, and live HTTPS bytes parity of published first-party Pages. No genuine production publisher, malware-free certification, signed repository, private app release, official F-Droid client subscription or signed Windows owner installation has been accepted. Entire engineering verdict **PARTIAL**.

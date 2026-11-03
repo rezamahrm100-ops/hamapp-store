@@ -72,3 +72,6 @@ Inspect actual PR on branch `feature/actual-binary-archive-inspection-and-owner-
 
 ## Actual fresh ClamAV artifact scanning
 - Review live PR #45 and the actual hosted ClamAV workflow, CI and CodeQL on exact head before merging; check main after. This validates real first-party debug APK signature scanning, not malware absence or any third-party production publisher. Continue offline signer, F-Droid official client, owner device and branch ruleset.
+
+## Latest accepted 2026-11-03 batch — continue unfinished authentic engineering
+- Read `docs/ENGINEERING-CLOSURE-2026-11-03.md`; actual merged main `e11f32ae3773e7b5488545230a1e96e27ed8dae4` passed all eight source/debug/binary signature scanner/Windows/Pages workflows. Do not rebuild accepted CRC/ClamAV/HTTPS static tooling. NEXT: genuine owner-approved publisher identity and private submission review; production binary threat/dynamic/legal screening with provenance; admin enforcement of GitHub main branch ruleset Issue #31; stable F-Droid offline production signer/restore and official client two-version install; real Authenticode Windows mapping/update. Continue engineerable code in one integrated execution and keep external owner actions separate. Update this file with exact new SHA and evidence.

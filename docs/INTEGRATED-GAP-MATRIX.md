@@ -48,3 +48,6 @@ New proposed release-governance transaction tooling can generate coordinated no-
 
 ### Real ClamAV artifact signature screening
 - Added offline actual candidate ClamAV scan, DB freshness constraint and hash continuity, plus real hosted debug APK scan. This is signature detection only; does not make malware absence claims or fulfill authentic production publisher malware/behavior review.
+
+## Final live 2026-11-03 integration reconciliation
+- Latest full evidence ledger `docs/ENGINEERING-CLOSURE-2026-11-03.md` supersedes earlier pending-status sections. Real owner-local upstream signer+GitHub attestation+APK/permission+archive integrity source check accepted as code (no production identity); real first-party debug APK archive and fresh ClamAV signature checks accepted; first-party actual HTTPS Pages delivered-byte parity accepted; main eight workflows all green at `e11f32ae3773e7b5488545230a1e96e27ed8dae4`. Remaining owner/real-product gates include protected PR approval, real malware/dynamic behavior review of approved release, F-Droid production repo/client and Windows Authenticode/owner-device, authenticated multi-publisher management.
