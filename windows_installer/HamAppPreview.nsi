@@ -61,7 +61,7 @@ Section "HamApp Windows Preview"
 SectionEnd
 
 Section "Uninstall"
-    ; Never delete a different install root or modify system-wide HKLM state.
+    ; Never delete a different install root or modify system-wide registry state.
     ReadRegStr $0 HKCU "${ROOT_REG}" "InstallDir"
     StrCmp $0 "$INSTDIR" permittedDelete
         SetErrorLevel 18
