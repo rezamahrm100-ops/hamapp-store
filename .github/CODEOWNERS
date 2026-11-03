@@ -88,3 +88,5 @@
 /scripts/verify_fdroid_private_stage.py @rezamahrm100-ops
 /tests/test_verify_fdroid_private_stage.py @rezamahrm100-ops
 /docs/FDROID-LOCAL-SIGNED-INDEX-ACCEPTANCE.md @rezamahrm100-ops
+
+/docs/ENGINEERING-CLOSURE-2026-11-03-RUN4.md @rezamahrm100-ops
