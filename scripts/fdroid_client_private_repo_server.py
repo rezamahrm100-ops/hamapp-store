@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import re
+import ssl
 
 PORT = 8975
 
@@ -41,7 +42,20 @@ def main():
     server = http.server.ThreadingHTTPServer(
         ("127.0.0.1", PORT), partial(ProbeHandler, directory=str(public)))
     server.daemon_threads = True
-    print("ISOLATED_SIGNED_REPO_HTTP_EMULATOR_ONLY", flush=True)
+    # The currently GPG/authenticode-pinned official F-Droid client only
+    # registers fdroidrepos (HTTPS), not the legacy fdroidrepo HTTP intent.
+    # Serve a true TLS endpoint using a throwaway local private CA whose
+    # public certificate is trusted ONLY in this isolated emulator.
+    certs = Path(os.environ["RUNNER_TEMP"]) / "hamapp-fdroid-real-official-client-lab/tls"
+    cert, key = certs / "server.pem", certs / "server.key"
+    if (cert.is_symlink() or key.is_symlink() or not cert.is_file()
+            or not key.is_file() or key.stat().st_mode & 0o077):
+        raise SystemExit("PRIVATE_TEMPORARY_TLS_SIGNER_MISSING_OR_UNSAFE")
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.minimum_version = ssl.TLSVersion.TLSv1_2
+    context.load_cert_chain(str(cert), str(key))
+    server.socket = context.wrap_socket(server.socket, server_side=True)
+    print("ISOLATED_SIGNED_REPO_HTTPS_EMULATOR_ONLY_NOT_PUBLIC", flush=True)
     server.serve_forever(poll_interval=0.2)
 
 
