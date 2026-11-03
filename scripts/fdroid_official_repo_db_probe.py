@@ -74,7 +74,8 @@ def validate_tar_snapshot(raw, target):
             if (not member.isfile() or member.issym() or member.islnk()
                     or member.size > MAX_DB or not allowed_names.fullmatch(member.name)):
                 raise RepositoryPersistenceError("unsafe private F-Droid database archive entry")
-            if (member.name.startswith("databases/..") or len(files) >= 60):
+            basename = member.name.split("/", 1)[1]
+            if (basename.startswith(".") or ".." in basename or len(files) >= 60):
                 raise RepositoryPersistenceError("unsafe or excessive private DB entries")
             content = archive.extractfile(member).read(member.size + 1)
             if len(content) != member.size:
