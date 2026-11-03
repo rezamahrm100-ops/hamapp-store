@@ -66,6 +66,7 @@ jobs:
           Get-FileHash dist/HamApp-Windows-Preview.exe -Algorithm SHA256 | Format-List
       - name: REAL native Authenticode signature, wrong signer and damaged EXE negative checks
         shell: pwsh
+        timeout-minutes: 8
         run: |
           ./scripts/windows_authenticode_real_drill.ps1 -UnsignedExe 'dist/HamApp-Windows-Preview.exe'
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
