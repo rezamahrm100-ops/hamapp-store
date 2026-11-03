@@ -22,8 +22,11 @@ import tempfile
 HOST = "10.0.2.2:8975"
 EXPECTED_SHA40 = re.compile(r"[a-f0-9]{40}\Z")
 EXPECTED_FP64 = re.compile(r"[A-Fa-f0-9]{64}\Z")
-MAX_SNAPSHOT = 48 * 1024 * 1024
-MAX_DB = 32 * 1024 * 1024
+# F-Droid's initial official catalogue can create >48MiB of genuine SQLite
+# and WAL bytes on a fresh emulator. Keep bounded private temporary memory,
+# never upload the snapshot, but accommodate the real upstream app's DB size.
+MAX_SNAPSHOT = 384 * 1024 * 1024
+MAX_DB = 256 * 1024 * 1024
 
 
 class RepositoryPersistenceError(ValueError):
@@ -65,7 +68,7 @@ def inspect_sqlite(path, expected_host=HOST):
 
 def validate_tar_snapshot(raw, target):
     if not 0 < len(raw) <= MAX_SNAPSHOT:
-        raise RepositoryPersistenceError("official client DB archive absent or oversized")
+        raise RepositoryPersistenceError("official client DB archive absent or oversized, bytes=" + str(len(raw)))
     allowed_names = re.compile(r"databases/[A-Za-z0-9._-]{1,130}\Z")
     files = []
     with tarfile.open(fileobj=io.BytesIO(raw), mode="r:*") as archive:
