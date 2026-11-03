@@ -78,3 +78,6 @@ Inspect actual PR on branch `feature/actual-binary-archive-inspection-and-owner-
 
 ## Private publisher quarantine engineering continuation
 - Live-check PR from `feature/private-publisher-quarantine-and-review-20261103`, Linux+hosted Windows CI and CodeQL. Accept only with real Linux private disk test coverage and exact main SHA. This adds secure **local** intake / owner crypto handoff; not login, private cloud hosting, tenant authentication or production release. Continue other engineerable gaps, keeping external production identity and branch ruleset (#31) separate.
+
+## Strict F-Droid stage must not bypass owner approval
+- Inspect PR for `security/fdroid-stage-requires-real-source-and-malware-preflight-20261103`, actual hosted CI, CodeQL and Trivy. Stage CLI must fail if independently pinned workflow/source ref, permissions or real ClamAV is missing; no unsigned bypass to `fdroid update`. After merging, pursue genuine persistent F-Droid repo signer key/index, official client subscription and two-version signed install, plus Windows production signer and owner-admin branch ruleset (#31). The current public trust registries remain empty.

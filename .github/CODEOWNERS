@@ -81,3 +81,6 @@
 /scripts/private_publisher_inbox.py @rezamahrm100-ops
 /docs/PRIVATE-PUBLISHER-QUARANTINE.md @rezamahrm100-ops
 /tests/test_private_publisher_inbox.py @rezamahrm100-ops
+
+/scripts/fdroid_bridge.py @rezamahrm100-ops
+/docs/FDROID-STRICT-VERIFIED-STAGING.md @rezamahrm100-ops
