@@ -159,6 +159,7 @@ def run(stage):
 
     clicked_client_button = False
     clicked_system_prompt = False
+    clicked_metered_confirmation = False
     with tempfile.TemporaryDirectory(prefix="hamapp-official-client-package-", dir=runner) as tmp:
         private = Path(tmp)
         # A genuine F-Droid app action and actual Android PM readback are both
@@ -168,7 +169,13 @@ def run(stage):
             if xml and tap_from_real_ui(xml, "dismiss-hint"):
                 time.sleep(1)
                 continue
-            if xml and tap_from_real_ui(xml, "confirm-installer"):
+            if xml and clicked_client_button and tap_from_real_ui(xml, "confirm-metered"):
+                # The actual upstream MeteredConnectionDialog requires
+                # confirming a download when network is classified metered.
+                # We only click the real F-Droid-owned Download control.
+                clicked_metered_confirmation = True
+                print("ACTUAL_OFFICIAL_FDROID_METERED_DOWNLOAD_DIALOG_CONFIRMED")
+            elif xml and tap_from_real_ui(xml, "confirm-installer"):
                 clicked_system_prompt = True
             elif xml and not clicked_client_button and tap_from_real_ui(
                     xml, "install" if stage == 1 else "update"):
@@ -185,6 +192,7 @@ def run(stage):
                     "package_name": APP_PACKAGE,
                     "real_official_client_app_action_tapped": clicked_client_button,
                     "real_android_installer_confirmation_tapped_if_visible": clicked_system_prompt,
+                    "real_fdroid_metered_download_confirmation_tapped_if_visible": clicked_metered_confirmation,
                     "actual_client_apk_get_observed": True,
                     "actual_installed_version_code": stage,
                     "actual_native_installed_apk_bytes_match_ci_built_signed_apk": True,
@@ -232,11 +240,14 @@ def run(stage):
             "schema_version": 1, "source_sha": source_sha, "requested_stage": stage,
             "official_app_install_button_actually_tapped": clicked_client_button,
             "system_installer_confirmation_actually_tapped": clicked_system_prompt,
+            "real_fdroid_metered_download_confirmation_tapped": clicked_metered_confirmation,
             "actual_native_installed_version_at_failure": installed_version(),
             "fdroid_target_app_name_visible": any(
                 label in ("هَماپ", "هماپ", "HamApp") for label in fdroid_labels),
             "fdroid_install_label_visible": "Install" in fdroid_labels,
             "fdroid_update_label_visible": "Update" in fdroid_labels,
+            "fdroid_metered_prompt_visible": "Continue with mobile data?" in fdroid_labels,
+            "fdroid_download_label_visible": "Download" in fdroid_labels,
             "fdroid_got_it_hint_visible": "Got it" in fdroid_labels,
             "android_permission_or_settings_screen_seen": system_package_seen,
             "install_or_upgrade_verified": False,
