@@ -49,12 +49,99 @@ def select(xml):
     return None
 
 
+def select_actual_repository_add(xml):
+    """Select the actual F-Droid Add repository button using live UI hierarchy.
+
+    Android accessibility commonly exposes the button label as a nonclickable
+    TextView nested inside a clickable button container. A title with the same
+    text must NOT trigger a tap. Choose only the smallest clickable F-Droid
+    ancestor enclosing the exact label, with button-sized visible bounds.
+    """
+    root = ET.parse(xml).getroot()
+    parent_of = {child: parent for parent in root.iter("node")
+                 for child in parent.findall("node")}
+    candidates = []
+    for node in root.iter("node"):
+        if node.attrib.get("package") != PACKAGE:
+            continue
+        label = (node.attrib.get("text", "") or
+                 node.attrib.get("content-desc", "")).strip().casefold()
+        if label != "add repository":
+            continue
+        current = node
+        while current is not None and current.attrib.get("package") == PACKAGE:
+            if current.attrib.get("clickable") == "true":
+                match = BOUNDS.fullmatch(current.attrib.get("bounds", ""))
+                if match:
+                    x1, y1, x2, y2 = map(int, match.groups())
+                    width, height = x2 - x1, y2 - y1
+                    # Restrict to a visible small button, not the screen,
+                    # toolbar or a large wrapping layout.
+                    if (0 <= x1 < x2 <= 4096 and 0 <= y1 < y2 <= 4096
+                            and 24 <= width <= 650 and 20 <= height <= 180):
+                        candidates.append((width * height, (x1 + x2) // 2,
+                                           (y1 + y2) // 2))
+                break
+            current = parent_of.get(current)
+    if not candidates:
+        return None
+    candidates.sort()
+    return candidates[0][1], candidates[0][2]
+
+
+def select_unneeded_notification_denial(xml):
+    """Dismiss ONLY the real Android notification prompt for official F-Droid.
+
+    Never grant Android permissions, click an unrelated system permission
+    dialog, or guess a coordinate. The observed prompt is system-owned, not
+    an F-Droid view, and was blocking the official repo-add confirmation.
+    """
+    root = ET.parse(xml).getroot()
+    nodes = [node for node in root.iter("node")
+             if node.attrib.get("package") in (
+                 "com.android.permissioncontroller",
+                 "com.google.android.permissioncontroller")]
+    visible_text = " ".join((node.attrib.get("text", "")
+                             + " " + node.attrib.get("content-desc", ""))
+                            for node in nodes).lower()
+    if not ("notification" in visible_text
+            and ("f-droid" in visible_text or "fdroid" in visible_text)):
+        return None
+    for node in nodes:
+        label = (node.attrib.get("text", "") or
+                 node.attrib.get("content-desc", "")).strip().lower()
+        if label.replace("’", "'") not in ("don't allow", "deny"):
+            continue
+        target = node
+        if target.attrib.get("clickable") != "true":
+            target = next((parent for parent in nodes
+                           if parent.attrib.get("clickable") == "true"
+                           and node in list(parent.iter("node"))), None)
+        if target is None:
+            continue
+        bounds = BOUNDS.fullmatch(target.attrib.get("bounds", ""))
+        if not bounds:
+            continue
+        x1, y1, x2, y2 = map(int, bounds.groups())
+        if x1 >= x2 or y1 >= y2 or x2 > 4096 or y2 > 4096:
+            continue
+        return (x1 + x2) // 2, (y1 + y2) // 2
+    return None
+
+
 def main():
     p = argparse.ArgumentParser(description="Real official-client accessible UI selection only")
     p.add_argument("--xml", type=Path, required=True)
+    p.add_argument("--deny-notification-prompt", action="store_true")
+    p.add_argument("--confirm-repository-add", action="store_true")
     a = p.parse_args()
     try:
-        action = select(a.xml)
+        if a.deny_notification_prompt and a.confirm_repository_add:
+            raise ValueError("only one restricted UI selector is allowed")
+        action = (select_unneeded_notification_denial(a.xml)
+                  if a.deny_notification_prompt else
+                  select_actual_repository_add(a.xml)
+                  if a.confirm_repository_add else select(a.xml))
     except (OSError, ET.ParseError, ValueError):
         return 2
     if action is None:

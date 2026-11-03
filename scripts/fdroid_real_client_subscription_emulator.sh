@@ -113,9 +113,22 @@ PY
 click_actual_accessible_control() {
   if adb shell uiautomator dump /sdcard/hamapp-fdroid-live.xml > "$base/uiauto-private.txt" 2>&1 \
     && adb pull /sdcard/hamapp-fdroid-live.xml "$base/window.xml" >/dev/null 2>&1; then
-    local point
+    local point x y
+    # Previously captured REAL F-Droid screenshots show an Android 13
+    # notification permission prompt covering the "Add repository" screen.
+    # On this disposable emulator, DENY that unrelated permission using its
+    # actual accessible "Don't allow" label; never silently grant it.
+    point=$(python3 scripts/fdroid_client_accessible_ui.py \
+      --xml "$base/window.xml" --deny-notification-prompt) || point=""
+    if [ -n "$point" ]; then
+      read -r x y <<< "$point"
+      if [[ "$x" =~ ^[0-9]+$ && "$y" =~ ^[0-9]+$ ]]; then
+        adb shell input tap "$x" "$y"
+        echo "OFFICIAL_FDROID_UNNECESSARY_NOTIFICATION_PERMISSION_DENIED_ON_DISPOSABLE_EMULATOR"
+        return 0
+      fi
+    fi
     point=$(python3 scripts/fdroid_client_accessible_ui.py --xml "$base/window.xml") || return 0
-    local x y
     read -r x y <<< "$point"
     if [[ "$x" =~ ^[0-9]+$ && "$y" =~ ^[0-9]+$ ]]; then
       adb shell input tap "$x" "$y"
@@ -138,6 +151,35 @@ if [ "$found" != true ]; then
 fi
 v1_sha=$(sha256sum "$base/webroot/fdroid/repo/index-v2.json" | awk '{print $1}')
 echo "OFFICIAL_FDROID_REAL_TEST_SIGNED_INDEX_V1_REQUEST_OBSERVED"
+# A real network GET is only a preview. The observed official screen
+# still showed an "Add repository" consent button. Require explicitly tapping
+# that TRUE F-Droid UI button before treating the repository as enrolled.
+clicked=false
+for add_attempt in $(seq 1 14); do
+  if adb shell uiautomator dump /sdcard/hamapp-fdroid-live.xml > "$base/add-uiauto-private.txt" 2>&1 \
+     && adb pull /sdcard/hamapp-fdroid-live.xml "$base/add-window.xml" >/dev/null 2>&1; then
+    add_point=$(python3 scripts/fdroid_client_accessible_ui.py \
+      --xml "$base/add-window.xml" --confirm-repository-add) || add_point=""
+    if [ -n "$add_point" ]; then
+      read -r add_x add_y <<< "$add_point"
+      if [[ "$add_x" =~ ^[0-9]+$ && "$add_y" =~ ^[0-9]+$ ]]; then
+        adb shell input tap "$add_x" "$add_y"
+        clicked=true
+        break
+      fi
+    fi
+  fi
+  sleep 2
+done
+if [ "$clicked" != true ]; then
+  echo "OFFICIAL_FDROID_ADD_REPOSITORY_BUTTON_NOT_VERIFIABLY_TAPPED" >&2
+  exit 1
+fi
+echo "OFFICIAL_FDROID_NATIVE_ADD_REPOSITORY_BUTTON_ACTUALLY_TAPPED"
+# Let F-Droid's real repository addition/SQLite transaction complete before
+# independently signing/serving the v2 index. Do not infer commit from a GET.
+sleep 14
+
 # Re-sign actual index with same throwaway repository key after placing
 # actual higher-version APK, and force the UI refresh on the emulator.
 python3 scripts/fdroid_client_private_repo_lab.py --version 2 \
@@ -161,12 +203,26 @@ if [ "$v2_seen" != true ]; then
   echo "OFFICIAL_FDROID_CLIENT_DID_NOT_FETCH_UPDATED_SIGNED_INDEX" >&2
   exit 1
 fi
+# Unlike observing index GET requests, the client itself must have durably
+# recorded the test repository under its REAL private Room/SQLite DB.
+# Pull a bounded snapshot from the disposable rooted emulator only; discard
+# its bytes before artifact upload and retain a non-secret proof receipt.
+python3 scripts/fdroid_official_repo_db_probe.py \
+  --source-sha "$GITHUB_SHA" --fingerprint "$fp" \
+  --receipt "$out/private-repository-db-proof.json"
+test -s "$out/private-repository-db-proof.json"
 FDROID_LAB="$base" FDROID_INDEX_V1="$v1_sha" FDROID_INDEX_V2="$v2_sha" python3 - <<'PY'
 import hashlib,json,os
 from pathlib import Path
 base=Path(os.environ["FDROID_LAB"])
 state=json.loads((base/"state.json").read_text("utf-8"))
 assert len(state["versions"])==2
+db_proof=json.loads(Path("dist/fdroid-real-client-probe/private-repository-db-proof.json").read_text("utf-8"))
+assert db_proof["source_sha"]==state["source_sha"]
+assert db_proof["independently_verified_ephemeral_repository_fingerprint"].lower()==state["fingerprint"].lower()
+assert db_proof["real_official_client_repo_host_saved_in_native_sqlite"] is True
+assert db_proof["actual_client_database_read_only_integrity_check_passed"] is True
+assert db_proof["signature_fingerprint_persisted_in_client_database_verified"] is False
 receipt={
 "schema_version":1,
 "scope":"actual-official-fdroid-client-signed-throwaway-repo-emulator-index-requests",
@@ -179,7 +235,8 @@ receipt={
 "real_v2_index_sha256":os.environ["FDROID_INDEX_V2"],
 "real_client_v1_signed_index_http_request_observed":True,
 "real_client_v2_signed_index_http_request_observed":True,
-"official_client_repository_persisted_in_database_verified":False,
+"official_client_repository_persisted_in_database_verified":True,
+"official_client_repo_signer_pin_in_database_verified":False,
 "actual_fdroid_client_app_install_verified":False,
 "actual_fdroid_client_app_upgrade_verified":False,
 "owner_key_or_device_verified":False,
@@ -189,4 +246,4 @@ receipt={
 Path("dist/fdroid-real-client-probe/receipt.json").write_text(
  json.dumps(receipt,sort_keys=True,indent=2)+"\n",encoding="utf-8")
 PY
-echo "ACTUAL_FDROID_CLIENT_SIGNED_INDEX_V1_V2_REQUESTS_OBSERVED; INSTALL_AND_SUBSCRIPTION_DB_NOT_VERIFIED"
+echo "ACTUAL_FDROID_CLIENT_SIGNED_INDEX_V1_V2_AND_NATIVE_SQLITE_REPO_HOST_PERSISTENCE_VERIFIED; APP_INSTALL_UPGRADE_AND_DB_SIGNER_PIN_NOT_VERIFIED"

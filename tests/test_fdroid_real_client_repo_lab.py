@@ -66,6 +66,88 @@ class RealFdroidClientLabTests(unittest.TestCase):
                          'text="Enable" bounds="[0,0][100,100]"/></hierarchy>',encoding="utf-8")
             self.assertIsNone(ui.select(f))
 
+    def test_real_fdroid_add_repository_button_requires_actual_clickable_app_node(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path=Path(temporary)/"official-add-repo.xml"
+            path.write_text(
+                '<hierarchy>'
+                '<node package="org.fdroid.fdroid" text="Add repository" clickable="false" '
+                'bounds="[16,30][210,85]"/>'
+                '<node package="org.fdroid.fdroid" text="Add repository" clickable="true" '
+                'bounds="[160,188][304,230]"/>'
+                '</hierarchy>',encoding="utf-8")
+            self.assertEqual(ui.select_actual_repository_add(path),(232,209))
+            path.write_text(
+                '<hierarchy><node package="com.google.android.permissioncontroller" '
+                'text="Add repository" clickable="true" bounds="[160,188][304,230]"/>'
+                '</hierarchy>',encoding="utf-8")
+            self.assertIsNone(ui.select_actual_repository_add(path))
+            path.write_text(
+                '<hierarchy><node package="org.fdroid.fdroid" '
+                'text="Add repository" clickable="false" bounds="[160,188][304,230]"/>'
+                '</hierarchy>',encoding="utf-8")
+            self.assertIsNone(ui.select_actual_repository_add(path))
+
+    def test_real_fdroid_nested_button_label_taps_clickable_parent_only(self):
+        # Actual official F-Droid screenshot confirms a blue Add repository
+        # button, but UIAutomator may expose its label as a child TextView.
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary)/"nested-add-repository.xml"
+            path.write_text(
+                '<hierarchy>'
+                '<node package="org.fdroid.fdroid" text="" clickable="false" '
+                'bounds="[0,0][320,600]">'
+                '<node package="org.fdroid.fdroid" text="Add repository" '
+                'clickable="false" bounds="[30,42][220,78]"/>'
+                '<node package="org.fdroid.fdroid" text="" clickable="true" '
+                'bounds="[160,188][304,228]">'
+                '<node package="org.fdroid.fdroid" text="Add repository" '
+                'clickable="false" bounds="[178,195][287,221]"/>'
+                '</node></node></hierarchy>', encoding="utf-8")
+            self.assertEqual(ui.select_actual_repository_add(path), (232,208))
+            path.write_text(
+                '<hierarchy><node package="org.fdroid.fdroid" clickable="true" '
+                'bounds="[0,0][320,600]">'
+                '<node package="org.fdroid.fdroid" text="Add repository" '
+                'clickable="false" bounds="[12,20][210,72]"/>'
+                '</node></hierarchy>', encoding="utf-8")
+            self.assertIsNone(ui.select_actual_repository_add(path))
+            path.write_text(
+                '<hierarchy><node package="com.android.settings" clickable="true" '
+                'bounds="[160,188][304,228]">'
+                '<node package="org.fdroid.fdroid" text="Add repository" '
+                'clickable="false" bounds="[180,195][290,220]"/>'
+                '</node></hierarchy>', encoding="utf-8")
+            self.assertIsNone(ui.select_actual_repository_add(path))
+
+    def test_android_system_notification_overlay_is_denied_only_when_actual_ui_matches(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            xml=Path(temporary)/"system-notification.xml"
+            xml.write_text(
+                '<hierarchy>'
+                '<node package="com.google.android.permissioncontroller" '
+                'text="Allow F-Droid to send you notifications?" clickable="false" '
+                'bounds="[30,100][320,200]"/>'
+                '<node package="com.google.android.permissioncontroller" '
+                'text="Don\'t allow" clickable="true" bounds="[48,392][272,454]"/>'
+                '</hierarchy>', encoding="utf-8")
+            self.assertEqual(ui.select_unneeded_notification_denial(xml),(160,423))
+            self.assertIsNone(ui.select(xml))
+            xml.write_text(
+                '<hierarchy><node package="com.google.android.permissioncontroller" '
+                'text="Allow a different app to send you notifications?" clickable="false"/>'
+                '<node package="com.google.android.permissioncontroller" '
+                'text="Don\'t allow" clickable="true" bounds="[48,392][272,454]"/>'
+                '</hierarchy>', encoding="utf-8")
+            self.assertIsNone(ui.select_unneeded_notification_denial(xml))
+            xml.write_text(
+                '<hierarchy><node package="org.fdroid.fdroid" '
+                'text="Allow F-Droid to send you notifications?" clickable="false"/>'
+                '<node package="org.fdroid.fdroid" '
+                'text="Don\'t allow" clickable="true" bounds="[48,392][272,454]"/>'
+                '</hierarchy>', encoding="utf-8")
+            self.assertIsNone(ui.select_unneeded_notification_denial(xml))
+
     def test_real_client_network_reachability_is_distinct_from_install_claim(self):
         sh=(ROOT/"scripts/fdroid_real_client_subscription_emulator.sh").read_text("utf-8")
         self.assertIn('adb install -r "$RUNNER_TEMP/hamapp-official-fdroid/F-Droid.apk"',sh)
@@ -77,10 +159,18 @@ class RealFdroidClientLabTests(unittest.TestCase):
         self.assertIn('openssl x509 -subject_hash_old',sh)
         self.assertIn('DISPOSABLE_TEST_CA_INSTALLED_ON_ROOTED_EMULATOR_ONLY',sh)
         self.assertIn('scripts/fdroid_client_accessible_ui.py',sh)
+        self.assertIn('--deny-notification-prompt',sh)
+        self.assertIn('--confirm-repository-add',sh)
+        self.assertIn('OFFICIAL_FDROID_NATIVE_ADD_REPOSITORY_BUTTON_ACTUALLY_TAPPED',sh)
+        self.assertIn('OFFICIAL_FDROID_UNNECESSARY_NOTIFICATION_PERMISSION_DENIED_ON_DISPOSABLE_EMULATOR',sh)
         self.assertIn('request_count',sh)
         self.assertIn('"actual_fdroid_client_app_install_verified":False',sh)
         self.assertIn('"actual_fdroid_client_app_upgrade_verified":False',sh)
-        self.assertIn('"official_client_repository_persisted_in_database_verified":False',sh)
+        self.assertIn('"official_client_repository_persisted_in_database_verified":True',sh)
+        self.assertIn('"official_client_repo_signer_pin_in_database_verified":False',sh)
+        self.assertIn('db_proof["real_official_client_repo_host_saved_in_native_sqlite"] is True',sh)
+        self.assertIn('db_proof["source_sha"]==state["source_sha"]',sh)
+        self.assertIn('ACTUAL_FDROID_CLIENT_SIGNED_INDEX_V1_V2_AND_NATIVE_SQLITE_REPO_HOST_PERSISTENCE_VERIFIED',sh)
         self.assertIn('"production_ready":False',sh)
 
     def test_signed_repo_v1_v2_job_never_runs_on_owner_or_uploads_keys(self):
