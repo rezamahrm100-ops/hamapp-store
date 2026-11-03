@@ -17,7 +17,7 @@ class EphemeralSignerError(ValueError):
     pass
 
 def generate(directory):
-    if os.name != "nt" or os.environ.get("GITHUB_ACTIONS") != "true" or os.environ.get("RUNNER_OS") != "Windows":
+    if (os.name != "nt" or os.environ.get("GITHUB_ACTIONS") != "true" or os.environ.get("RUNNER_OS") != "Windows" or os.environ.get("RUNNER_ENVIRONMENT") != "github-hosted" or os.environ.get("GITHUB_REPOSITORY") != "rezamahrm100-ops/hamapp-store"):
         raise EphemeralSignerError("GitHub-hosted Windows cryptographic test only")
     base = Path(directory)
     if base.exists() or base.is_symlink() or not os.environ.get("RUNNER_TEMP"):
