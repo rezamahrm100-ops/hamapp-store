@@ -72,12 +72,26 @@ case "${1:-}" in
     fi
     adb shell dumpsys activity activities > "$RUNNER_TEMP/fdroid-activities.txt"
     grep -Fq 'org.fdroid.fdroid' "$RUNNER_TEMP/fdroid-activities.txt"
-    adb shell uiautomator dump /sdcard/fdroid-client.xml >/dev/null
     mkdir -p "$out"
-    adb pull /sdcard/fdroid-client.xml "$out/ui.xml" >/dev/null
-    grep -Fq 'package="org.fdroid.fdroid"' "$out/ui.xml"
+    ui_ok=false
+    # The official client can still be creating its first Android window when
+    # am start returns. UIAutomator may temporarily report a null root node.
+    for attempt in $(seq 1 12); do
+      if adb shell uiautomator dump /sdcard/fdroid-client.xml > "$RUNNER_TEMP/fdroid-ui-attempt.txt" 2>&1 \
+         && adb pull /sdcard/fdroid-client.xml "$out/ui.xml" >/dev/null 2>&1 \
+         && grep -Fq 'package="org.fdroid.fdroid"' "$out/ui.xml"; then
+        ui_ok=true
+        break
+      fi
+      sleep 5
+    done
+    if [ "$ui_ok" != true ]; then
+      echo "OFFICIAL_FDROID_UI_HIERARCHY_NOT_AVAILABLE_AFTER_BOUNDED_RETRIES" >&2
+      exit 1
+    fi
     adb exec-out screencap -p > "$out/client-intent.png"
     test -s "$out/client-intent.png"
+    echo "OFFICIAL_FDROID_UI_HIERARCHY_AND_SCREENSHOT_CAPTURED"
     python3 - <<'PY'
 import hashlib, json, os
 from pathlib import Path
