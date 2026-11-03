@@ -83,6 +83,9 @@ jobs:
           api-level: 33
           target: google_apis
           arch: x86_64
+          # Writable SYSTEM is confined to the disposable CI emulator and
+          # permits its short-lived private test CA, never an owner device.
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -writable-system
           script: bash scripts/fdroid_real_client_subscription_emulator.sh
       - name: Remove all ephemeral signing materials, repository and debug APKs
         if: always()
