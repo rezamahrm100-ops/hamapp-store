@@ -56,7 +56,7 @@ class RealNativeSignaturePolicyTests(unittest.TestCase):
         self.assertNotIn("LocalMachine",ps)
         self.assertIn("Remove-Item",ps)
         yml=(ROOT/".github/workflows/windows-client-preview.yml").read_text("utf-8")
-        self.assertIn("runs-on: windows-latest",yml)
+        self.assertIn("runs-on: windows-2022",yml)
         self.assertIn("hamapp-windows-unsigned-preview",yml)
         self.assertIn("hamapp-real-ephemeral-windows-authenticode-evidence",yml)
         self.assertNotIn("runs-on: self-hosted",yml)
