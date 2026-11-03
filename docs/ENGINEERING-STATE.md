@@ -186,3 +186,6 @@ Read [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md) for 
 
 ## Actual 2026-11-03 cross-platform engineering closure evidence
 - All #43, #44, #45 merged with exact SHAs and successful hosted test evidence in `docs/ENGINEERING-CLOSURE-2026-11-03.md`. Main `e11f32ae3773e7b5488545230a1e96e27ed8dae4`: CI #41524412272, CodeQL #41524412221, Trivy #41524412229, ClamAV actual APK #41524412228, Android native APK #41524412154, trusted owner Windows QA #41524412199, public Pages actual HTTPS parity #41524412528 and reproducible evidence #41524412190 all completed SUCCESS. Still engineering PARTIAL and production NOT ACCEPTED due real app signing, review, protected-branch and device/repository gates.
+
+## Owner-local private publisher quarantined intake (implementation awaiting checks)
+- Proposed 0700 POSIX owner-owned vault, 0600 per-submission bytes, exact source/declaration hash/size, binary structure validation, untrusted claimed publisher labels, explicit non-approving review event chain and no public GitHub upload. `owner_candidate_intake.py` can verify only locally review-requested bytes via full signer, producer attestation, aapt/ClamAV. No authenticated account, remote upload service, encrypted private cloud, production signer or publisher authorization introduced. Check exact PR CI/CodeQL and post-merge SHA.

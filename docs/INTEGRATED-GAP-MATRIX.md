@@ -51,3 +51,6 @@ New proposed release-governance transaction tooling can generate coordinated no-
 
 ## Final live 2026-11-03 integration reconciliation
 - Latest full evidence ledger `docs/ENGINEERING-CLOSURE-2026-11-03.md` supersedes earlier pending-status sections. Real owner-local upstream signer+GitHub attestation+APK/permission+archive integrity source check accepted as code (no production identity); real first-party debug APK archive and fresh ClamAV signature checks accepted; first-party actual HTTPS Pages delivered-byte parity accepted; main eight workflows all green at `e11f32ae3773e7b5488545230a1e96e27ed8dae4`. Remaining owner/real-product gates include protected PR approval, real malware/dynamic behavior review of approved release, F-Droid production repo/client and Windows Authenticode/owner-device, authenticated multi-publisher management.
+
+### Private publisher intake local queue (2026-11-03)
+- Added owner-local POSIX private quarantine file/metadata custody for untrusted publisher submissions, no owner-approval transition, exact byte-hash checks, symlink/duplicate/replay rejection and handoff into actual signed-source/antivirus preflight. This **is not** an authenticated private publisher web portal or an approved commercial marketplace; production auth/tenant quota/storage, signed real packages and admin branch review remain outstanding.

@@ -155,3 +155,6 @@ Older sections below describe historical continuation stages; they **do not auth
 
 ## Actual verified final 2026-11-03 engineering handoff
 - `docs/ENGINEERING-CLOSURE-2026-11-03.md` supersedes stale work-in-progress sections: PRs #43/#44/#45 merged and all eight exact-main `e11f32ae3773e7b5488545230a1e96e27ed8dae4` workflow conclusions SUCCESS. Native real APK ZIP/CRC and ClamAV fresh-signature test accepted only for first-party DEBUG artifact. Public Pages real HTTPS byte parity accepted for first-party storefront, not app web origins. Still outstanding genuine production certificate/key/index/F-Droid client, Windows authenticode/device acceptance, private publisher submission roles and admin branch ruleset. Focus these instead of mock/duplicate checks.
+
+## Private untrusted publisher submissions
+- Read `docs/PRIVATE-PUBLISHER-QUARANTINE.md`, inspect exact CI for real POSIX disk isolation, actual byte copy/hash, validation, event quarantine/rejection and owner local crypto-check integration. Native Windows scanner must run on an authorized Windows session on same hash; private POSIX inbox alone is not Authenticode. Full authenticated private tenant submission service, owner approval and encrypted production storage are still unimplemented.
