@@ -75,7 +75,10 @@ def select(xml_path, action):
         # "Filter" tutorial with "Got it" above a truncated repository-preview
         # title, so the full repo name is not in live accessibility. Scope
         # dismissal to this exact app-owned tutorial, not any generic dialog.
-        if "filter" not in labels or "got it" not in labels:
+        # Official Repositories.kt also presents a separate first-visit
+        # "Repository list" / "Got it" tutorial on entry to the repo list.
+        # Only these two actual upstream tutorial titles may be dismissed.
+        if "got it" not in labels or not ({"filter", "repository list"} & labels):
             return None
         names = {"got it"}
     else:
@@ -129,6 +132,7 @@ def screen_signals(xml):
         "back_accessibility_visible": "back" in labels,
         "got_it_onboarding_visible": "got it" in labels,
         "filter_tutorial_visible": "filter" in labels,
+        "repo_list_tutorial_visible": "repository list" in labels,
     }
 
 
