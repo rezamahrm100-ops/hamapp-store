@@ -164,3 +164,6 @@ Older sections below describe historical continuation stages; they **do not auth
 
 ## Signed F-Droid index-v2 / APK byte binding
 - Verify `fdroid_bridge.py` now refuses staging completion without real signature verification of private `entry.jar`, owner-pinned repo fingerprint, signed index-v2 sha256/size and exact candidate package/versionCode/versionName/SHA. On mismatch it removes new APK and creates a BLOCKING marker; do not claim a changed signed index was rolled back. Hosted disposable F-Droid real signature drill must pass at PR SHA. Still no production owner key or client install.
+
+## 2026-11-03 private publisher & F-Droid full workstream handoff
+- Exact ledger `docs/ENGINEERING-CLOSURE-2026-11-03-RUN4.md`. Main SHA `562d4cd808a73e11a139ab52f5ee4adbe50ef107`, PRs #47/#48/#49 verified merged. Six of seven listed current-main workflows SUCCESS; self-hosted owner Windows QA #41587826538 QUEUED on 2026-11-03 inspection. Do not conflate CI disposable F-Droid keystore with a real owner production signing root. Future code: authentic private publisher submission/authorization and immutable reviewed promotion, full Windows installer signature acceptance, real F-Droid HTTPS origin/client subscription and independently signed two-version install, branch ruleset admin. Keep all owner/private material outside public GitHub.
