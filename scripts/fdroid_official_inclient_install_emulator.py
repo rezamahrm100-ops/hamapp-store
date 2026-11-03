@@ -19,7 +19,7 @@ import tempfile
 import time
 import xml.etree.ElementTree as ET
 
-from fdroid_official_install_ui import select
+from fdroid_official_install_ui import select, source_settings_state
 
 APP_PACKAGE = "ir.hamapp.store"
 FDROID_PACKAGE = "org.fdroid.fdroid"
@@ -203,12 +203,40 @@ def run(stage):
     last_install_tap_monotonic = 0.0
     clicked_system_prompt = False
     clicked_metered_confirmation = False
+    real_source_block_dialog_opened_settings = False
+    real_source_settings_switch_tap_sent = False
+    real_source_permission_verified_via_visible_ui = False
+    post_source_consent_install_retry = False
     with tempfile.TemporaryDirectory(prefix="hamapp-official-client-package-", dir=runner) as tmp:
         private = Path(tmp)
         # A genuine F-Droid app action and actual Android PM readback are both
         # necessary. Only live package-labelled accessibility XML is tapped.
         for attempt in range(42):
             xml = dump_ui(private)
+            # Android 13 blocks first-time sideloading from F-Droid. This
+            # disposable test must traverse the ACTUAL visible OS confirmation
+            # + named F-Droid Settings page like a real user, never use appops,
+            # pm grant, settings put or privileged install APIs.
+            if (xml and not real_source_block_dialog_opened_settings
+                    and tap_from_real_ui(xml, "open-source-settings")):
+                real_source_block_dialog_opened_settings = True
+                print("REAL_ANDROID_EXPLICIT_FDROID_UNKNOWN_SOURCE_SETTINGS_OPENED")
+                time.sleep(2)
+                continue
+            if xml and real_source_block_dialog_opened_settings and not real_source_permission_verified_via_visible_ui:
+                permission_state = source_settings_state(xml)
+                if permission_state is False and tap_from_real_ui(xml, "allow-source-settings"):
+                    real_source_settings_switch_tap_sent = True
+                    time.sleep(1)
+                    continue
+                if permission_state is True:
+                    # Permission is verified from live native system Settings
+                    # checkbox/switch, never inferred from an input event.
+                    real_source_permission_verified_via_visible_ui = True
+                    print("REAL_ANDROID_ISOLATED_FDROID_SOURCE_PERMISSION_UI_VERIFIED")
+                    invoke(["adb", "shell", "input", "keyevent", "4"], limit=15)
+                    time.sleep(2)
+                    continue
             if xml and tap_from_real_ui(xml, "dismiss-hint"):
                 time.sleep(1)
                 continue
@@ -220,11 +248,15 @@ def run(stage):
                 print("ACTUAL_OFFICIAL_FDROID_METERED_DOWNLOAD_DIALOG_CONFIRMED")
             elif xml and tap_from_real_ui(xml, "confirm-installer"):
                 clicked_system_prompt = True
-            elif (xml and client_install_ui_tap_attempts < 3
-                  and (client_install_ui_tap_attempts == 0 or
-                       time.monotonic() - last_install_tap_monotonic >= 12)
-                  and count_client_apk_get(base / "requests.jsonl",
-                                           f"hamapp-v{stage}.apk") == 0
+            elif (xml and (
+                    (client_install_ui_tap_attempts < 3 and
+                     (client_install_ui_tap_attempts == 0 or
+                      time.monotonic() - last_install_tap_monotonic >= 12) and
+                     count_client_apk_get(base / "requests.jsonl",
+                                          f"hamapp-v{stage}.apk") == 0)
+                    or (real_source_permission_verified_via_visible_ui and
+                        clicked_client_button and
+                        not post_source_consent_install_retry))
                   and tap_from_real_ui(xml, "install" if stage == 1 else "update")):
                 # A live blue Install button can remain after a transient
                 # tap was lost during Compose recomposition. Retry at most
@@ -232,6 +264,8 @@ def run(stage):
                 # app-owned button STILL exists and no APK GET has begun.
                 # Never repeatedly tap a progress, system, or error dialog.
                 clicked_client_button = True
+                if real_source_permission_verified_via_visible_ui:
+                    post_source_consent_install_retry = True
                 client_install_ui_tap_attempts += 1
                 last_install_tap_monotonic = time.monotonic()
                 if client_install_ui_tap_attempts == 1:
@@ -260,6 +294,10 @@ def run(stage):
                     "real_official_client_app_installed": stage == 1,
                     "real_official_client_app_updated": stage == 2,
                     "unknown_source_permission_auto_granted": False,
+                    "android_unknown_source_permission_granted_via_visible_isolated_ui":
+                        real_source_permission_verified_via_visible_ui,
+                    "real_source_permission_settings_screen_confirmed":
+                        real_source_block_dialog_opened_settings,
                     "owner_device_or_production_signer_verified": False,
                     "public_release_authorized": False,
                 }
@@ -299,6 +337,13 @@ def run(stage):
             "schema_version": 1, "source_sha": source_sha, "requested_stage": stage,
             "official_app_install_button_coordinate_tap_sent": clicked_client_button,
             "bounded_real_client_install_ui_tap_attempts": client_install_ui_tap_attempts,
+            "real_source_permission_dialog_settings_opened":
+                real_source_block_dialog_opened_settings,
+            "real_source_permission_toggle_tap_sent":
+                real_source_settings_switch_tap_sent,
+            "real_source_permission_verified_from_ui":
+                real_source_permission_verified_via_visible_ui,
+            "post_permission_real_install_retried": post_source_consent_install_retry,
             "actual_client_versioned_apk_get_count": count_client_apk_get(
                 base / "requests.jsonl", f"hamapp-v{stage}.apk"),
             **on_device_failure_signals(),
@@ -312,7 +357,8 @@ def run(stage):
             "fdroid_metered_prompt_visible": "Continue with mobile data?" in fdroid_labels,
             "fdroid_download_label_visible": "Download" in fdroid_labels,
             "fdroid_got_it_hint_visible": "Got it" in fdroid_labels,
-            "android_permission_or_settings_screen_seen": system_package_seen,
+            "android_permission_or_settings_screen_seen":
+                system_package_seen or real_source_block_dialog_opened_settings,
             "install_or_upgrade_verified": False,
             "public_release_authorized": False,
         }
