@@ -1,0 +1,18 @@
+# Official upstream F-Droid client — authentic APK + emulator handoff acceptance
+
+## Exact engineering issue resolved
+The native HamApp Android preview previously constructed an HTTPS `ACTION_VIEW` with a repository fingerprint. Modern official F-Droid client manifest does not generally register as an Android handler for arbitrary HTTPS hosts; thus this may open a web browser instead of the F-Droid app. The native client now constructs an explicit `fdroidrepos://https://<approved-host>/fdroid/repo/?fingerprint=<PIN>` intent, targets **package `org.fdroid.fdroid`** only, retains separate positive user confirmation and rejects unapproved repository metadata. No Android package installation API is used.
+
+## Official binary integrity — not a mirror trust assumption
+New hosted workflow `.github/workflows/official-fdroid-client-emulator.yml` downloads the actual upstream `F-Droid.apk` and detached `F-Droid.apk.asc` from `https://f-droid.org/` into GitHub-hosted temporary disk, imports the upstream *public* PGP key from the official F-Droid website source repository, **pins its primary fingerprint** `37D2C98789D8311948394E3E41E7044E1DBA2E89`, cryptographically verifies the signed APK, and independently verifies package identity `org.fdroid.fdroid` and the published **Android developer APK signing-certificate SHA-256** `43238d512c1e5eb2d6569f4a3afbf5523418b82e0a3ed1552770abb9a9c9ccab` using Android's official `aapt`/`apksigner`. These identities are published by F-Droid on [Release Channels and Signing Keys](https://f-droid.org/docs/Release_Channels_and_Signing_Keys/) and [Verifying Downloaded APK](https://f-droid.org/docs/Verifying_Downloaded_APK/). A failed signer check rejects the download; it cannot silently substitute a GitHub mirror executable.
+
+The workflow starts a real Android 35 Google APIs emulator, installs the *cryptographically verified official client APK*, starts its real activity, then sends an `fdroidrepos://` `ACTION_VIEW` **explicitly to that installed package** and verifies the actual activity/UI. It uses only `example.invalid` with a dummy fingerprint so that **no fake repository is added**. Screenshots, UI hierarchy and safe receipt are uploaded briefly; no downloaded APK or signing key is uploaded. The upstream public signing key is not an owner production key.
+
+## Non-claims
+- The real official app installed and accepted an intent handler; **no official F-Droid repository subscription, signed-test index refresh, package installation or two-version app update** is implied.
+- No approved production repo HTTPS origin/fingerprint or developer signer exists in HamApp's public catalog. A positive future native handoff must still have reviewed real publisher certificates, signed repo content, and user consent.
+- Owner Windows/physical Android devices are not used; public PRs run only on GitHub-hosted isolated emulator. Android system package prompts are never bypassed. Do not turn on app download actions from this workflow.
+- If the official client changes its release keys, package name or exported intents, this acceptance **must fail closed** pending independent upstream verification; do not simply disable signer checks.
+
+## Acceptance criteria
+Observe SUCCESS for hosted Linux/Windows CI, CodeQL and Trivy plus the **real** `HamApp Official Signed F-Droid Client Emulator Intent` workflow on the exact final PR head SHA. Confirm its receipt includes `real_emulator_official_fdroid_apk_installed=true` and `real_fdroidrepos_intent_activity_launched=true` but all subscription/install/production flags **false**. Then merge and recheck main SHA/workflows. Unit tests/source-string checks alone do not constitute real upstream-client acceptance.
