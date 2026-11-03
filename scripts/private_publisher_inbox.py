@@ -232,6 +232,38 @@ def verify_events(folder):
         previous = _hash(raw)
     return status, previous, len(entries)
 
+def load_for_preflight(root, submission_id):
+    """Return privately staged exact bytes only for a locally requested review.
+
+    This stage is NOT an owner authentication token or external publisher claim.
+    The subsequent cryptographic and antivirus checks must run independently.
+    """
+    folder, receipt = load(root, submission_id)
+    status, _, _ = verify_events(folder)
+    if status != "review_requested":
+        raise QuarantineError("only review-requested private submissions can enter preflight")
+    candidate_path = folder / "candidate.json"
+    if candidate_path.is_symlink() or not candidate_path.is_file():
+        raise QuarantineError("missing unmodified staged candidate metadata")
+    try:
+        candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+    except (ValueError, UnicodeError, OSError) as exc:
+        raise QuarantineError("invalid private submission metadata") from exc
+    release = validate_claim(candidate, receipt["claimed_publisher"])
+    ext = Path(urlsplit(release["asset_url"]).path).suffix.lower()
+    artifact = folder / ("candidate" + ext)
+    if artifact.is_symlink() or not artifact.is_file() or artifact.stat().st_nlink != 1:
+        raise QuarantineError("staged binary missing or replaced by symlink/hardlink")
+    verified = release_integrity.verify_file(release, artifact)
+    if (verified["sha256"] != receipt["artifact_sha256"]
+            or verified["size_bytes"] != receipt["artifact_size_bytes"]
+            or receipt["app_id"] != release["app_id"]
+            or receipt["platform"] != release["platform"]
+            or receipt["version"] != release["version"]
+            or receipt["claimed_source_sha"] != candidate["source_sha"]):
+        raise QuarantineError("untrusted local publisher metadata changed after staging")
+    return candidate, artifact, receipt
+
 def transition(root, submission_id, event):
     if event not in EVENTS:
         raise QuarantineError("no private intake command can approve/publish")
