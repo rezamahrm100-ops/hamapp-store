@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param([Parameter(Mandatory = $true)][string]$UnsignedExe)
 $ErrorActionPreference = 'Stop'
-if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_OS -ne 'Windows') {
+if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_OS -ne 'Windows' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:GITHUB_REPOSITORY -ne 'rezamahrm100-ops/hamapp-store') {
     throw 'Only isolated GitHub-hosted Windows may run disposable signer drill'
 }
 if (-not (Test-Path -LiteralPath $UnsignedExe -PathType Leaf)) {
@@ -32,19 +32,11 @@ try {
     if ($certA.Thumbprint -eq $certB.Thumbprint -or $rootA.Thumbprint -eq $rootB.Thumbprint) {
         throw 'Two independent disposable CA and leaf identities required'
     }
-    # Trust only throwaway CA public certificates in CurrentUser Root, and
-    # only code-signing leaf public certificates in CurrentUser TrustedPublisher.
-    # No private key enters Windows cert stores. The runner is disposable.
-    $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
-        'Root', [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser)
-    $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
-    try { $rootStore.Add($rootA); $rootStore.Add($rootB) }
-    finally { $rootStore.Close() }
-    $publisherStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
-        'TrustedPublisher', [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser)
-    $publisherStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
-    try { $publisherStore.Add($certA); $publisherStore.Add($certB) }
-    finally { $publisherStore.Close() }
+    # Hosted Windows certificate-store mutation stalled for eight minutes in
+    # real CI #41642192393. Never import disposable roots into Windows.
+    # This test proves native Windows REJECTION of untrusted test signers,
+    # not acceptance of a trusted production signature.
+    Write-Output 'AUTHENTICODE_NO_WINDOWS_CERTIFICATE_STORE_MUTATIONS'
     $kits = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin'
     if (-not (Test-Path -LiteralPath $kits)) { throw 'Official Windows SDK SignTool is unavailable' }
     $signer = Get-ChildItem -LiteralPath $kits -Filter 'signtool.exe' -Recurse -File |
@@ -61,30 +53,75 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Official Windows SDK signing failed for signer A' }
     & $signer.FullName sign /f $material.b.pfx /p $material.b.password /fd SHA256 $foreign
     if ($LASTEXITCODE -ne 0) { throw 'Official Windows SDK signing failed for signer B' }
-    & $signer.FullName verify /pa $signed
-    if ($LASTEXITCODE -ne 0) { throw 'Native Windows SDK failed first signed EXE validation' }
-    & $signer.FullName verify /pa $foreign
-    if ($LASTEXITCODE -ne 0) { throw 'Native Windows SDK failed foreign signed EXE validation' }
-    if (-not $env:GITHUB_SHA -or $env:GITHUB_SHA.Length -ne 40) {
+    if (-not $env:GITHUB_SHA -or $env:GITHUB_SHA -notmatch '^[a-f0-9]{40}$') {
         throw 'Immutable producing GitHub source SHA is missing'
     }
-    Write-Output 'AUTHENTICODE_TEST_CHECKING_PINNED_PUBLISHER_AND_CORRUPTION_GATES'
+    Write-Output 'AUTHENTICODE_TEST_CHECKING_REAL_NATIVE_UNTRUSTED_SIGNER_REJECTIONS'
+    function Observe-NativeSignature([string]$Path) {
+        $info = Get-AuthenticodeSignature -LiteralPath $Path
+        $digest = $null
+        if ($null -ne $info.SignerCertificate) {
+            $sha = [Security.Cryptography.SHA256]::Create()
+            try { $digest = [BitConverter]::ToString($sha.ComputeHash($info.SignerCertificate.RawData)).Replace('-', '').ToLowerInvariant() }
+            finally { $sha.Dispose() }
+        }
+        return @{ status = [string]$info.Status; signer = $digest }
+    }
+    $nativeA = Observe-NativeSignature $signed
+    $nativeB = Observe-NativeSignature $foreign
+    if ($nativeA.signer -ne $material.a.certificate_sha256 -or $nativeB.signer -ne $material.b.certificate_sha256) {
+        throw 'Windows native OS returned unexpected signer fingerprints'
+    }
+    if ($nativeA.status -ne 'NotTrusted' -or $nativeB.status -ne 'NotTrusted') {
+        throw ('Disposable CA is not valid trusted Windows signer; statuses=' + $nativeA.status + ',' + $nativeB.status)
+    }
+    $nativeUnsigned = Observe-NativeSignature $UnsignedExe
+    if ($nativeUnsigned.status -ne 'NotSigned' -or $null -ne $nativeUnsigned.signer) {
+        throw 'Unsigned original unexpectedly has Windows native Authenticode signer'
+    }
+    $originalHash = (Get-FileHash -LiteralPath $UnsignedExe -Algorithm SHA256).Hash
+    $signedHash = (Get-FileHash -LiteralPath $signed -Algorithm SHA256).Hash
+    $foreignHash = (Get-FileHash -LiteralPath $foreign -Algorithm SHA256).Hash
+    if ($signedHash -eq $originalHash -or $foreignHash -eq $originalHash -or $foreignHash -eq $signedHash) {
+        throw 'Two independently signed real PE copies required'
+    }
+    Copy-Item -LiteralPath $signed -Destination $tampered -ErrorAction Stop
+    $stream = [IO.File]::Open($tampered, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite)
+    try {
+        if ($stream.Length -lt 65537) { throw 'Signed Windows PE too short to tamper in signed section' }
+        $stream.Seek(65536, [IO.SeekOrigin]::Begin) | Out-Null
+        $before = $stream.ReadByte()
+        $stream.Seek(65536, [IO.SeekOrigin]::Begin) | Out-Null
+        $stream.WriteByte([byte]($before -bxor 0x01))
+        $stream.Flush($true)
+    } finally { $stream.Dispose() }
+    $nativeTamper = Observe-NativeSignature $tampered
+    if ($nativeTamper.status -notin @('HashMismatch', 'NotSigned') -or (Get-FileHash -LiteralPath $tampered -Algorithm SHA256).Hash -eq $signedHash) {
+        throw ('Real modified signed PE was not rejected by native Windows: ' + $nativeTamper.status)
+    }
     New-Item -ItemType Directory -Path 'dist/windows-authenticode-evidence' -Force | Out-Null
-    & python scripts/windows_authenticode_real_drill.py --unsigned $UnsignedExe --signed $signed --foreign $foreign --intended-certificate $material.a.certificate_sha256 --foreign-certificate $material.b.certificate_sha256 --source-sha $env:GITHUB_SHA --tamper-path $tampered --receipt 'dist/windows-authenticode-evidence/receipt.json'
-    if ($LASTEXITCODE -ne 0) { throw 'Windows Authenticode exact signer/bytes rejection failed' }
-    Write-Output 'ACTUAL_WINDOWS_SIGNTOOL_AND_NATIVE_AUTHENTICODE_SIGNER_NEGATIVES_PASSED'
+    $receipt = @{
+        schema_version = 1
+        scope = 'actual-hosted-Windows-OS-untrusted-Authenticode-negative-tests'
+        source_sha = $env:GITHUB_SHA
+        actual_windows_native_unsigned_exe_provided = $true
+        actual_official_windows_sdk_signer_produced_two_distinct_signed_exes = $true
+        native_windows_os_observed_two_exact_disposable_leaf_certificates = $true
+        native_windows_os_rejected_untrusted_disposable_ca_signers = $true
+        native_windows_os_rejected_unsigned_exe = $true
+        native_windows_os_rejected_modified_signed_exe = $true
+        production_authenticode_certificate_verified = $false
+        native_windows_os_trusted_authenticode_verified = $false
+        owner_windows_device_tested = $false
+        public_release_authorized = $false
+    }
+    $receipt | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath 'dist/windows-authenticode-evidence/receipt.json' -Encoding utf8
+    Write-Output 'ACTUAL_NATIVE_WINDOWS_OS_REJECTED_BOTH_UNTRUSTED_EPHEMERAL_SIGNERS_UNSIGNED_AND_TAMPERED_PE; NOT_TRUSTED_PRODUCTION'
 }
 finally {
-    Write-Output 'AUTHENTICODE_TEST_REMOVING_DISPOSABLE_CERTIFICATES_AND_PFX'
-    foreach ($record in @(@{ name = 'TrustedPublisher'; cert = $certA },
-                           @{ name = 'TrustedPublisher'; cert = $certB },
-                           @{ name = 'Root'; cert = $rootA },
-                           @{ name = 'Root'; cert = $rootB })) {
-        $cert = $record.cert
-        if ($null -eq $cert) { continue }
-        $certPath = 'Cert:\CurrentUser\' + $record.name + '\' + $cert.Thumbprint
-        Remove-Item -LiteralPath $certPath -Force -Confirm:$false -ErrorAction SilentlyContinue
-        $cert.Dispose()
+    Write-Output 'AUTHENTICODE_TEST_DISPOSING_CERTIFICATE_OBJECTS_AND_PRIVATE_TEMP_ONLY'
+    foreach ($cert in @($certA, $certB, $rootA, $rootB)) {
+        if ($null -ne $cert) { $cert.Dispose() }
     }
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -Confirm:$false -ErrorAction SilentlyContinue
 }
