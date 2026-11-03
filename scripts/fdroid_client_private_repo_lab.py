@@ -20,7 +20,7 @@ from verify_fdroid_private_stage import verify as verify_signed_repo
 from publisher_gate import AAPT
 
 PORT = 8975
-REPO_URL = f"http://10.0.2.2:{PORT}/fdroid/repo/"
+REPO_URL = f"https://10.0.2.2:{PORT}/fdroid/repo/"
 LAB = "hamapp-fdroid-real-official-client-lab"
 ALLOWED = {".apk", ".jar", ".json", ".xml", ".png", ".webp", ".svg"}
 SHA40 = re.compile(r"[a-f0-9]{40}\Z")
@@ -36,6 +36,72 @@ def root():
     if base.is_symlink():
         raise DrillError("unsafe disposable lab symlink")
     return base
+
+
+def make_ephemeral_https_identity(base):
+    """Private temporary CA + IP-SAN server certificate for isolated emulator.
+
+    Not a public CA, HTTPS production origin or owner-approved signer. Both
+    keys are restricted to CI RUNNER_TEMP, never in HTTP served webroot.
+    """
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
+    from datetime import datetime, timedelta, timezone
+    import ipaddress
+
+    directory = base / "tls"
+    directory.mkdir(mode=0o700)
+    ca_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    ca_name = x509.Name([x509.NameAttribute(
+        NameOID.COMMON_NAME, "HamApp GitHub-hosted disposable CA - NEVER PRODUCTION")])
+    now = datetime.now(timezone.utc)
+    ca = (x509.CertificateBuilder().subject_name(ca_name).issuer_name(ca_name)
+          .public_key(ca_key.public_key()).serial_number(x509.random_serial_number())
+          .not_valid_before(now-timedelta(minutes=3))
+          .not_valid_after(now+timedelta(hours=4))
+          .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
+          .add_extension(x509.KeyUsage(
+              digital_signature=False, content_commitment=False,
+              key_encipherment=False, data_encipherment=False, key_agreement=False,
+              key_cert_sign=True, crl_sign=True, encipher_only=False,
+              decipher_only=False), critical=True)
+          .sign(ca_key, hashes.SHA256()))
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    server_name = x509.Name([x509.NameAttribute(
+        NameOID.COMMON_NAME, "HamApp temporary emulator loopback 10.0.2.2")])
+    leaf = (x509.CertificateBuilder()
+            .subject_name(server_name).issuer_name(ca_name)
+            .public_key(key.public_key()).serial_number(x509.random_serial_number())
+            .not_valid_before(now-timedelta(minutes=3))
+            .not_valid_after(now+timedelta(hours=3))
+            .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+            .add_extension(x509.SubjectAlternativeName([
+                x509.IPAddress(ipaddress.ip_address("10.0.2.2")),
+                x509.DNSName("localhost")]), critical=False)
+            .add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]),
+                           critical=False)
+            .add_extension(x509.KeyUsage(
+                digital_signature=True, content_commitment=False,
+                key_encipherment=False, data_encipherment=False, key_agreement=False,
+                key_cert_sign=False, crl_sign=False, encipher_only=False,
+                decipher_only=False), critical=True)
+            .sign(ca_key, hashes.SHA256()))
+    for filename, raw in (
+        ("ca.pem", ca.public_bytes(serialization.Encoding.PEM)),
+        ("server.pem", leaf.public_bytes(serialization.Encoding.PEM)),
+        ("server.key", key.private_bytes(
+            serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+            serialization.NoEncryption())),
+    ):
+        target = directory / filename
+        with target.open("xb") as stream:
+            stream.write(raw)
+        target.chmod(0o600)
+    if directory == (base / "webroot") or (base / "webroot") in directory.parents:
+        raise DrillError("test TLS private identity must not be in HTTP root")
+    return directory
 
 
 def env_for(base):
@@ -135,6 +201,7 @@ def stage(version, apk, source_sha):
         private.mkdir(parents=True, mode=0o700)
         (base / "home").mkdir(mode=0o700)
         (base / "webroot" / "fdroid").mkdir(parents=True, mode=0o700)
+        make_ephemeral_https_identity(base)
         run(["fdroid", "init"], cwd=private, env=env, timeout=180)
         import yaml
         config_path = private / "config.yml"
