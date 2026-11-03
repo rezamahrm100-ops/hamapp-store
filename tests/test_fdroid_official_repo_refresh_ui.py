@@ -109,8 +109,8 @@ class RealRepoForceRefreshSelectorTests(unittest.TestCase):
             def show(xml):
                 path.write_text(xml, encoding="utf-8")
                 return path
-            with patch.object(ui, "dump", side_effect=lambda dest: show(actual)), \\
-                 patch.object(ui, "adb") as adb, \\
+            with patch.object(ui, "dump", side_effect=lambda dest: show(actual)), \
+                 patch.object(ui, "adb") as adb, \
                  patch.object(ui.time, "sleep"):
                 self.assertTrue(ui.confirm_visible_repo_download_dialog(path))
                 adb.assert_called_once_with("shell", "input", "tap", "237", "414")
@@ -118,14 +118,14 @@ class RealRepoForceRefreshSelectorTests(unittest.TestCase):
                 actual.replace("Continue with mobile data?", "Grant install permissions?"),
                 actual.replace("org.fdroid.fdroid", "com.android.settings"),
             ):
-                with patch.object(ui, "dump", side_effect=lambda dest: show(bad)), \\
-                     patch.object(ui, "adb") as adb, \\
+                with patch.object(ui, "dump", side_effect=lambda dest: show(bad)), \
+                     patch.object(ui, "adb") as adb, \
                      patch.object(ui.time, "sleep"):
                     self.assertFalse(ui.confirm_visible_repo_download_dialog(path))
                     adb.assert_not_called()
             with patch.object(ui, "dump", side_effect=lambda dest: show(
-                    actual.replace('clickable="true"', 'clickable="false"'))), \\
-                 patch.object(ui, "adb") as adb, \\
+                    actual.replace('clickable="true"', 'clickable="false"'))), \
+                 patch.object(ui, "adb") as adb, \
                  patch.object(ui.time, "sleep"):
                 with self.assertRaisesRegex(RuntimeError, "metered"):
                     ui.confirm_visible_repo_download_dialog(path)
