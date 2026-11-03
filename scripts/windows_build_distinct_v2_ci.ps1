@@ -16,7 +16,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Could not create second source entry' }
 $root = Join-Path $env:RUNNER_TEMP 'hamapp-distinct-exe-v2'
 if (Test-Path -LiteralPath $root) { throw 'Refuse pre-existing second version work folder' }
 New-Item -ItemType Directory -Path $root | Out-Null
-& python -m PyInstaller --noconfirm --clean --onefile --windowed --name HamApp-Windows-V2-CI-ONLY --paths . --distpath (Join-Path $root 'dist') --workpath (Join-Path $root 'work') --specpath (Join-Path $root 'spec') --add-data 'dist/windows-client/windows-client-catalog.json:.' $entry
+$catalog = (Resolve-Path -LiteralPath 'dist/windows-client/windows-client-catalog.json').Path
+& python -m PyInstaller --noconfirm --clean --onefile --windowed --name HamApp-Windows-V2-CI-ONLY --paths . --distpath (Join-Path $root 'dist') --workpath (Join-Path $root 'work') --specpath (Join-Path $root 'spec') --add-data "${catalog}:." $entry
 if ($LASTEXITCODE -ne 0) { throw 'Second real Windows GUI executable build failed' }
 $v2 = Join-Path $root 'dist/HamApp-Windows-V2-CI-ONLY.exe'
 if (-not (Test-Path -LiteralPath $v2 -PathType Leaf)) { throw 'Second actual Windows EXE is missing' }
