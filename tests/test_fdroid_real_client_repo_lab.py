@@ -88,6 +88,38 @@ class RealFdroidClientLabTests(unittest.TestCase):
                 '</hierarchy>',encoding="utf-8")
             self.assertIsNone(ui.select_actual_repository_add(path))
 
+    def test_real_fdroid_nested_button_label_taps_clickable_parent_only(self):
+        # Actual official F-Droid screenshot confirms a blue Add repository
+        # button, but UIAutomator may expose its label as a child TextView.
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary)/"nested-add-repository.xml"
+            path.write_text(
+                '<hierarchy>'
+                '<node package="org.fdroid.fdroid" text="" clickable="false" '
+                'bounds="[0,0][320,600]">'
+                '<node package="org.fdroid.fdroid" text="Add repository" '
+                'clickable="false" bounds="[30,42][220,78]"/>'
+                '<node package="org.fdroid.fdroid" text="" clickable="true" '
+                'bounds="[160,188][304,228]">'
+                '<node package="org.fdroid.fdroid" text="Add repository" '
+                'clickable="false" bounds="[178,195][287,221]"/>'
+                '</node></node></hierarchy>', encoding="utf-8")
+            self.assertEqual(ui.select_actual_repository_add(path), (232,208))
+            path.write_text(
+                '<hierarchy><node package="org.fdroid.fdroid" clickable="true" '
+                'bounds="[0,0][320,600]">'
+                '<node package="org.fdroid.fdroid" text="Add repository" '
+                'clickable="false" bounds="[12,20][210,72]"/>'
+                '</node></hierarchy>', encoding="utf-8")
+            self.assertIsNone(ui.select_actual_repository_add(path))
+            path.write_text(
+                '<hierarchy><node package="com.android.settings" clickable="true" '
+                'bounds="[160,188][304,228]">'
+                '<node package="org.fdroid.fdroid" text="Add repository" '
+                'clickable="false" bounds="[180,195][290,220]"/>'
+                '</node></hierarchy>', encoding="utf-8")
+            self.assertIsNone(ui.select_actual_repository_add(path))
+
     def test_android_system_notification_overlay_is_denied_only_when_actual_ui_matches(self):
         with tempfile.TemporaryDirectory() as temporary:
             xml=Path(temporary)/"system-notification.xml"
