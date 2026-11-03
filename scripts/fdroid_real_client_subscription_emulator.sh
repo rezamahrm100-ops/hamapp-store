@@ -168,7 +168,9 @@ echo "OFFICIAL_FDROID_REAL_TEST_SIGNED_INDEX_V1_REQUEST_OBSERVED"
 # still showed an "Add repository" consent button. Require explicitly tapping
 # that TRUE F-Droid UI button before treating the repository as enrolled.
 clicked=false
-for add_attempt in $(seq 1 14); do
+# The separate confirmed Add-repository tap must never be consumed by the
+# initial generic index fetch loop. Allow the official signed preview to settle.
+for add_attempt in $(seq 1 24); do
   if adb shell uiautomator dump /sdcard/hamapp-fdroid-live.xml > "$base/add-uiauto-private.txt" 2>&1 \
      && adb pull /sdcard/hamapp-fdroid-live.xml "$base/add-window.xml" >/dev/null 2>&1; then
     add_point=$(python3 scripts/fdroid_client_accessible_ui.py \
