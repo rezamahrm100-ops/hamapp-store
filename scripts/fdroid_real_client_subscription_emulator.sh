@@ -151,6 +151,35 @@ if [ "$found" != true ]; then
 fi
 v1_sha=$(sha256sum "$base/webroot/fdroid/repo/index-v2.json" | awk '{print $1}')
 echo "OFFICIAL_FDROID_REAL_TEST_SIGNED_INDEX_V1_REQUEST_OBSERVED"
+# A real network GET is only a preview. The observed official screen
+# still showed an "Add repository" consent button. Require explicitly tapping
+# that TRUE F-Droid UI button before treating the repository as enrolled.
+clicked=false
+for add_attempt in $(seq 1 14); do
+  if adb shell uiautomator dump /sdcard/hamapp-fdroid-live.xml > "$base/add-uiauto-private.txt" 2>&1 \
+     && adb pull /sdcard/hamapp-fdroid-live.xml "$base/add-window.xml" >/dev/null 2>&1; then
+    add_point=$(python3 scripts/fdroid_client_accessible_ui.py \
+      --xml "$base/add-window.xml" --confirm-repository-add) || add_point=""
+    if [ -n "$add_point" ]; then
+      read -r add_x add_y <<< "$add_point"
+      if [[ "$add_x" =~ ^[0-9]+$ && "$add_y" =~ ^[0-9]+$ ]]; then
+        adb shell input tap "$add_x" "$add_y"
+        clicked=true
+        break
+      fi
+    fi
+  fi
+  sleep 2
+done
+if [ "$clicked" != true ]; then
+  echo "OFFICIAL_FDROID_ADD_REPOSITORY_BUTTON_NOT_VERIFIABLY_TAPPED" >&2
+  exit 1
+fi
+echo "OFFICIAL_FDROID_NATIVE_ADD_REPOSITORY_BUTTON_ACTUALLY_TAPPED"
+# Let F-Droid's real repository addition/SQLite transaction complete before
+# independently signing/serving the v2 index. Do not infer commit from a GET.
+sleep 14
+
 # Re-sign actual index with same throwaway repository key after placing
 # actual higher-version APK, and force the UI refresh on the emulator.
 python3 scripts/fdroid_client_private_repo_lab.py --version 2 \
