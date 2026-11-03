@@ -1,4 +1,4 @@
-name: HamApp Real Official F-Droid Client Signed Test Repo and Native Signer Pin
+name: HamApp Actual F-Droid Client Signed Repo and Real In-App Install Update
 on:
   pull_request:
     branches: [main]
@@ -8,6 +8,10 @@ on:
       - 'scripts/fdroid_client_accessible_ui.py'
       - 'scripts/fdroid_real_client_subscription_emulator.sh'
       - 'scripts/fdroid_official_repo_db_probe.py'
+      - 'scripts/fdroid_official_install_ui.py'
+      - 'scripts/fdroid_official_inclient_install_emulator.py'
+      - 'tests/test_fdroid_official_install_ui.py'
+      - 'tests/test_fdroid_official_inclient_install_emulator.py'
       - 'tests/test_fdroid_official_repo_db_probe.py'
       - '.github/workflows/fdroid-real-client-signed-repo.yml'
       - 'tests/test_fdroid_real_client_repo_lab.py'
@@ -81,7 +85,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Real signed repo import and two index fetch attempts in OFFICIAL client
+      - name: Actual official F-Droid repo import, in-app v1 install, signed v2 and in-app upgrade
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 33
@@ -104,6 +108,8 @@ jobs:
           path: |
             dist/fdroid-real-client-probe/receipt.json
             dist/fdroid-real-client-probe/private-repository-db-proof.json
+            dist/fdroid-real-client-probe/official-inclient-installed-v1.json
+            dist/fdroid-real-client-probe/official-inclient-installed-v2.json
             dist/fdroid-real-client-probe/official-client-after-repo-intent.png
             dist/fdroid-real-client-probe/official-client-after-index-v2.png
           if-no-files-found: warn
@@ -113,4 +119,4 @@ jobs:
         shell: bash
         run: |
           echo '### Actual official F-Droid Android client requests signed disposable v1/v2 indexes' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Real official upstream APK GPG+developer signer, disposable v1/v2 signed indexes and official client requests. Real read-only F-Droid CoreRepository SQLite address plus exact DER certificate SHA256 matched the independently verified disposable JAR index key. No in-client application installation or update verified; no production HTTPS signer, owner key or owner device authorized.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'The official F-Droid app must actually install signed HamApp v1, update to signed HamApp v2 from its disposable HTTPS signed repo, fetch both APKs, and Android PackageManager read-back must exactly match source APK bytes, version codes and signing certificate. Native SQLite CoreRepository certificate SHA256 independently matches index signer. Fail-closed if app install/upgrade or Android installer consent is absent. No owner-device, production repo key, live HTTPS origin or public release accepted.' >> "$GITHUB_STEP_SUMMARY"

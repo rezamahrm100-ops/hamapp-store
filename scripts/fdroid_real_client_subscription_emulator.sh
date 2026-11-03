@@ -179,6 +179,9 @@ echo "OFFICIAL_FDROID_NATIVE_ADD_REPOSITORY_BUTTON_ACTUALLY_TAPPED"
 # Let F-Droid's real repository addition/SQLite transaction complete before
 # independently signing/serving the v2 index. Do not infer commit from a GET.
 sleep 14
+# Only real official F-Droid on-device UI may initiate the first APK install.
+# The installer is never invoked through adb install or private SQL changes.
+python3 scripts/fdroid_official_inclient_install_emulator.py --stage 1
 
 # Re-sign actual index with same throwaway repository key after placing
 # actual higher-version APK, and force the UI refresh on the emulator.
@@ -203,6 +206,8 @@ if [ "$v2_seen" != true ]; then
   echo "OFFICIAL_FDROID_CLIENT_DID_NOT_FETCH_UPDATED_SIGNED_INDEX" >&2
   exit 1
 fi
+# Require REAL native F-Droid app update before any success receipt.
+python3 scripts/fdroid_official_inclient_install_emulator.py --stage 2
 # Unlike observing index GET requests, the client itself must have durably
 # recorded the test repository under its REAL private Room/SQLite DB.
 # Pull a bounded snapshot from the disposable rooted emulator only; discard
@@ -223,6 +228,14 @@ assert db_proof["independently_verified_ephemeral_repository_fingerprint"].lower
 assert db_proof["real_official_client_repo_host_saved_in_native_sqlite"] is True
 assert db_proof["actual_client_database_read_only_integrity_check_passed"] is True
 assert db_proof["signature_fingerprint_persisted_in_client_database_verified"] is True
+first=json.loads(Path("dist/fdroid-real-client-probe/official-inclient-installed-v1.json").read_text("utf-8"))
+second=json.loads(Path("dist/fdroid-real-client-probe/official-inclient-installed-v2.json").read_text("utf-8"))
+assert first["source_sha"]==second["source_sha"]==state["source_sha"]
+assert first["actual_installed_version_code"]==1 and second["actual_installed_version_code"]==2
+assert first["real_official_client_app_installed"] is True
+assert second["real_official_client_app_updated"] is True
+assert first["actual_installed_apk_sha256"]==state["versions"][0]["sha256"]
+assert second["actual_installed_apk_sha256"]==state["versions"][1]["sha256"]
 receipt={
 "schema_version":1,
 "scope":"actual-official-fdroid-client-signed-throwaway-repo-emulator-index-requests",
@@ -237,8 +250,8 @@ receipt={
 "real_client_v2_signed_index_http_request_observed":True,
 "official_client_repository_persisted_in_database_verified":True,
 "official_client_repo_signer_pin_in_database_verified":True,
-"actual_fdroid_client_app_install_verified":False,
-"actual_fdroid_client_app_upgrade_verified":False,
+"actual_fdroid_client_app_install_verified":True,
+"actual_fdroid_client_app_upgrade_verified":True,
 "owner_key_or_device_verified":False,
 "public_release_authorized":False,
 "production_ready":False
@@ -246,4 +259,4 @@ receipt={
 Path("dist/fdroid-real-client-probe/receipt.json").write_text(
  json.dumps(receipt,sort_keys=True,indent=2)+"\n",encoding="utf-8")
 PY
-echo "ACTUAL_FDROID_CLIENT_V1_V2_SIGNED_INDEX_AND_NATIVE_SQLITE_REPO_CERT_PIN_VERIFIED; APP_INSTALL_UPDATE_NOT_VERIFIED"
+echo "ACTUAL_FDROID_CLIENT_SIGNED_REPO_NATIVE_DB_CERT_PIN_AND_INCLIENT_V1_TO_V2_APK_INSTALL_UPDATE_VERIFIED"
