@@ -51,7 +51,7 @@ class RealNativeSignaturePolicyTests(unittest.TestCase):
         self.assertIn("RUNNER_TEMP",gen)
         self.assertIn("secrets.token_urlsafe",gen)
         self.assertIn("cryptography==50.0.2",(ROOT/".github/workflows/windows-client-preview.yml").read_text("utf-8"))
-        self.assertIn("Set-AuthenticodeSignature",ps)
+        self.assertIn("signtool.exe",ps)
         self.assertIn("CurrentUser",ps)
         self.assertNotIn("LocalMachine",ps)
         self.assertIn("Remove-Item",ps)
