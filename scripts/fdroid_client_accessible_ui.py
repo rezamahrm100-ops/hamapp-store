@@ -50,28 +50,43 @@ def select(xml):
 
 
 def select_actual_repository_add(xml):
-    """Return only F-Droid's own genuine Add repository consent button.
+    """Select the actual F-Droid Add repository button using live UI hierarchy.
 
-    There must be a real F-Droid package UI node, not a synthetic tap or
-    Android system permission prompt. The observer still must verify the
-    resulting native database record; clicking alone is not acceptance.
+    Android accessibility commonly exposes the button label as a nonclickable
+    TextView nested inside a clickable button container. A title with the same
+    text must NOT trigger a tap. Choose only the smallest clickable F-Droid
+    ancestor enclosing the exact label, with button-sized visible bounds.
     """
     root = ET.parse(xml).getroot()
-    nodes = [node for node in root.iter("node")
-             if node.attrib.get("package") == "org.fdroid.fdroid"]
-    for node in nodes:
+    parent_of = {child: parent for parent in root.iter("node")
+                 for child in parent.findall("node")}
+    candidates = []
+    for node in root.iter("node"):
+        if node.attrib.get("package") != PACKAGE:
+            continue
         label = (node.attrib.get("text", "") or
                  node.attrib.get("content-desc", "")).strip().casefold()
-        if label != "add repository" or node.attrib.get("clickable") != "true":
+        if label != "add repository":
             continue
-        bounds = BOUNDS.fullmatch(node.attrib.get("bounds", ""))
-        if not bounds:
-            continue
-        x1, y1, x2, y2 = map(int, bounds.groups())
-        if x1 >= x2 or y1 >= y2 or x2 > 4096 or y2 > 4096:
-            continue
-        return (x1 + x2) // 2, (y1 + y2) // 2
-    return None
+        current = node
+        while current is not None and current.attrib.get("package") == PACKAGE:
+            if current.attrib.get("clickable") == "true":
+                match = BOUNDS.fullmatch(current.attrib.get("bounds", ""))
+                if match:
+                    x1, y1, x2, y2 = map(int, match.groups())
+                    width, height = x2 - x1, y2 - y1
+                    # Restrict to a visible small button, not the screen,
+                    # toolbar or a large wrapping layout.
+                    if (0 <= x1 < x2 <= 4096 and 0 <= y1 < y2 <= 4096
+                            and 24 <= width <= 650 and 20 <= height <= 180):
+                        candidates.append((width * height, (x1 + x2) // 2,
+                                           (y1 + y2) // 2))
+                break
+            current = parent_of.get(current)
+    if not candidates:
+        return None
+    candidates.sort()
+    return candidates[0][1], candidates[0][2]
 
 
 def select_unneeded_notification_denial(xml):
