@@ -17,6 +17,8 @@ import tempfile
 import time
 import xml.etree.ElementTree as ET
 
+from fdroid_official_install_ui import select as select_official_metered_control
+
 FDROID = "org.fdroid.fdroid"
 REPO_TITLE = "Disposable HamApp emulator install test only"
 BOUNDS = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\Z")
@@ -162,6 +164,40 @@ def safe_disposable_screenshot():
 
 
 
+
+def confirm_visible_repo_download_dialog(xml):
+    """Real upstream RepoDetails may show MeteredConnectionDialog before repo GET.
+
+    Click only the genuine F-Droid-owned Download control when the exact title
+    coexists. This is NOT Android install-source permission or a secret grant.
+    """
+    prompt_seen = False
+    for attempt in range(7):
+        try:
+            dump(xml)
+        except (OSError, subprocess.TimeoutExpired, RuntimeError):
+            time.sleep(1)
+            continue
+        scoped = [_label(node).casefold() for node in ET.parse(xml).getroot().iter("node")
+                  if node.get("package") == FDROID]
+        title_visible = "continue with mobile data?" in scoped
+        prompt_seen = prompt_seen or title_visible
+        point = select_official_metered_control(xml, "confirm-metered")
+        if point is not None:
+            adb("shell", "input", "tap", str(point[0]), str(point[1]))
+            print("REAL_OFFICIAL_FDROID_SAVED_REPO_METERED_DOWNLOAD_UI_CONFIRMED",
+                  flush=True)
+            return True
+        if not title_visible and attempt >= 3 and not prompt_seen:
+            # No metered dialog; subsequent actual signed v2 GET still required.
+            return False
+        time.sleep(1)
+    if prompt_seen:
+        raise RuntimeError("real F-Droid metered repo-download consent not accepted")
+    return False
+
+
+
 def run():
     if (os.environ.get("GITHUB_ACTIONS") != "true"
             or os.environ.get("RUNNER_OS") != "Linux"
@@ -202,6 +238,7 @@ def run():
                         "test-repository" not in transitions):
                     raise RuntimeError("repository update did not follow genuine navigation")
                 print("REAL_OFFICIAL_FDROID_REPO_DETAIL_FORCE_UPDATE_BUTTON_TAPPED")
+                confirm_visible_repo_download_dialog(xml)
                 return
             time.sleep(2)
         # Failure-only, reproducible and non-sensitive synthetic-emulator evidence.
