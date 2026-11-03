@@ -2,6 +2,7 @@
 from pathlib import Path
 import json
 import subprocess
+import shutil
 import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -37,6 +38,7 @@ class OfficialFdroidHandoffTests(unittest.TestCase):
         self.assertIn('"production_ready":False',src)
         self.assertNotIn('adb shell pm grant',src)
 
+    @unittest.skipUnless(shutil.which("bash"), "bash not on this hosted operating system")
     def test_bash_script_grammar(self):
         parsed=subprocess.run(["bash","-n",str(SCRIPT)],capture_output=True,text=True,timeout=10)
         self.assertEqual(parsed.returncode,0,parsed.stderr)
