@@ -59,6 +59,18 @@ class RealPortableWindowsPESignatureTests(unittest.TestCase):
         ):
             self.assertIn(negative, src)
 
+    def test_disposable_trust_chain_is_root_ca_to_code_signing_leaf_not_self_signed_leaf(self):
+        src = (ROOT / "scripts/portable_authenticode_drill.py").read_text("utf-8")
+        self.assertIn("x509.BasicConstraints(ca=True, path_length=0)", src)
+        self.assertIn("x509.BasicConstraints(ca=False, path_length=None)", src)
+        self.assertIn("ExtendedKeyUsageOID.CODE_SIGNING", src)
+        self.assertIn("subject_name(name).issuer_name(root.subject)", src)
+        self.assertIn("sign(ca_key, hashes.SHA256())", src)
+        self.assertIn("signer_key, leaf, [root]", src)
+        self.assertIn("fingerprint", src)
+        self.assertIn("expected_success=False", src)
+        self.assertNotIn('"public_release_authorized": True', src)
+
     def test_hosted_pipeline_builds_real_windows_PE_first_then_uses_real_linux_validator(self):
         yml = (ROOT / ".github/workflows/windows-client-preview.yml").read_text("utf-8")
         self.assertIn("runs-on: windows-2022", yml)
