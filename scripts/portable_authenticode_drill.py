@@ -49,7 +49,23 @@ def run(command, expected_success=True, phase="unspecified"):
     if ok != expected_success:
         # Never expose upstream messages that might echo paths, key passwords,
         # signing identities or user-controlled metadata into logs.
-        raise AuthenticodeDrillError("upstream cryptographic acceptance predicate failed: phase=" + phase + " exit=" + str(completed.returncode))
+        diagnostic = ""
+        # Verification (never signing) deals only with PUBLIC disposable
+        # test certificates. Emit bounded, sanitized public status hints.
+        if phase.startswith("verify-"):
+            public_hints = []
+            for line in (completed.stdout + "\n" + completed.stderr).splitlines():
+                lowered = line.lower()
+                if any(word in lowered for word in (
+                        "verification", "error", "unable", "trust", "chain",
+                        "signer", "signature", "certificate", "digest", "hash",
+                        "purpose", "invalid", "failed")):
+                    clean = re.sub(r"[^a-zA-Z0-9 :=,._()/+-]", "", line)[:160]
+                    public_hints.append(clean)
+            diagnostic = " public_diagnostic=" + "|".join(public_hints[-12:])[:1200]
+        raise AuthenticodeDrillError(
+            "upstream cryptographic acceptance predicate failed: phase=" + phase
+            + " exit=" + str(completed.returncode) + diagnostic)
     return ok
 
 
