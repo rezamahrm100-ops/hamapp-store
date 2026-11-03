@@ -83,6 +83,59 @@ class OfficialInClientInstallUiTests(unittest.TestCase):
         self.assertIsNone(self.choose(prompt.replace("Download", "Install"),
                                       "confirm-metered"))
 
+    def test_real_android_unknown_source_dialog_settings_requires_fdroid_security_context(self):
+        prompt = (
+            '<node package="com.google.android.packageinstaller" text="F-Droid" '
+            'clickable="false"/>'
+            '<node package="com.google.android.packageinstaller" '
+            'text="For your security, your phone currently is not allowed to install unknown apps from this source."/>'
+            '<node package="com.google.android.packageinstaller" text="Settings" '
+            'clickable="true" bounds="[216,380][304,429]"/>'
+        )
+        self.assertEqual(self.choose(prompt, "open-source-settings"), (260, 404))
+        self.assertIsNone(self.choose(prompt.replace("F-Droid", "Other App"),
+                                      "open-source-settings"))
+        self.assertIsNone(self.choose(prompt.replace("unknown apps from this source",
+                                                      "notification permission"),
+                                      "open-source-settings"))
+        self.assertIsNone(self.choose(prompt.replace("com.google.android.packageinstaller",
+                                                      "com.android.settings"),
+                                      "open-source-settings"))
+        self.assertIsNone(self.choose(prompt.replace("[216,380][304,429]",
+                                                      "[0,0][400,800]"),
+                                      "open-source-settings"))
+
+    def test_real_android_fdroid_unknown_source_switch_state_and_safe_toggle(self):
+        content = (
+            '<node package="com.android.settings" text="Install unknown apps"/>'
+            '<node package="com.android.settings" text="F-Droid"/>'
+            '<node package="com.android.settings" text="Allow from this source"/>'
+            '<node package="com.android.settings" class="android.widget.Switch" '
+            'clickable="true" checked="false" enabled="true" '
+            'bounds="[238,205][292,249]"/>'
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.xml"
+            path.write_text("<hierarchy>" + content + "</hierarchy>", encoding="utf-8")
+            self.assertIs(ui.source_settings_state(path), False)
+            self.assertEqual(ui.select(path, "allow-source-settings"), (265, 227))
+            path.write_text("<hierarchy>" + content.replace('checked="false"',
+                                                               'checked="true"') +
+                            "</hierarchy>", encoding="utf-8")
+            self.assertIs(ui.source_settings_state(path), True)
+            self.assertIsNone(ui.select(path, "allow-source-settings"))
+            for changed in (
+                content.replace("F-Droid", "Unknown App"),
+                content.replace("Allow from this source", "Allow all access"),
+                content.replace("com.android.settings", "com.android.permissioncontroller"),
+                content.replace('enabled="true"', 'enabled="false"'),
+                content.replace('class="android.widget.Switch"', 'class="android.widget.Button"'),
+            ):
+                with self.subTest(changed=changed[:80]):
+                    path.write_text("<hierarchy>" + changed + "</hierarchy>", encoding="utf-8")
+                    self.assertIsNone(ui.source_settings_state(path))
+                    self.assertIsNone(ui.select(path, "allow-source-settings"))
+
     def test_invalid_bounds_or_wrong_label_rejected(self):
         raw = (
             '<node package="org.fdroid.fdroid" text="هَماپ"/>'
