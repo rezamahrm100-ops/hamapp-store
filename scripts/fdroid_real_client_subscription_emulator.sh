@@ -21,7 +21,7 @@ trap 'kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || 
 
 ready=false
 for t in $(seq 1 24); do
-  if curl -fsS --max-time 2 "http://127.0.0.1:8975/fdroid/repo/index-v2.json" -o "$base/host-index-check.json"; then
+  if curl --cacert "$base/tls/ca.pem" -fsS --max-time 3 "https://localhost:8975/fdroid/repo/index-v2.json" -o "$base/host-index-check.json"; then
     ready=true
     break
   fi
@@ -31,6 +31,24 @@ test "$ready" = true
 # Keep this host curl DISTINCT from F-Droid client requests in the observed log.
 : > "$request_log"
 adb wait-for-device
+# ONLY in a disposable rooted hosted Android emulator: install a temporary
+# public test CA certificate into Android system trust. This is needed because
+# the official current F-Droid APK handles fdroidrepos HTTPS, not legacy
+# fdroidrepo HTTP. No real owner Android device, production CA or secrets.
+test -s "$base/tls/ca.pem"
+adb root > "$base/emulator-root-only.txt" 2>&1
+adb wait-for-device
+if ! adb remount > "$base/emulator-remount-only.txt" 2>&1; then
+  echo "ISOLATED_EMULATOR_SYSTEM_CA_INSTALL_NOT_AVAILABLE" >&2
+  exit 1
+fi
+subject_hash=$(openssl x509 -subject_hash_old -noout -in "$base/tls/ca.pem")
+[[ "$subject_hash" =~ ^[0-9a-fA-F]{8}$ ]]
+adb push "$base/tls/ca.pem" "/sdcard/Download/hamapp-disposable-ci-ca.pem" >/dev/null
+adb shell "cp /sdcard/Download/hamapp-disposable-ci-ca.pem /system/etc/security/cacerts/$subject_hash.0"
+adb shell "chmod 0644 /system/etc/security/cacerts/$subject_hash.0"
+adb shell "test -s /system/etc/security/cacerts/$subject_hash.0"
+echo "DISPOSABLE_TEST_CA_INSTALLED_ON_ROOTED_EMULATOR_ONLY"
 adb install -r "$RUNNER_TEMP/hamapp-official-fdroid/F-Droid.apk" | grep -F Success
 adb shell pm path org.fdroid.fdroid | grep -F package:
 # Some official client versions have no usable exported LAUNCHER activity on
@@ -42,9 +60,11 @@ else
   echo "OPTIONAL_OFFICIAL_FDROID_LAUNCHER_UNAVAILABLE; TEST_REAL_REPO_INTENT_DIRECTLY"
 fi
 sleep 3
-# fdroidrepo:// is the official HTTP emulator-only deep-link. HTTPS production
-# uses fdroidrepos://. NEVER embed 'http://' after fdroidrepo://.
-uri="fdroidrepo://10.0.2.2:8975/fdroid/repo/?fingerprint=$fp"
+# Confirmed against the current official F-Droid AndroidManifest:
+# only fdroidrepos:// is exported, which maps to HTTPS. The older unhandled
+# fdroidrepo:// scheme previously failed Android activity resolution.
+# This temporary CA and HTTPS URL exist ONLY within the hosted emulator.
+uri="fdroidrepos://10.0.2.2:8975/fdroid/repo/?fingerprint=$fp"
 if ! adb shell am start -W -a android.intent.action.VIEW \
   -c android.intent.category.BROWSABLE -p org.fdroid.fdroid -d "$uri" > "$base/intent-private.txt" 2>&1; then
   echo "OFFICIAL_FDROID_REPO_HTTP_INTENT_REJECTED_BY_ANDROID" >&2
