@@ -33,8 +33,15 @@ test "$ready" = true
 adb wait-for-device
 adb install -r "$RUNNER_TEMP/hamapp-official-fdroid/F-Droid.apk" | grep -F Success
 adb shell pm path org.fdroid.fdroid | grep -F package:
-adb shell monkey -p org.fdroid.fdroid -c android.intent.category.LAUNCHER 1 >/dev/null
-sleep 4
+# Some official client versions have no usable exported LAUNCHER activity on
+# Android 33 first boot. A launcher monkey failure is not repository evidence
+# and should not prevent testing the actual exported ACTION_VIEW handler.
+if adb shell monkey -p org.fdroid.fdroid -c android.intent.category.LAUNCHER 1 > "$base/launcher-private.txt" 2>&1; then
+  echo "OPTIONAL_OFFICIAL_FDROID_LAUNCHER_WORKED"
+else
+  echo "OPTIONAL_OFFICIAL_FDROID_LAUNCHER_UNAVAILABLE; TEST_REAL_REPO_INTENT_DIRECTLY"
+fi
+sleep 3
 # fdroidrepo:// is the official HTTP emulator-only deep-link. HTTPS production
 # uses fdroidrepos://. NEVER embed 'http://' after fdroidrepo://.
 uri="fdroidrepo://10.0.2.2:8975/fdroid/repo/?fingerprint=$fp"
