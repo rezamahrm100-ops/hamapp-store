@@ -1,0 +1,111 @@
+name: HamApp Real Official F-Droid Client Signed Test Repo Fetch
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/fdroid_client_private_repo_lab.py'
+      - 'scripts/fdroid_client_private_repo_server.py'
+      - 'scripts/fdroid_client_accessible_ui.py'
+      - 'scripts/fdroid_real_client_subscription_emulator.sh'
+      - '.github/workflows/fdroid-real-client-signed-repo.yml'
+      - 'tests/test_fdroid_real_client_repo_lab.py'
+      - 'android/**'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/fdroid_client_private_repo_lab.py'
+      - 'scripts/fdroid_client_private_repo_server.py'
+      - 'scripts/fdroid_client_accessible_ui.py'
+      - 'scripts/fdroid_real_client_subscription_emulator.sh'
+      - '.github/workflows/fdroid-real-client-signed-repo.yml'
+      - 'tests/test_fdroid_real_client_repo_lab.py'
+      - 'android/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hamapp-real-client-repo-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  actual-client-signed-repo:
+    if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.ref == 'refs/heads/main' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install official F-Droid signing and Android SDK tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/fdroid-signed-lab-venv"
+          "$RUNNER_TEMP/fdroid-signed-lab-venv/bin/python" -m pip install --disable-pip-version-check "fdroidserver==2.4.5" "androguard==4.1.4"
+          echo "$RUNNER_TEMP/fdroid-signed-lab-venv/bin" >> "$GITHUB_PATH"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-35' 'build-tools;35.0.0'
+          echo "$ANDROID_HOME/build-tools/35.0.0" >> "$GITHUB_PATH"
+      - name: Build two real APK versions with stable debug signer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -v
+          bash scripts/android_two_version_smoke.sh prepare
+          test -s dist/android-two-version/v1.apk
+          test -s dist/android-two-version/v2.apk
+      - name: Validate actual official F-Droid APK upstream GPG + developer cert
+        shell: bash
+        run: bash scripts/fdroid_official_client_emulator.sh prepare
+      - name: Make real signed v1 F-Droid repo with credentials outside HTTP webroot
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/fdroid_client_private_repo_lab.py --version 1             --apk dist/android-two-version/v1.apk --source-sha "$GITHUB_SHA"
+          test -s "$RUNNER_TEMP/hamapp-fdroid-real-official-client-lab/webroot/fdroid/repo/entry.jar"
+      - name: Allow isolated hosted Android emulator acceleration
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Real signed repo import and two index fetch attempts in OFFICIAL client
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          # Writable SYSTEM is confined to the disposable CI emulator and
+          # permits its short-lived private test CA, never an owner device.
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -writable-system
+          script: bash scripts/fdroid_real_client_subscription_emulator.sh
+      - name: Remove all ephemeral signing materials, repository and debug APKs
+        if: always()
+        shell: bash
+        run: |
+          rm -rf "$RUNNER_TEMP/hamapp-fdroid-real-official-client-lab" "$RUNNER_TEMP/hamapp-official-fdroid" dist/android-two-version
+      - name: Save isolated client screenshot/receipt only; no signing key, config or APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamapp-real-fdroid-signed-repo-client-probe
+          path: |
+            dist/fdroid-real-client-probe/receipt.json
+            dist/fdroid-real-client-probe/official-client-after-repo-intent.png
+            dist/fdroid-real-client-probe/official-client-after-index-v2.png
+          if-no-files-found: warn
+          retention-days: 5
+      - name: Precise acceptance boundary
+        if: success()
+        shell: bash
+        run: |
+          echo '### Actual official F-Droid Android client requests signed disposable v1/v2 indexes' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Real official upstream APK GPG+developer signer, real disposable signed repository indexes and real client network requests accepted. NOT proof of persistent client repo DB subscription, in-client app install/upgrade, live HTTPS origin or any owner production key.' >> "$GITHUB_STEP_SUMMARY"
