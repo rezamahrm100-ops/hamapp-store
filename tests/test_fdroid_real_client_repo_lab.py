@@ -66,6 +66,34 @@ class RealFdroidClientLabTests(unittest.TestCase):
                          'text="Enable" bounds="[0,0][100,100]"/></hierarchy>',encoding="utf-8")
             self.assertIsNone(ui.select(f))
 
+    def test_android_system_notification_overlay_is_denied_only_when_actual_ui_matches(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            xml=Path(temporary)/"system-notification.xml"
+            xml.write_text(
+                '<hierarchy>'
+                '<node package="com.google.android.permissioncontroller" '
+                'text="Allow F-Droid to send you notifications?" clickable="false" '
+                'bounds="[30,100][320,200]"/>'
+                '<node package="com.google.android.permissioncontroller" '
+                'text="Don\'t allow" clickable="true" bounds="[48,392][272,454]"/>'
+                '</hierarchy>', encoding="utf-8")
+            self.assertEqual(ui.select_unneeded_notification_denial(xml),(160,423))
+            self.assertIsNone(ui.select(xml))
+            xml.write_text(
+                '<hierarchy><node package="com.google.android.permissioncontroller" '
+                'text="Allow a different app to send you notifications?" clickable="false"/>'
+                '<node package="com.google.android.permissioncontroller" '
+                'text="Don\'t allow" clickable="true" bounds="[48,392][272,454]"/>'
+                '</hierarchy>', encoding="utf-8")
+            self.assertIsNone(ui.select_unneeded_notification_denial(xml))
+            xml.write_text(
+                '<hierarchy><node package="org.fdroid.fdroid" '
+                'text="Allow F-Droid to send you notifications?" clickable="false"/>'
+                '<node package="org.fdroid.fdroid" '
+                'text="Don\'t allow" clickable="true" bounds="[48,392][272,454]"/>'
+                '</hierarchy>', encoding="utf-8")
+            self.assertIsNone(ui.select_unneeded_notification_denial(xml))
+
     def test_real_client_network_reachability_is_distinct_from_install_claim(self):
         sh=(ROOT/"scripts/fdroid_real_client_subscription_emulator.sh").read_text("utf-8")
         self.assertIn('adb install -r "$RUNNER_TEMP/hamapp-official-fdroid/F-Droid.apk"',sh)
@@ -77,6 +105,8 @@ class RealFdroidClientLabTests(unittest.TestCase):
         self.assertIn('openssl x509 -subject_hash_old',sh)
         self.assertIn('DISPOSABLE_TEST_CA_INSTALLED_ON_ROOTED_EMULATOR_ONLY',sh)
         self.assertIn('scripts/fdroid_client_accessible_ui.py',sh)
+        self.assertIn('--deny-notification-prompt',sh)
+        self.assertIn('OFFICIAL_FDROID_UNNECESSARY_NOTIFICATION_PERMISSION_DENIED_ON_DISPOSABLE_EMULATOR',sh)
         self.assertIn('request_count',sh)
         self.assertIn('"actual_fdroid_client_app_install_verified":False',sh)
         self.assertIn('"actual_fdroid_client_app_upgrade_verified":False',sh)
