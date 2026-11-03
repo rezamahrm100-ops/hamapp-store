@@ -37,14 +37,22 @@ def _point(node):
 
 
 def select(xml_file, action):
-    if action not in ("install", "update", "dismiss-hint", "confirm-installer"):
+    if action not in ("install", "update", "dismiss-hint", "confirm-installer", "confirm-metered"):
         raise ValueError("restricted action required")
     root = ET.parse(xml_file).getroot()
     nodes = list(root.iter("node"))
     parents = {node: parent for parent in nodes for node in parent.findall("node")}
     allowed = INSTALLER_PACKAGES if action == "confirm-installer" else frozenset((FDROID,))
     scoped = [node for node in nodes if node.get("package") in allowed]
-    if action != "dismiss-hint" and not any(
+    if action == "confirm-metered":
+        # Official F-Droid upstream MeteredConnectionDialog: only proceed
+        # when the real application-owned prompt title and button coexist.
+        # The only network here is the disposable isolated test repository;
+        # this does not grant unknown-source installation permissions.
+        if not any(_text(node).casefold() == "continue with mobile data?"
+                   for node in scoped):
+            return None
+    elif action != "dismiss-hint" and not any(
             _text(node) in APP_LABELS or "ir.hamapp.store" in _text(node)
             for node in scoped):
         return None
@@ -53,6 +61,7 @@ def select(xml_file, action):
         "update": ("update",),
         "dismiss-hint": ("got it",),
         "confirm-installer": ("install", "update"),
+        "confirm-metered": ("download",),
     }[action]
     candidates = []
     for node in scoped:
@@ -78,7 +87,7 @@ def main():
     parser = argparse.ArgumentParser(description="Official client actual bounded UI control")
     parser.add_argument("--xml", type=Path, required=True)
     parser.add_argument("--action", choices=("install", "update", "dismiss-hint",
-                                           "confirm-installer"), required=True)
+                                           "confirm-installer", "confirm-metered"), required=True)
     args = parser.parse_args()
     try:
         point = select(args.xml, args.action)
