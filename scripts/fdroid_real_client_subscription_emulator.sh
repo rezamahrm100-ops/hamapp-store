@@ -222,7 +222,7 @@ assert db_proof["source_sha"]==state["source_sha"]
 assert db_proof["independently_verified_ephemeral_repository_fingerprint"].lower()==state["fingerprint"].lower()
 assert db_proof["real_official_client_repo_host_saved_in_native_sqlite"] is True
 assert db_proof["actual_client_database_read_only_integrity_check_passed"] is True
-assert db_proof["signature_fingerprint_persisted_in_client_database_verified"] is False
+assert db_proof["signature_fingerprint_persisted_in_client_database_verified"] is True
 receipt={
 "schema_version":1,
 "scope":"actual-official-fdroid-client-signed-throwaway-repo-emulator-index-requests",
@@ -236,7 +236,7 @@ receipt={
 "real_client_v1_signed_index_http_request_observed":True,
 "real_client_v2_signed_index_http_request_observed":True,
 "official_client_repository_persisted_in_database_verified":True,
-"official_client_repo_signer_pin_in_database_verified":False,
+"official_client_repo_signer_pin_in_database_verified":True,
 "actual_fdroid_client_app_install_verified":False,
 "actual_fdroid_client_app_upgrade_verified":False,
 "owner_key_or_device_verified":False,
@@ -246,4 +246,4 @@ receipt={
 Path("dist/fdroid-real-client-probe/receipt.json").write_text(
  json.dumps(receipt,sort_keys=True,indent=2)+"\n",encoding="utf-8")
 PY
-echo "ACTUAL_FDROID_CLIENT_SIGNED_INDEX_V1_V2_AND_NATIVE_SQLITE_REPO_HOST_PERSISTENCE_VERIFIED; APP_INSTALL_UPGRADE_AND_DB_SIGNER_PIN_NOT_VERIFIED"
+echo "ACTUAL_FDROID_CLIENT_V1_V2_SIGNED_INDEX_AND_NATIVE_SQLITE_REPO_CERT_PIN_VERIFIED; APP_INSTALL_UPDATE_NOT_VERIFIED"

@@ -66,6 +66,53 @@ def inspect_sqlite(path, expected_host=HOST):
         return matched
 
 
+def inspect_repository_signer(path, fingerprint, expected_address="https://10.0.2.2:8975/fdroid/repo/"):
+    """Verify the actual official CoreRepository row's DER certificate pin.
+
+    F-Droid upstream CoreRepository.certificate stores DER X.509 bytes as
+    hexadecimal. F-Droid IndexUtils.getFingerprint() computes SHA-256 on the
+    decoded bytes. Read only the exact native table/column, not arbitrary
+    matching strings or a synthetic claimed fingerprint.
+    """
+    if (not path.is_file() or path.is_symlink()
+            or not 0 < path.stat().st_size <= MAX_DB
+            or not EXPECTED_FP64.fullmatch(fingerprint)):
+        raise RepositoryPersistenceError("bounded SQLite and actual signer fingerprint required")
+    uri = path.resolve(strict=True).as_uri() + "?mode=ro"
+    with closing(sqlite3.connect(uri, uri=True, timeout=3)) as conn:
+        conn.execute("PRAGMA query_only=ON")
+        checked = conn.execute("PRAGMA quick_check(1)").fetchone()
+        if not checked or checked[0] != "ok":
+            raise RepositoryPersistenceError("native SQLite signer table integrity failed")
+        tables = {row[0] for row in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'")}
+        if "CoreRepository" not in tables:
+            raise RepositoryPersistenceError("official CoreRepository table absent")
+        columns = {row[1] for row in conn.execute('PRAGMA table_info("CoreRepository")')}
+        if not {"address", "certificate"}.issubset(columns):
+            raise RepositoryPersistenceError("native repository signer columns absent")
+        rows = conn.execute(
+            'SELECT "address", "certificate" FROM "CoreRepository" LIMIT 501').fetchall()
+        if len(rows) > 500:
+            raise RepositoryPersistenceError("unbounded official repository table")
+        observed = []
+        for address, certificate in rows:
+            if not isinstance(address, str) or address.rstrip("/") != expected_address.rstrip("/"):
+                continue
+            if (not isinstance(certificate, str)
+                    or not 512 <= len(certificate) <= 32768
+                    or len(certificate) % 2
+                    or not re.fullmatch(r"[0-9A-Fa-f]+", certificate)):
+                raise RepositoryPersistenceError("native repo certificate is not DER hex")
+            actual = hashlib.sha256(bytes.fromhex(certificate)).hexdigest()
+            if actual != fingerprint.lower():
+                raise RepositoryPersistenceError("native F-Droid signer pin does not match signed index")
+            observed.append(actual)
+        if len(observed) != 1:
+            raise RepositoryPersistenceError("exactly one native repository signer row required")
+        return True
+
+
 def validate_tar_snapshot(raw, target):
     if not 0 < len(raw) <= MAX_SNAPSHOT:
         raise RepositoryPersistenceError("official client DB archive absent or oversized, bytes=" + str(len(raw)))
@@ -135,6 +182,10 @@ def verify(source_sha, fingerprint, receipt_path):
             raise RepositoryPersistenceError(
                 "exactly one intact official-client SQLite repository record required")
         db_file, tables = validated[0]
+        # Only native on-device repository certificate DER bytes count. The
+        # signed index fingerprint supplied by the independent upstream JAR
+        # verifier is compared with the decoded CoreRepository certificate.
+        pin_verified = inspect_repository_signer(db_file, fingerprint)
         result = {
             "schema_version": 1,
             "scope": "isolated-official-fdroid-client-native-SQLite-persistence",
@@ -145,7 +196,7 @@ def verify(source_sha, fingerprint, receipt_path):
             "matched_repo_table_count": len(tables),
             "private_emulator_sqlite_sha256_for_evidence_only": hashlib.sha256(
                 db_file.read_bytes()).hexdigest(),
-            "signature_fingerprint_persisted_in_client_database_verified": False,
+            "signature_fingerprint_persisted_in_client_database_verified": pin_verified,
             "client_installed_apk_from_repo_verified": False,
             "client_updated_apk_from_repo_verified": False,
             "owner_device_or_production_repo_approved": False,
@@ -154,7 +205,7 @@ def verify(source_sha, fingerprint, receipt_path):
     with receipt_path.open("x", encoding="utf-8") as stream:
         json.dump(result, stream, sort_keys=True, indent=2)
         stream.write("\n")
-    print("ACTUAL_OFFICIAL_FDROID_NATIVE_REPO_SQLITE_PERSISTENCE_VERIFIED_NOT_APP_INSTALL")
+    print("ACTUAL_OFFICIAL_FDROID_NATIVE_SQLITE_REPOSITORY_AND_SIGNER_CERT_SHA256_VERIFIED_NOT_APP_INSTALL")
     return result
 
 
