@@ -56,6 +56,36 @@ class SignedRepoDrillPolicyTests(unittest.TestCase):
         r = d.classify_result({"repo": {}, "packages": {"ir.hamapp.store": {}}}, "ir.hamapp.store")
         self.assertEqual(r["indexed_packages"], 1)
 
+    def test_receipt_rejects_forged_production_or_owner_approval(self):
+        with self.assertRaises(d.DrillError):
+            d.public_receipt(self.sha, self.fp, {
+                "indexed_packages": 1, "expected_package_listed": True,
+                "production_ready": True
+            }, True, True)
+
+    def test_two_version_receipt_requires_actual_continuity_proofs(self):
+        two = {
+            "indexed_packages": 1, "expected_package_listed": True,
+            "actual_debug_version_codes": [1, 2],
+            "real_two_version_apk_sha256_distinct": True,
+            "same_disposable_repo_certificate_across_two_signed_indexes": True,
+            "both_exact_apk_versions_in_fresh_signed_index": True,
+            "unapproved_second_version_hash_substitution_rejected": True,
+            "official_fdroid_client_subscribed": False,
+            "two_version_client_update_performed": False,
+            "real_owner_key_restored_or_backed_up": False
+        }
+        accepted = d.public_receipt(self.sha, self.fp, two, True, True)
+        self.assertTrue(accepted["both_exact_apk_versions_in_fresh_signed_index"])
+        self.assertFalse(accepted["production_ready"])
+        two["actual_debug_version_codes"] = [2, 1]
+        with self.assertRaises(d.DrillError):
+            d.public_receipt(self.sha, self.fp, two, True, True)
+        two["actual_debug_version_codes"] = [1, 2]
+        two["official_fdroid_client_subscribed"] = True
+        with self.assertRaises(d.DrillError):
+            d.public_receipt(self.sha, self.fp, two, True, True)
+
     def test_signing_assets_not_checked_into_public_project(self):
         for pattern in ("**/keystore.p12", "**/keystore.jks", "**/config-secret.yml"):
             self.assertFalse(list(ROOT.glob(pattern)), pattern)
