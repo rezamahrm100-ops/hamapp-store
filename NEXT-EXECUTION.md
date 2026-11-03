@@ -81,3 +81,6 @@ Inspect actual PR on branch `feature/actual-binary-archive-inspection-and-owner-
 
 ## Strict F-Droid stage must not bypass owner approval
 - Inspect PR for `security/fdroid-stage-requires-real-source-and-malware-preflight-20261103`, actual hosted CI, CodeQL and Trivy. Stage CLI must fail if independently pinned workflow/source ref, permissions or real ClamAV is missing; no unsigned bypass to `fdroid update`. After merging, pursue genuine persistent F-Droid repo signer key/index, official client subscription and two-version signed install, plus Windows production signer and owner-admin branch ruleset (#31). The current public trust registries remain empty.
+
+## Verify signed local F-Droid v2 index and exact APK on real disposable key
+- Check branch `security/local-fdroid-signed-v2-index-bound-to-exact-apk-20261103` hosted CI/CodeQL/Trivy plus actual signed-index drill on exact head. Repair real fdroidserver schema/verification discrepancies if present before merge; then inspect main. Owner-independent signer key custody/backup and real HTTPS-origin official F-Droid subscription/install/update remain genuine external gates. See `docs/FDROID-LOCAL-SIGNED-INDEX-ACCEPTANCE.md`.

@@ -84,3 +84,7 @@
 
 /scripts/fdroid_bridge.py @rezamahrm100-ops
 /docs/FDROID-STRICT-VERIFIED-STAGING.md @rezamahrm100-ops
+
+/scripts/verify_fdroid_private_stage.py @rezamahrm100-ops
+/tests/test_verify_fdroid_private_stage.py @rezamahrm100-ops
+/docs/FDROID-LOCAL-SIGNED-INDEX-ACCEPTANCE.md @rezamahrm100-ops
