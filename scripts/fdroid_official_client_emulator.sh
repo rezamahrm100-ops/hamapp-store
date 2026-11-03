@@ -46,8 +46,67 @@ case "${1:-}" in
     adb wait-for-device
     adb install -r "$apk" | grep -F 'Success'
     adb shell pm path org.fdroid.fdroid | grep -F 'package:'
-    adb shell am start -W -n org.fdroid.fdroid/.MainActivity > "$RUNNER_TEMP/fdroid-launch.txt"
-    grep -Fq 'Status: ok' "$RUNNER_TEMP/fdroid-launch.txt"
+    # Use official APK's exported launcher resolution; the version-specific
+    # Java activity class is not a stable exported CLI contract.
+    if ! adb shell monkey -p org.fdroid.fdroid -c android.intent.category.LAUNCHER 1 > "$RUNNER_TEMP/fdroid-launch.txt" 2>&1; then
+      echo "OFFICIAL_FDROID_LAUNCH_FAILED" >&2
+      cat "$RUNNER_TEMP/fdroid-launch.txt" >&2
+      exit 1
+    fi
+    grep -Eq 'Events injected: 1|Events injected: 1
+    # Use the REAL officially signed F-Droid app as the intent target. The
+    # deliberately untrusted *.invalid URL is NOT added as a repository.
+    dummy="fdroidrepos://https://example.invalid/fdroid/repo/?fingerprint=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    if ! adb shell am start -W -a android.intent.action.VIEW \
+      -c android.intent.category.BROWSABLE \
+      -p org.fdroid.fdroid -d "$dummy" > "$RUNNER_TEMP/fdroid-repo-intent.txt" 2>&1; then
+      echo "OFFICIAL_FDROID_REPO_INTENT_DISPATCH_REJECTED" >&2
+      cat "$RUNNER_TEMP/fdroid-repo-intent.txt" >&2
+      exit 1
+    fi
+    if ! grep -Fq 'Status: ok' "$RUNNER_TEMP/fdroid-repo-intent.txt"; then
+      echo "OFFICIAL_FDROID_REPO_INTENT_DID_NOT_LAUNCH" >&2
+      cat "$RUNNER_TEMP/fdroid-repo-intent.txt" >&2
+      exit 1
+    fi
+    adb shell dumpsys activity activities > "$RUNNER_TEMP/fdroid-activities.txt"
+    grep -Fq 'org.fdroid.fdroid' "$RUNNER_TEMP/fdroid-activities.txt"
+    adb shell uiautomator dump /sdcard/fdroid-client.xml >/dev/null
+    mkdir -p "$out"
+    adb pull /sdcard/fdroid-client.xml "$out/ui.xml" >/dev/null
+    grep -Fq 'package="org.fdroid.fdroid"' "$out/ui.xml"
+    adb exec-out screencap -p > "$out/client-intent.png"
+    test -s "$out/client-intent.png"
+    python3 - <<'PY'
+import hashlib, json, os
+from pathlib import Path
+apk=Path(os.environ["RUNNER_TEMP"])/"hamapp-official-fdroid/F-Droid.apk"
+receipt={
+"schema_version":1,
+"scope":"official-F-Droid-signed-client-emulator-intent-only",
+"official_gpg_primary_fingerprint_pinned":True,
+"official_apk_cert_fingerprint_pinned":True,
+"official_apk_sha256":hashlib.sha256(apk.read_bytes()).hexdigest(),
+"real_emulator_official_fdroid_apk_installed":True,
+"real_fdroidrepos_intent_activity_launched":True,
+"example_invalid_repository_added":False,
+"owner_repo_subscription_verified":False,
+"official_client_app_install_or_update_verified":False,
+"production_smartphone_acceptance":False,
+"production_ready":False
+}
+p=Path("dist/official-fdroid-client/receipt.json")
+p.write_text(json.dumps(receipt,sort_keys=True,indent=2)+"\n",encoding="utf-8")
+PY
+    echo "OFFICIAL_FDROID_ANDROID_EMULATOR_INTENT_ROUTING_ACCEPTED_NOT_REPO_SUBSCRIPTION"
+    ;;
+  *)
+    echo "usage: $0 prepare|verify" >&2
+    exit 2
+    ;;
+esac
+ "$RUNNER_TEMP/fdroid-launch.txt"
+    echo "OFFICIAL_FDROID_LAUNCHER_EVENT_ACCEPTED"
     # Use the REAL officially signed F-Droid app as the intent target. The
     # deliberately untrusted *.invalid URL is NOT added as a repository.
     dummy="fdroidrepos://https://example.invalid/fdroid/repo/?fingerprint=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
