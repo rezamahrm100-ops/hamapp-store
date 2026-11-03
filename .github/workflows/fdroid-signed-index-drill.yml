@@ -1,9 +1,20 @@
 name: HamApp Isolated F-Droid Signed Index Drill
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/fdroid_signed_repo_drill.py'
+      - 'scripts/verify_fdroid_private_stage.py'
+      - 'scripts/fdroid_bridge.py'
+      - 'tests/test_verify_fdroid_private_stage.py'
+      - '.github/workflows/fdroid-signed-index-drill.yml'
   push:
     branches: [main]
     paths:
       - 'scripts/fdroid_signed_repo_drill.py'
+      - 'scripts/verify_fdroid_private_stage.py'
+      - 'scripts/fdroid_bridge.py'
+      - 'tests/test_verify_fdroid_private_stage.py'
       - 'tests/test_fdroid_signed_repo_drill.py'
       - '.github/workflows/fdroid-signed-index-drill.yml'
       - 'android/**'
@@ -15,7 +26,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   signed-repository-drill:
-    if: github.repository == 'rezamahrm100-ops/hamapp-store' && github.ref == 'refs/heads/main'
+    if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.ref == 'refs/heads/main' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository))
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -51,7 +62,7 @@ jobs:
           gradle --no-daemon -p android :app:assembleDebug
           test -s android/app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify android/app/build/outputs/apk/debug/app-debug.apk
-      - name: Create disposable signed F-Droid v2 index and reject wrong keys or tampering
+      - name: Create disposable signed index v2, validate local signed JAR and exact APK; reject wrong keys/tampering
         shell: bash
         run: |
           set -euo pipefail
@@ -71,4 +82,4 @@ jobs:
         shell: bash
         run: |
           echo '### Real signed F-Droid index-v2 verification with a disposable CI key' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Correct key accepted; incorrect key and corrupted signed metadata rejected. No production signing key, no deployment, no approved live app and no installs. Test keystore/config destroyed before artifact upload.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Correct key and exact artifact matched in independently verified local signed index; wrong key/corrupted metadata rejected. No production key/deployment/owner live APK/official client install. All ephemeral keys deleted before artifact upload.' >> "$GITHUB_STEP_SUMMARY"
