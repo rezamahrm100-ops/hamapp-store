@@ -56,8 +56,8 @@ def _match_package(index, package_id, version_code, version_name, binary_sha, bi
     if len(matching_files) != 1:
         raise PrivateIndexError("exact immutable APK version/digest not uniquely indexed")
     name = matching_files[0]
-    if (not isinstance(name, str) or not re.fullmatch(r"/[A-Za-z0-9._+-]+\\.apk", name)
-            or ".." in name or "%" in name or "\\\\" in name):
+    if (not isinstance(name, str) or not re.fullmatch(r"/[A-Za-z0-9._+-]+\.apk", name)
+            or ".." in name or "%" in name):
         raise PrivateIndexError("signed index listed unsafe APK filename")
     return name[1:]
 
