@@ -1,0 +1,19 @@
+# HamApp hosted Windows actual NSIS installer lifecycle — unsigned preview only
+
+The Windows PyInstaller `HamApp-Windows-Preview.exe` previously built successfully and was cryptographically Authenticode-tested using genuine disposable keys on GitHub-hosted Linux. However, there was no verified **real Windows installer package** or actual installed-state/upgrade/uninstall acceptance. This feature closes an engineerable part of that separate gap using the maintained, free/open-source [Nullsoft Scriptable Install System (NSIS)](https://nsis.sourceforge.io/) **3.11.0**, pinned on GitHub-hosted Windows via Chocolatey community packaging. No paid WiX license is required.
+
+## Actual integration
+- `windows_installer/HamAppPreview.nsi` packages the **actual Windows-built EXE** using free NSIS. It runs as the **current unprivileged Windows user**, installs only under `%LOCALAPPDATA%\Programs\HamAppPreviewSandbox`, registers only in **HKCU**, creates a scoped Start Menu shortcut and an actual uninstaller, and explicitly **rejects an older installer version**.
+- `.github/workflows/windows-client-preview.yml` adds a dependent `nsis-installer-sandbox` job on free GitHub-hosted Windows Server 2022. It downloads the **exact original unsigned EXE produced by the existing desktop-preview job**, not another build or synthetic placeholder. It compiles two genuine, distinct NSIS installer versions using that same EXE. This explicitly tests **installer package version continuity**, **not distinct application code changes**.
+- `scripts/windows_nsis_sandbox_acceptance.ps1` **actually executes** v1 installer, checks HKCU version=1, exact installed EXE SHA-256 equals independently measured native source, executes v2 installer and observes HKCU version=2, executes older v1 again and demands a nonzero denial without changing installed bytes/version, runs the actual uninstaller, and verifies private installed files/registry are completely gone.
+- The scripts **refuse a pre-existing installed app or HKCU registration** before touching local state. They never modify HKLM, invoke elevation/UAC, install a system service, grant Windows Firewall permissions or use owner physical desktops. Only the disposable GitHub-hosted Windows VM is modified, then its private sandbox is cleaned. The output acceptance receipt has only SHA-256 digests, exact source commit, verified factual flags and **false** production flags.
+
+## Test and release limits
+
+All installer EXEs are deliberately **UNSIGNED** and held inside `RUNNER_TEMP`; they are destroyed before artifact upload. Only a bounded safe JSON receipt `hamapp-real-hosted-nsis-install-qa` is retained for 7 days. The original unsigned Windows preview artifact remains short-lived and does **not** gain production approval. Even a fully green installer lifecycle test does not verify a code-signed MSI/MSIX, a validated real producer CA, SmartScreen, owner-device install consent, real WinGet mapping, public release or application v2 binary upgrade. All approved-signers and release catalogs remain empty.
+
+A production installer still requires independent approved publisher signature, trusted source provenance, verified Windows policy and permissions, real update/recovery mechanism, one-time owner device acceptance and public release approval.
+
+## Exact evidence requirement
+
+Require **all** of these on the same immutable PR head: hosted Linux/Windows CI, CodeQL, Trivy, existing Windows EXE + portable Authenticode cryptography, and new **real hosted Windows NSIS install/upgrade/deny downgrade/uninstall** job completed SUCCESS. Source tests `tests/test_windows_nsis_sandbox.py` protect forbidden system-wide/elevated installation but **do not substitute for the actual Windows VM installer run**. After merging, check all applicable jobs on the new `main` SHA and do not call queued owner QA green.
