@@ -199,6 +199,8 @@ def run(stage):
         raise ClientInstallFailure("official F-Droid app details market intent not accepted")
 
     clicked_client_button = False
+    client_install_ui_tap_attempts = 0
+    last_install_tap_monotonic = 0.0
     clicked_system_prompt = False
     clicked_metered_confirmation = False
     with tempfile.TemporaryDirectory(prefix="hamapp-official-client-package-", dir=runner) as tmp:
@@ -218,14 +220,24 @@ def run(stage):
                 print("ACTUAL_OFFICIAL_FDROID_METERED_DOWNLOAD_DIALOG_CONFIRMED")
             elif xml and tap_from_real_ui(xml, "confirm-installer"):
                 clicked_system_prompt = True
-            elif xml and not clicked_client_button and tap_from_real_ui(
-                    xml, "install" if stage == 1 else "update"):
+            elif (xml and client_install_ui_tap_attempts < 3
+                  and (client_install_ui_tap_attempts == 0 or
+                       time.monotonic() - last_install_tap_monotonic >= 12)
+                  and count_client_apk_get(base / "requests.jsonl",
+                                           f"hamapp-v{stage}.apk") == 0
+                  and tap_from_real_ui(xml, "install" if stage == 1 else "update")):
+                # A live blue Install button can remain after a transient
+                # tap was lost during Compose recomposition. Retry at most
+                # twice, 12 s apart, only when the same bounded genuine
+                # app-owned button STILL exists and no APK GET has begun.
+                # Never repeatedly tap a progress, system, or error dialog.
                 clicked_client_button = True
-                # The input event is NOT proof of the F-Droid callback. Capture
-                # its immediate live aftermath before dialogs can disappear.
-                time.sleep(2)
-                safe_test_only_screenshot(
-                    output / f"official-inclient-after-first-action-v{stage}.png")
+                client_install_ui_tap_attempts += 1
+                last_install_tap_monotonic = time.monotonic()
+                if client_install_ui_tap_attempts == 1:
+                    time.sleep(2)
+                    safe_test_only_screenshot(
+                        output / f"official-inclient-after-first-action-v{stage}.png")
             if clicked_client_button and installed_version() == stage:
                 if count_client_apk_get(base / "requests.jsonl",
                                         f"hamapp-v{stage}.apk") < 1:
@@ -238,6 +250,7 @@ def run(stage):
                     "package_name": APP_PACKAGE,
                     "real_official_client_app_action_tapped": clicked_client_button,
                     "real_android_installer_confirmation_tapped_if_visible": clicked_system_prompt,
+                    "real_official_client_ui_tap_attempts": client_install_ui_tap_attempts,
                     "real_fdroid_metered_download_confirmation_tapped_if_visible": clicked_metered_confirmation,
                     "actual_client_apk_get_observed": True,
                     "actual_installed_version_code": stage,
@@ -285,6 +298,7 @@ def run(stage):
         diagnostic = {
             "schema_version": 1, "source_sha": source_sha, "requested_stage": stage,
             "official_app_install_button_coordinate_tap_sent": clicked_client_button,
+            "bounded_real_client_install_ui_tap_attempts": client_install_ui_tap_attempts,
             "actual_client_versioned_apk_get_count": count_client_apk_get(
                 base / "requests.jsonl", f"hamapp-v{stage}.apk"),
             **on_device_failure_signals(),
