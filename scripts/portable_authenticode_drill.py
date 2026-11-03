@@ -54,48 +54,74 @@ def run(command, expected_success=True, phase="unspecified"):
 
 
 def make_identity(directory, slug):
+    """Build genuine two-level test PKI: root CA and end-entity code signer."""
     from cryptography import x509
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import rsa
     from cryptography.hazmat.primitives.serialization import pkcs12
     from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
 
-    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    name = x509.Name([x509.NameAttribute(
-        NameOID.COMMON_NAME, "HamApp disposable Authenticode test " + slug)])
     now = datetime.now(timezone.utc)
-    cert = (x509.CertificateBuilder()
-            .subject_name(name).issuer_name(name).public_key(key.public_key())
+    ca_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    root_name = x509.Name([x509.NameAttribute(
+        NameOID.COMMON_NAME, "HamApp CI ephemeral root " + slug)])
+    root = (x509.CertificateBuilder()
+            .subject_name(root_name).issuer_name(root_name)
+            .public_key(ca_key.public_key())
             .serial_number(x509.random_serial_number())
             .not_valid_before(now - timedelta(minutes=5))
             .not_valid_after(now + timedelta(hours=4))
             .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
             .add_extension(x509.KeyUsage(
-                digital_signature=True, content_commitment=False, key_encipherment=False,
-                data_encipherment=False, key_agreement=False, key_cert_sign=True,
-                crl_sign=True, encipher_only=False, decipher_only=False), critical=True)
+                digital_signature=False, content_commitment=False,
+                key_encipherment=False, data_encipherment=False,
+                key_agreement=False, key_cert_sign=True, crl_sign=True,
+                encipher_only=False, decipher_only=False), critical=True)
+            .add_extension(x509.SubjectKeyIdentifier.from_public_key(
+                ca_key.public_key()), critical=False)
+            .sign(ca_key, hashes.SHA256()))
+
+    signer_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    name = x509.Name([x509.NameAttribute(
+        NameOID.COMMON_NAME, "HamApp disposable Authenticode signer " + slug)])
+    leaf = (x509.CertificateBuilder()
+            .subject_name(name).issuer_name(root.subject)
+            .public_key(signer_key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(now - timedelta(minutes=5))
+            .not_valid_after(now + timedelta(hours=3))
+            .add_extension(x509.BasicConstraints(ca=False, path_length=None),
+                           critical=True)
+            .add_extension(x509.KeyUsage(
+                digital_signature=True, content_commitment=False,
+                key_encipherment=False, data_encipherment=False,
+                key_agreement=False, key_cert_sign=False, crl_sign=False,
+                encipher_only=False, decipher_only=False), critical=True)
             .add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.CODE_SIGNING]),
                            critical=False)
-            .sign(key, hashes.SHA256()))
+            .add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(
+                ca_key.public_key()), critical=False)
+            .sign(ca_key, hashes.SHA256()))
+
     password = secrets.token_urlsafe(48)
     pfx = directory / (slug + ".pfx")
-    pem = directory / (slug + ".pem")
+    root_pem = directory / (slug + "-root.pem")
     passfile = directory / (slug + ".pass")
     with pfx.open("xb") as stream:
         stream.write(pkcs12.serialize_key_and_certificates(
-            b"throwaway-ci-no-production", key, cert, None,
+            b"throwaway-ci-code-signing-leaf", signer_key, leaf, [root],
             serialization.BestAvailableEncryption(password.encode("ascii"))))
-    with pem.open("xb") as stream:
-        stream.write(cert.public_bytes(serialization.Encoding.PEM))
+    with root_pem.open("xb") as stream:
+        stream.write(root.public_bytes(serialization.Encoding.PEM))
     with passfile.open("x", encoding="ascii") as stream:
         stream.write(password + "\n")
-    for file in (pfx, pem, passfile):
+    for file in (pfx, root_pem, passfile):
         file.chmod(0o600)
     return {
-        "pfx": pfx, "pem": pem, "password_file": passfile,
-        "fingerprint": hashlib.sha256(cert.public_bytes(serialization.Encoding.DER)).hexdigest(),
+        "pfx": pfx, "pem": root_pem, "password_file": passfile,
+        "fingerprint": hashlib.sha256(leaf.public_bytes(
+            serialization.Encoding.DER)).hexdigest(),
     }
-
 
 def verify(path, identity, expected_success):
     return run([
