@@ -113,7 +113,8 @@ class TLSQuarantineServer(LimitedThreadingMixIn, HTTPServer):
                 or self.quarantine_root in self.temp_dir.parents
                 or self.temp_dir in self.quarantine_root.parents):
             raise IntakeServiceError("private upload temporary storage must be isolated")
-        self.credentials = load_credentials(credentials)
+        self.credential_file = private_file(credentials)
+        self.credentials = load_credentials(self.credential_file)
         cert, key = certificate_files(cert_file, key_file)
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.minimum_version = ssl.TLSVersion.TLSv1_2
