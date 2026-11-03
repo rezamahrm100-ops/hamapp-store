@@ -12,11 +12,12 @@ import sys
 import xml.etree.ElementTree as ET
 
 BOUNDS = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\Z")
-CONTROLS = {
-    "add", "add repo", "add repository", "add new repository",
-    "enable", "ok", "save", "confirm", "continue",
-    "allow", "next", "done", "refresh", "sync", "update"
-}
+# A generic refresh selector MUST NEVER tap Add repository. Previously
+# the first index-fetch loop silently clicked the Add button before the
+# dedicated consent stage; the real emulator then showed "Adding repository..."
+# while the verifier incorrectly waited for a second Add button. Only the
+# explicitly audited select_actual_repository_add() may initiate enrollment.
+CONTROLS = {"refresh", "sync", "update"}
 PACKAGE = "org.fdroid.fdroid"
 
 
@@ -43,7 +44,9 @@ def select(xml):
         if not bounds:
             continue
         x1, y1, x2, y2 = map(int, bounds.groups())
-        if x1 >= x2 or y1 >= y2 or x2 > 4096 or y2 > 4096:
+        w, h = x2 - x1, y2 - y1
+        if (x1 < 0 or y1 < 0 or x2 > 4096 or y2 > 4096
+                or not 24 <= w <= 650 or not 20 <= h <= 180):
             continue
         return (x1 + x2) // 2, (y1 + y2) // 2
     return None
