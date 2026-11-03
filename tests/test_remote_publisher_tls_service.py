@@ -25,6 +25,7 @@ import private_publisher_inbox as inbox
 import publisher_intake_service as gateway
 import remote_publisher_tls_service as remote
 import remote_publisher_submit as publisher
+import publisher_token_lifecycle as token_admin
 
 
 @unittest.skipUnless(os.name == "posix" and shutil.which("openssl"),
@@ -117,6 +118,24 @@ class RealRemotePublisherTLSIntegrationTests(unittest.TestCase):
         self.assertEqual(inbox.verify_events(folder)[0], "quarantined")
         self.assertEqual(list(self.incoming.iterdir()), [])
         self.assertEqual((folder / "submission.json").stat().st_mode & 0o077, 0)
+
+    def test_real_tls_running_server_honors_token_rotation_and_revocation(self):
+        first = self.send()
+        self.assertEqual(first["status"], "quarantined")
+        changed = token_admin.change_registry(self.credentials, "rotate", "publisher-first")
+        with self.assertRaises(local_submit_error()):
+            self.send()
+        fresh_file = self.work / "new-token-secret.txt"
+        fresh_file.write_text(changed["one_time_secret"] + "\n", encoding="ascii")
+        fresh_file.chmod(0o600)
+        # The same TLS service instance must immediately use the new token.
+        second = self.send(token=fresh_file)
+        self.assertEqual(second["status"], "quarantined")
+        self.assertEqual(len(list(self.root.iterdir())), 2)
+        token_admin.change_registry(self.credentials, "revoke", "publisher-first")
+        with self.assertRaises(local_submit_error()):
+            self.send(token=fresh_file)
+        self.assertEqual(len(list(self.root.iterdir())), 2)
 
     def test_wrong_tls_fingerprint_fails_before_sending_publisher_token(self):
         self.assertRaises(publisher.RemotePublisherError, self.send, pin="f" * 64)

@@ -56,7 +56,7 @@ def load_credentials(path):
     if not isinstance(raw, dict) or set(raw) != {"schema_version", "publishers"} or raw["schema_version"] != 1:
         raise IntakeServiceError("invalid credential registry schema")
     publishers = raw["publishers"]
-    if not isinstance(publishers, list) or not 1 <= len(publishers) <= 100:
+    if not isinstance(publishers, list) or not 0 <= len(publishers) <= 100:
         raise IntakeServiceError("invalid publisher credential count")
     result = {}
     for item in publishers:
@@ -124,7 +124,8 @@ class LocalIntakeServer(HTTPServer):
         self.temp_dir = inbox._private_dir(temp_dir)
         if self.temp_dir == self.quarantine_root or self.quarantine_root in self.temp_dir.parents:
             raise IntakeServiceError("temporary uploads must be outside the quarantine root")
-        self.credentials = load_credentials(credentials)
+        self.credential_file = private_file(credentials)
+        self.credentials = load_credentials(self.credential_file)
         super().__init__((host, port), IntakeHandler)
 
 
@@ -161,9 +162,17 @@ class IntakeHandler(BaseHTTPRequestHandler):
                 or len(bearer) > 150 or len(bearer) < 40):
             self._reply(401, {"error": "unauthorized"})
             return
+        # Reopen the private atomic registry on EVERY authenticated request:
+        # operator revocation and rotation become effective immediately,
+        # without reusing a stale startup credential snapshot.
+        try:
+            current_credentials = load_credentials(self.server.credential_file)
+        except (ValueError, OSError, UnicodeError):
+            self._reply(503, {"error": "publisher_auth_registry_unavailable"})
+            return
         observed = hashlib.sha256(bearer[7:].encode("utf-8")).hexdigest()
-        expected = self.server.credentials.get(claimed, "0" * 64)
-        if not hmac.compare_digest(observed, expected) or claimed not in self.server.credentials:
+        expected = current_credentials.get(claimed, "0" * 64)
+        if not hmac.compare_digest(observed, expected) or claimed not in current_credentials:
             self._reply(401, {"error": "unauthorized"})
             return
         encoded = self.headers.get("X-HamApp-Candidate-Base64", "")
