@@ -87,7 +87,7 @@ def select(xml_path, action):
             choices.append((size, x, y))
     if not choices:
         return None
-    choices.sort()
+    choices = sorted(set(choices))
     if action in ("test-repository", "force-update") and len(choices) > 1:
         # No ambiguous installed repository identity or refresh control.
         return None
