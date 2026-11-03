@@ -1,4 +1,5 @@
 import importlib.util
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -73,7 +74,12 @@ class SignedRepoDrillPolicyTests(unittest.TestCase):
             "unapproved_second_version_hash_substitution_rejected": True,
             "official_fdroid_client_subscribed": False,
             "two_version_client_update_performed": False,
-            "real_owner_key_restored_or_backed_up": False
+            "real_owner_key_restored_or_backed_up": False,
+            "actual_ephemeral_keystore_removed_then_restored": True,
+            "independent_volume_key_backup_bytes_verified": True,
+            "restored_key_material_ephemeral_only": True,
+            "restored_ephemeral_key_signed_second_real_index": True,
+            "real_owner_backup_or_restore_proven": False
         }
         accepted = d.public_receipt(self.sha, self.fp, two, True, True)
         self.assertTrue(accepted["both_exact_apk_versions_in_fresh_signed_index"])
@@ -85,6 +91,52 @@ class SignedRepoDrillPolicyTests(unittest.TestCase):
         two["official_fdroid_client_subscribed"] = True
         with self.assertRaises(d.DrillError):
             d.public_receipt(self.sha, self.fp, two, True, True)
+
+        two["official_fdroid_client_subscribed"] = False
+        two["restored_ephemeral_key_signed_second_real_index"] = False
+        with self.assertRaises(d.DrillError):
+            d.public_receipt(self.sha, self.fp, two, True, True)
+        two["restored_ephemeral_key_signed_second_real_index"] = True
+        two["real_owner_backup_or_restore_proven"] = True
+        with self.assertRaises(d.DrillError):
+            d.public_receipt(self.sha, self.fp, two, True, True)
+
+    @unittest.skipUnless(os.name == "posix" and Path("/dev/shm").is_dir(),
+                         "independent POSIX tmpfs signer recovery test")
+    def test_real_disposable_keystore_loss_and_external_volume_restore(self):
+        with tempfile.TemporaryDirectory() as base:
+            workspace = Path(base) / "fdroid"
+            home = Path(base) / "home"
+            workspace.mkdir()
+            home.mkdir()
+            if home.stat().st_dev == Path("/dev/shm").stat().st_dev:
+                self.skipTest("no distinct independent temporary filesystem")
+            key = home / "repo-test-key.jks"
+            key.write_bytes(b"synthetic-not-a-real-key:" + b"R" * 2048)
+            key.chmod(0o600)
+            before = key.read_bytes()
+            report = d.restore_ephemeral_signer_key(
+                {"keystore": "~/repo-test-key.jks"}, workspace, home)
+            self.assertEqual(key.read_bytes(), before)
+            self.assertTrue(report["actual_ephemeral_keystore_removed_then_restored"])
+            self.assertTrue(report["independent_volume_key_backup_bytes_verified"])
+            self.assertFalse(report["real_owner_backup_or_restore_proven"])
+            self.assertEqual(list(Path("/dev/shm").glob("hamapp-fdroid-independent-backup-*")), [])
+
+    @unittest.skipUnless(os.name == "posix" and Path("/dev/shm").is_dir(),
+                         "disposable POSIX signer containment guard")
+    def test_owner_path_cannot_be_restored_by_disposable_ci_helper(self):
+        with tempfile.TemporaryDirectory() as base:
+            workspace = Path(base) / "fdroid"
+            home = Path(base) / "home"
+            workspace.mkdir()
+            home.mkdir()
+            outsider = Path(base) / "owner-do-not-touch.jks"
+            outsider.write_bytes(b"O" * 2048)
+            outsider.chmod(0o600)
+            with self.assertRaises(d.DrillError):
+                d.restore_ephemeral_signer_key({"keystore": str(outsider)}, workspace, home)
+            self.assertEqual(outsider.read_bytes(), b"O" * 2048)
 
     def test_signing_assets_not_checked_into_public_project(self):
         for pattern in ("**/keystore.p12", "**/keystore.jks", "**/config-secret.yml"):
