@@ -180,7 +180,7 @@ jobs:
         shell: pwsh
         timeout-minutes: 8
         run: |
-          ./scripts/windows_nsis_sandbox_acceptance.ps1 -UnsignedExe 'dist/HamApp-Windows-Preview.exe'
+          ./scripts/windows_nsis_sandbox_acceptance.ps1 -UnsignedExe 'dist/HamApp-Windows-Preview.exe' -SecondUnsignedExe (Join-Path $env:RUNNER_TEMP 'hamapp-distinct-exe-v2/dist/HamApp-Windows-V2-CI-ONLY.exe')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path 'dist/windows-installer-evidence/receipt.json' -PathType Leaf)) { throw 'Missing actual native install receipt' }
       - name: Upload bounded SAFE install verification receipt, never unapproved installer EXEs
@@ -195,7 +195,7 @@ jobs:
         shell: pwsh
         run: |
           "### Real hosted Windows unsigned NSIS per-user installer QA PASS" | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-          "Actual per-user v1 install, version-2 installer upgrade, older installer downgrade refused, exact installed PyInstaller EXE digest and real uninstall/registry cleanup. Both installers are UNSIGNED test-only; no production Authenticode/WinGet, actual distinct app v2, owner-device consent or public release." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          "Actual per-user v1 install, version-2 installer upgrade, older installer downgrade refused, exact installed PyInstaller EXE digest and real uninstall/registry cleanup. Both installers are UNSIGNED test-only; the actual GUI app v2 is source-modified and has different binary bytes. No production Authenticode/WinGet, owner-device consent or public release." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
   attest-and-verify:
     name: Verify trusted-main unsigned Windows EXE provenance
