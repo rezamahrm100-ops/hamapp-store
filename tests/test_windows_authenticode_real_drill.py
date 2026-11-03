@@ -40,7 +40,10 @@ class RealNativeSignaturePolicyTests(unittest.TestCase):
     def test_temp_signer_cannot_run_on_owner_device_and_does_not_upload_secrets(self):
         ps=(ROOT/"scripts/windows_authenticode_real_drill.ps1").read_text("utf-8")
         self.assertIn("$env:GITHUB_ACTIONS -ne 'true'",ps)
-        self.assertIn("New-SelfSignedCertificate",ps)
+        self.assertIn("CertificateRequest",ps)
+        self.assertIn("CreateSelfSigned",ps)
+        self.assertIn("X509EnhancedKeyUsageExtension",ps)
+        self.assertNotIn("New-SelfSignedCertificate @opts",ps)
         self.assertIn("Set-AuthenticodeSignature",ps)
         self.assertIn("CurrentUser",ps)
         self.assertNotIn("LocalMachine",ps)
