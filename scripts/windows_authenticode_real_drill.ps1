@@ -19,19 +19,35 @@ if (Test-Path -LiteralPath $tempRoot) { throw 'Refuse to overwrite temporary sig
 New-Item -ItemType Directory -Path $tempRoot | Out-Null
 $certA = $null
 $certB = $null
+$pairA = $null
+$pairB = $null
 try {
-    $opts = @{
-        Type = 'CodeSigningCert'
-        CertStoreLocation = 'Cert:\CurrentUser\My'
-        HashAlgorithm = 'SHA256'
-        KeyAlgorithm = 'RSA'
-        KeyLength = 2048
-        KeyExportPolicy = 'NonExportable'
-        NotAfter = (Get-Date).AddDays(1)
+    # New-SelfSignedCertificate can block indefinitely while provisioning the
+    # runner's key container. Use built-in .NET in-memory CertificateRequest
+    # instead; no file-system private key, OS prompt or actual owner identity.
+    function New-DisposableCodeSigningCert([string]$subject) {
+        $key = [System.Security.Cryptography.RSA]::Create(2048)
+        $request = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
+            "CN=$subject", $key,
+            [System.Security.Cryptography.HashAlgorithmName]::SHA256,
+            [System.Security.Cryptography.RSASignaturePadding]::Pkcs1)
+        $oids = [System.Security.Cryptography.OidCollection]::new()
+        [void]$oids.Add([System.Security.Cryptography.Oid]::new('1.3.6.1.5.5.7.3.3'))
+        $request.CertificateExtensions.Add(
+            [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]::new($oids, $false))
+        $request.CertificateExtensions.Add(
+            [System.Security.Cryptography.X509Certificates.X509KeyUsageExtension]::new(
+                [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::DigitalSignature, $false))
+        $cert = $request.CreateSelfSigned(
+            [DateTimeOffset]::UtcNow.AddMinutes(-2), [DateTimeOffset]::UtcNow.AddHours(4))
+        if (-not $cert.HasPrivateKey) { throw 'In-memory disposable signing key not available' }
+        return @{ Certificate = $cert; Key = $key }
     }
-    Write-Output 'AUTHENTICODE_TEST_CREATING_DISPOSABLE_CERTIFICATES'
-    $certA = New-SelfSignedCertificate @opts -Subject 'CN=HamApp Ephemeral Test Signer A - NEVER PRODUCTION'
-    $certB = New-SelfSignedCertificate @opts -Subject 'CN=HamApp Ephemeral Test Signer B - WRONG PUBLISHER'
+    Write-Output 'AUTHENTICODE_TEST_CREATING_IN_MEMORY_DISPOSABLE_KEYS'
+    $pairA = New-DisposableCodeSigningCert 'HamApp Ephemeral Test Signer A - NEVER PRODUCTION'
+    $pairB = New-DisposableCodeSigningCert 'HamApp Ephemeral Test Signer B - WRONG PUBLISHER'
+    $certA = $pairA.Certificate
+    $certB = $pairB.Certificate
     # Trust only CurrentUser on short-lived GitHub-hosted Windows, never public CA.
     foreach ($storeName in @('Root', 'TrustedPublisher')) {
         $store = [System.Security.Cryptography.X509Certificates.X509Store]::new(
@@ -76,4 +92,9 @@ finally {
         }
     }
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -Confirm:$false -ErrorAction SilentlyContinue
+    foreach ($pair in @($pairA, $pairB)) {
+        if ($null -eq $pair) { continue }
+        if ($pair.Certificate) { $pair.Certificate.Dispose() }
+        if ($pair.Key) { $pair.Key.Dispose() }
+    }
 }
