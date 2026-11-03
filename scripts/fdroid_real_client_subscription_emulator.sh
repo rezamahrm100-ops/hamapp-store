@@ -161,6 +161,14 @@ if [ "$v2_seen" != true ]; then
   echo "OFFICIAL_FDROID_CLIENT_DID_NOT_FETCH_UPDATED_SIGNED_INDEX" >&2
   exit 1
 fi
+# Unlike observing index GET requests, the client itself must have durably
+# recorded the test repository under its REAL private Room/SQLite DB.
+# Pull a bounded snapshot from the disposable rooted emulator only; discard
+# its bytes before artifact upload and retain a non-secret proof receipt.
+python3 scripts/fdroid_official_repo_db_probe.py \
+  --source-sha "$GITHUB_SHA" --fingerprint "$fp" \
+  --receipt "$out/private-repository-db-proof.json"
+test -s "$out/private-repository-db-proof.json"
 FDROID_LAB="$base" FDROID_INDEX_V1="$v1_sha" FDROID_INDEX_V2="$v2_sha" python3 - <<'PY'
 import hashlib,json,os
 from pathlib import Path
