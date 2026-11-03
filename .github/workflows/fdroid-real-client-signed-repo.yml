@@ -1,4 +1,4 @@
-name: HamApp Real Official F-Droid Client Signed Test Repo Fetch
+name: HamApp Real Official F-Droid Client Signed Test Repo and Native Signer Pin
 on:
   pull_request:
     branches: [main]
@@ -113,4 +113,4 @@ jobs:
         shell: bash
         run: |
           echo '### Actual official F-Droid Android client requests signed disposable v1/v2 indexes' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Real official upstream APK GPG+developer signer, real disposable signed repository indexes, client HTTP requests and read-only on-device official F-Droid SQLite repository persistence verified. NOT proof of installed app from repo, in-client app update, live production HTTPS origin, verified persistent fingerprint in client DB, or any owner key.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Real official upstream APK GPG+developer signer, disposable v1/v2 signed indexes and official client requests. Real read-only F-Droid CoreRepository SQLite address plus exact DER certificate SHA256 matched the independently verified disposable JAR index key. No in-client application installation or update verified; no production HTTPS signer, owner key or owner device authorized.' >> "$GITHUB_STEP_SUMMARY"
