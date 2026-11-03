@@ -69,7 +69,9 @@ class RealFdroidClientLabTests(unittest.TestCase):
         self.assertIn('runs-on: ubuntu-24.04',yaml)
         self.assertIn('api-level: 33',yaml)
         self.assertIn('fdroidserver==2.4.5',yaml)
-        self.assertIn('fedroid',yaml.replace('fdroid','fedroid'))
+        self.assertIn('scripts/fdroid_client_private_repo_lab.py',yaml)
+        self.assertIn('scripts/fdroid_real_client_subscription_emulator.sh',yaml)
+        self.assertIn('scripts/fdroid_official_client_emulator.sh prepare',yaml)
         self.assertNotIn('runs-on: self-hosted',yaml)
         self.assertNotIn('dist/android-two-version/v1.apk\n          if-no-files-found',yaml)
 
