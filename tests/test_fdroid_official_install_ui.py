@@ -64,6 +64,25 @@ class OfficialInClientInstallUiTests(unittest.TestCase):
         self.assertIsNone(self.choose(good.replace("[160,180][280,224]",
                                                     "[0,0][400,800]"), "dismiss-hint"))
 
+    def test_real_f_droid_metered_download_confirmation_requires_exact_dialog(self):
+        # Upstream MeteredConnectionDialog titles its confirmation action
+        # "Download"; without the exact title it MUST NOT tap a random button.
+        prompt = (
+            '<node package="org.fdroid.fdroid" text="Continue with mobile data?" '
+            'clickable="false"/>'
+            '<node package="org.fdroid.fdroid" text="Download" clickable="true" '
+            'bounds="[160,400][300,449]"/>'
+        )
+        self.assertEqual(self.choose(prompt, "confirm-metered"), (230, 424))
+        self.assertIsNone(self.choose(prompt.replace("Continue with mobile data?",
+                                                      "Permission required"), "confirm-metered"))
+        self.assertIsNone(self.choose(prompt.replace("org.fdroid.fdroid",
+                                                     "com.android.settings"), "confirm-metered"))
+        self.assertIsNone(self.choose(prompt.replace("[160,400][300,449]",
+                                                     "[0,0][400,800]"), "confirm-metered"))
+        self.assertIsNone(self.choose(prompt.replace("Download", "Install"),
+                                      "confirm-metered"))
+
     def test_invalid_bounds_or_wrong_label_rejected(self):
         raw = (
             '<node package="org.fdroid.fdroid" text="هَماپ"/>'
