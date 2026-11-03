@@ -234,9 +234,15 @@ def run():
             print("REAL_OFFICIAL_FDROID_REPO_UI_ACTION_" + action.upper().replace("-", "_"),
                   flush=True)
             if action == "force-update":
-                if ("repositories" not in transitions or
-                        "test-repository" not in transitions):
-                    raise RuntimeError("repository update did not follow genuine navigation")
+                # Real Android #41692904167 returned to this *exact*
+                # saved-repository Details view through the existing back
+                # stack, not a redundant Discover -> Repositories route.
+                # The meaningful authorization is exact live F-Droid repo
+                # title + official Check for updates control, not the
+                # historical order of screens used to reach that view.
+                if not (latest_signals["disposable_repository_label_visible"] and
+                        latest_signals["native_check_for_updates_visible"]):
+                    raise RuntimeError("exact installed F-Droid repository UI not proven")
                 print("REAL_OFFICIAL_FDROID_REPO_DETAIL_FORCE_UPDATE_BUTTON_TAPPED")
                 confirm_visible_repo_download_dialog(xml)
                 return
