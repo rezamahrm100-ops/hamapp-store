@@ -41,8 +41,8 @@ class PermissionReviewTests(unittest.TestCase):
     def test_exact_androidx_app_signature_receiver_guard_only(self):
         allowed = "ir.hamapp.store.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
         self.policy["allowed_permissions"] = [allowed]
-        self.permissions = ("package: ir.hamapp.store\\n"
-                            "uses-permission: name='" + allowed + "'\\n")
+        self.permissions = ("package: ir.hamapp.store\n"
+                            "uses-permission: name='" + allowed + "'\n")
         receipt = p.review(self.apk, self.policy, runner=self.runner)
         self.assertEqual(receipt["requested_permissions"], [allowed])
         for wrong in (
@@ -50,7 +50,7 @@ class PermissionReviewTests(unittest.TestCase):
                 "ir.hamapp.store.ANY_PERMISSION",
                 "android.permission.REQUEST_INSTALL_PACKAGES"):
             with self.subTest(wrong=wrong):
-                self.permissions = "uses-permission: name='" + wrong + "'\\n"
+                self.permissions = "uses-permission: name='" + wrong + "'\n"
                 with self.assertRaises(p.AndroidPermissionError):
                     p.review(self.apk, self.policy, runner=self.runner)
 
