@@ -134,6 +134,9 @@ jobs:
           } finally {
             Pop-Location
           }
+          # The corrupt-file rejection is expected; do not let cmd.exe's
+          # negative-test exit code poison the succeeding PowerShell step.
+          $global:LASTEXITCODE = 0
       - name: Upload portable EXE, per-user Setup, SHA256 and Persian notes
         uses: actions/upload-artifact@v4
         with:
