@@ -31,6 +31,14 @@ class OfficialFdroidHandoffTests(unittest.TestCase):
         self.assertIn('example.invalid/fdroid/repo/?fingerprint=', source)
         self.assertNotIn('dummy="fdroidrepos://https://', source)
 
+    def test_official_client_native_process_check_is_bounded_and_fail_closed(self):
+        source = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("official_ready=false", source)
+        self.assertIn("OFFICIAL_FDROID_INTENT_NATIVE_ACTIVITY_OR_PROCESS_NOT_READY", source)
+        self.assertIn('if [[ "$official_ready" != true ]]; then', source)
+        self.assertIn("adb shell pidof org.fdroid.fdroid", source)
+        self.assertNotIn("adb shell pm grant", source)
+
     def test_unapproved_storefront_has_no_downloads(self):
         repo=json.loads((ROOT/"catalog/android_repository.json").read_text(encoding="utf-8"))
         self.assertIsNone(repo["repository"])
