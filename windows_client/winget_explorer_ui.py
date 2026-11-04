@@ -123,6 +123,11 @@ def open_explorer(parent):
     def show_selection(*_):
         nonlocal selected_id, verified_id
         if busy:
+            # Invalidate the previous inspected package when selection changes
+            # during an asynchronous WinGet show; never enable the wrong ID.
+            selected_id = None
+            verified_id = None
+            update_controls()
             return
         current = table.selection()
         selected_id = current[0] if current and current[0] in packages else None
@@ -137,7 +142,7 @@ def open_explorer(parent):
             if error:
                 state.config(text="دریافت اطلاعات مستقل بسته ناموفق بود؛ نصب غیرفعال است.")
                 display(error)
-            elif selected_id == identity:
+            elif selected_id == identity and table.selection() == (identity,):
                 verified_id = identity
                 state.config(text="اطلاعات این بسته از WinGet دریافت شد؛ اجرا فقط با تأیید صریح شما انجام می‌شود.")
                 display(data["details"])
@@ -145,7 +150,7 @@ def open_explorer(parent):
 
     def perform(operation):
         identity = verified_id
-        if busy or not identity or identity != selected_id:
+        if busy or not identity or identity != selected_id or table.selection() != (identity,):
             return
         prompt = (f"بستهٔ انتخاب‌شده: {identity}\nمنبع: winget (شخص ثالث)\n\n"
                   "این نرم‌افزار توسط هَماپ بررسی/امضا نشده است. "
