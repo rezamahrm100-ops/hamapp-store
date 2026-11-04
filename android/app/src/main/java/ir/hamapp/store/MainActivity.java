@@ -3,6 +3,8 @@ package ir.hamapp.store;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.graphics.Color;
+import android.content.res.ColorStateList;
+import android.graphics.drawable.GradientDrawable;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.Editable;
@@ -11,6 +13,9 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputLayout;
+import com.google.android.material.textfield.TextInputEditText;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -28,7 +33,8 @@ import java.nio.charset.StandardCharsets;
 /** HamApp Android native preview. F-Droid is the installer; no APK sideloading. */
 public final class MainActivity extends Activity {
     private final int bg = Color.rgb(11, 18, 32);
-    private final int panel = Color.rgb(28, 40, 60);
+    private final int accent = Color.rgb(159, 227, 199);
+    private final int panel = Color.rgb(27, 41, 61);
     private final int white = Color.rgb(245, 248, 252);
     private final int muted = Color.rgb(181, 197, 211);
     private JSONArray apps = new JSONArray();
@@ -90,6 +96,25 @@ public final class MainActivity extends Activity {
         return view;
     }
 
+    private GradientDrawable roundedSurface(int color, int radius, int outline) {
+        GradientDrawable shape = new GradientDrawable();
+        shape.setColor(color);
+        shape.setCornerRadius(dp(radius));
+        shape.setStroke(dp(1), outline);
+        return shape;
+    }
+
+    private MaterialButton actionButton(String label, boolean primary) {
+        MaterialButton button = new MaterialButton(this);
+        button.setAllCaps(false);
+        button.setText(label);
+        button.setCornerRadius(dp(16));
+        button.setMinHeight(dp(50));
+        button.setBackgroundTintList(ColorStateList.valueOf(primary ? accent : panel));
+        button.setTextColor(primary ? bg : white);
+        return button;
+    }
+
     private LinearLayout.LayoutParams margin(int top, int bottom) {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -113,15 +138,13 @@ public final class MainActivity extends Activity {
                 "کاوش عمومی: برنامه‌های متن‌باز در F-Droid | مستقل از انتشارهای هَماپ",
                 12, muted, false);
         main.addView(upstreamLabel, margin(0, 7));
-        Button explore = new Button(this);
-        explore.setAllCaps(false);
-        explore.setText("بازکردن فروشگاه عمومی F-Droid");
+        MaterialButton explore = actionButton("بازکردن فروشگاه عمومی F-Droid", true);
         explore.setContentDescription(
                 "با رضایت شما فروشگاه رسمی F-Droid یا وب‌سایت آن باز می‌شود");
         explore.setOnClickListener(view -> FdroidEngine.requestPublicCatalog(this));
         main.addView(explore, margin(0, 14));
 
-        query = new EditText(this);
+        query = new TextInputEditText(this);
         query.setTextColor(white);
         query.setHintTextColor(muted);
         query.setSingleLine(true);
@@ -129,7 +152,10 @@ public final class MainActivity extends Activity {
         query.setHint("جست‌وجوی برنامه‌ها");
         query.setContentDescription("جست‌وجوی برنامه‌ها");
         query.setPadding(dp(10), dp(6), dp(10), dp(6));
-        main.addView(query, margin(0, 10));
+        TextInputLayout searchField = new TextInputLayout(this);
+        searchField.setHint("جست‌وجوی برنامه‌ها");
+        searchField.addView(query);
+        main.addView(searchField, margin(0, 10));
 
         TextView status = text(repo == null
                 ? "مخزن امضاشده هنوز تأیید نشده؛ نصب غیرفعال است."
@@ -168,7 +194,7 @@ public final class MainActivity extends Activity {
             card.setOrientation(LinearLayout.VERTICAL);
             card.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
             card.setPadding(dp(17), dp(17), dp(17), dp(17));
-            card.setBackgroundColor(panel);
+            card.setBackground(roundedSurface(panel, 20, Color.rgb(59, 77, 98)));
             card.addView(text(name, 20, white, true), margin(0, 6));
             card.addView(text(description, 13, muted, false), margin(0, 10));
 
@@ -176,17 +202,13 @@ public final class MainActivity extends Activity {
             String state = approved ? "برنامهٔ تأییدشده: " + app.optString("version") : "در دست توسعه";
             card.addView(text(state, 12, approved ? Color.rgb(130, 231, 190) : muted, false),
                     margin(0, 9));
-            Button action = new Button(this);
-            action.setAllCaps(false);
-            action.setText("مدیریت از طریق F-Droid");
+            MaterialButton action = actionButton("مدیریت از طریق F-Droid", approved);
             action.setEnabled(approved);
             action.setContentDescription(approved ? "بازکردن مخزن امضاشده در F-Droid"
                     : "نصب هنوز فعال نیست");
             if (approved) action.setOnClickListener(view -> openApprovedRepo());
             card.addView(action, margin(0, 4));
-            Button info = new Button(this);
-            info.setAllCaps(false);
-            info.setText("جزئیات برنامه");
+            MaterialButton info = actionButton("جزئیات برنامه", false);
             info.setContentDescription("نمایش جزئیات " + name);
             info.setOnClickListener(view -> new AlertDialog.Builder(this)
                     .setTitle(name)

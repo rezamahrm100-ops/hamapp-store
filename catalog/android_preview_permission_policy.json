@@ -3,5 +3,7 @@
   "package_id": "ir.hamapp.store",
   "version_code": 1,
   "version_name": "0.1.0-preview",
-  "allowed_permissions": []
+  "allowed_permissions": [
+    "ir.hamapp.store.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+  ]
 }

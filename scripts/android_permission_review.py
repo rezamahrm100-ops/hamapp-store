@@ -15,6 +15,12 @@ import subprocess
 import publisher_gate
 
 PERMISSION = re.compile(r"android\.permission\.[A-Z0-9_]+\Z")
+def permitted_name(value, package_id=None):
+    """Only system permissions or our own AndroidX signature receiver guard."""
+    return bool(PERMISSION.fullmatch(value)) or (isinstance(package_id, str)
+        and value == package_id + ".DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION")
+
+
 GRANTED_LINE = re.compile(r"^\s*uses-permission(?:-sdk-[0-9]+)?:\s*name='([^']+)'(?:\s.*)?$")
 BADGE_LINE = publisher_gate.AAPT
 
@@ -39,7 +45,7 @@ def validate_policy(policy):
         raise AndroidPermissionError("invalid Android versionName")
     requested = policy["allowed_permissions"]
     if (not isinstance(requested, list) or len(requested) > 128
-            or any(not isinstance(v, str) or not PERMISSION.fullmatch(v) for v in requested)
+            or any(not isinstance(v, str) or not permitted_name(v, policy["package_id"]) for v in requested)
             or len(set(requested)) != len(requested)):
         raise AndroidPermissionError("invalid or duplicate allowlisted permission")
     return policy
@@ -57,7 +63,7 @@ def invoke_aapt(aapt, command, apk, runner=subprocess.run):
     return result.stdout
 
 
-def parse_requested_permissions(stdout):
+def parse_requested_permissions(stdout, package_id=None):
     if not isinstance(stdout, str):
         raise AndroidPermissionError("invalid manifest permission output")
     found = set()
@@ -65,7 +71,7 @@ def parse_requested_permissions(stdout):
         stripped = raw.strip()
         if stripped.startswith(("uses-permission", "implied-permission")):
             match = GRANTED_LINE.fullmatch(raw)
-            if not match or not PERMISSION.fullmatch(match.group(1)):
+            if not match or not permitted_name(match.group(1), package_id):
                 raise AndroidPermissionError("unknown or malformed manifest permission declaration")
             if match.group(1) in found:
                 raise AndroidPermissionError("duplicate APK permission declaration")
@@ -91,7 +97,7 @@ def review(apk, policy, aapt="aapt", runner=subprocess.run):
             policy["package_id"], policy["version_code"], policy["version_name"]):
         raise AndroidPermissionError("actual APK package/version differs from reviewed policy")
     permissions = parse_requested_permissions(
-        invoke_aapt(aapt, "permissions", apk, runner=runner))
+        invoke_aapt(aapt, "permissions", apk, runner=runner), policy["package_id"])
     unknown = sorted(set(permissions) - set(policy["allowed_permissions"]))
     if unknown:
         raise AndroidPermissionError("APK requests permissions absent from reviewed allowlist: " + ", ".join(unknown))

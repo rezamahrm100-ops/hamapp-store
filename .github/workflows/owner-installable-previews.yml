@@ -94,7 +94,7 @@ jobs:
           python scripts/build_windows_client_catalog.py
           if ($LASTEXITCODE -ne 0) { throw 'Manifest generation failed' }
           if (-not (Test-Path 'dist/windows-client/store-capabilities.json' -PathType Leaf)) { throw 'UI contract missing' }
-          python -m pip install --disable-pip-version-check pyinstaller==6.22.3
+          python -m pip install --disable-pip-version-check pyinstaller==6.22.3 ttkbootstrap==2.2.6
           if ($LASTEXITCODE -ne 0) { throw 'Pinned PyInstaller failed' }
           python -m PyInstaller --noconfirm --clean --onefile --windowed --name HamApp-Windows-Preview --add-data "dist/windows-client/windows-client-catalog.json:." --add-data "dist/windows-client/store-capabilities.json:." run_windows_client.py
           if ($LASTEXITCODE -ne 0 -or -not (Test-Path 'dist/HamApp-Windows-Preview.exe' -PathType Leaf)) { throw 'Portable EXE build failed' }

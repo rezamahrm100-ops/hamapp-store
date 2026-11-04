@@ -172,17 +172,17 @@ def open_explorer(parent):
                     "این نتیجه اثبات اعتبار مستقل ناشر نیست.", parent=window)
         job(lambda: winget_discovery.execute_external(identity, operation), done)
 
-    find_btn = tk.Button(bar, text="جستجو در WinGet", bg="#296e60", fg="white", bd=0,
-                         padx=18, pady=7, command=start_search)
+    find_btn = ttk.Button(bar, text="جستجو در WinGet", style="HamApp.Primary.TButton",
+                          command=start_search)
     find_btn.pack(side="left")
-    install_btn = tk.Button(footer, text="نصب انتخابی", bg="#296e60", fg="white",
-                            padx=20, pady=9, bd=0, command=lambda: perform("install"))
+    install_btn = ttk.Button(footer, text="نصب انتخابی", style="HamApp.Primary.TButton",
+                             command=lambda: perform("install"))
     install_btn.pack(side="right", padx=(7, 0))
-    upgrade_btn = tk.Button(footer, text="به‌روزرسانی انتخابی", bg=panel, fg=text,
-                            padx=16, pady=9, bd=0, command=lambda: perform("upgrade"))
+    upgrade_btn = ttk.Button(footer, text="به‌روزرسانی انتخابی",
+                             style="HamApp.Secondary.TButton", command=lambda: perform("upgrade"))
     upgrade_btn.pack(side="right")
-    tk.Button(footer, text="بستن", bg=panel, fg=text,
-              padx=16, pady=9, bd=0, command=window.destroy).pack(side="left")
+    ttk.Button(footer, text="بستن", style="HamApp.Secondary.TButton",
+               command=window.destroy).pack(side="left")
     table.bind("<<TreeviewSelect>>", show_selection)
     entry.bind("<Return>", start_search)
     update_controls()
