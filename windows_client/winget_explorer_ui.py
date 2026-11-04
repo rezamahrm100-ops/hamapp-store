@@ -128,7 +128,8 @@ def open_explorer(parent):
             return
         selected_id = None
         verified_id = None
-        table.delete(*table.get_children())
+        for row in table.get_children():
+            table.delete(row)
         packages.clear()
         update_controls()
         state.config(text="خواندن محلی برنامه‌های نصب‌شده از منبع WinGet...")
