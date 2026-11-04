@@ -234,3 +234,13 @@ Next engineering campaign: once owner reports exact install UX/device findings, 
 Design integration PR #86 merged main `af33be11479a8728a27387a67b0030a58613b4e3` after 12/12 latest head Actions PASS. Use `docs/ATLAS-UI-OPEN-SOURCE-INTEGRATION.md` as the canonical visual/architecture handoff. Built-in native Material 3 Android Java, pinned ttkbootstrap Windows and self-contained Tabler-informed PWA CSS were merged; no wholesale client framework migration or remote assets.
 
 Download personal previews from https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41910093475 and inspect README_FA.md/SHA256SUMS. Android debug APK and Windows unsigned portable/NSIS setup are NOT production-signed or verified installed on the owner's actual devices. Next milestone: owner installation and actual display/UX feedback, followed by refinement across all 3 clients while preserving direct upstream F-Droid/WinGet actions and reviewed HamApp publisher gates. Commercial release/certificates and real owner devices remain explicit external prerequisites.
+
+## RUN19 integrated owner-use client and main-only QA acceptance — 2026-11-05
+
+PR #88 accepted main `6acf4297393d5685da2bd0def474befcf9300fc1`, exact PR SHA `2ba38498477385449567fffb8cbfcab4c9f6b6af`; 5/5 hosted workflows successful. `docs/OWNER-READY-GAP-LEDGER-2026-11-05.md` records the definitive module-by-module gap matrix and evidence.
+
+Owner downloads: Android APK ZIP https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41914613853/artifacts/13363542959 and Windows EXE+NSIS ZIP https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41914613853/artifacts/13364660881. Both are short-lived personal test outputs; include SHA256SUMS, manifest, Persian notes and a one-click integrity checker for Windows.
+
+Windows: installed inventory now read via private temporary official `winget export`, interactive exact-ID uninstall and upgrade verified by readback, no untrusted install authority. Self-hosted owner Windows QA is reviewed-main-only and read-only; its actual new run's result is **UNVERIFIED** from this connector. Once obtainable, inspect the job ID and logs independently; no permission to run PR code or install extra programs on owner host.
+
+Next personal milestone: owner installs/tests those exact preview files. Genuine public app signatures/publisher releases and production marketplace remain externally blocked, not engineering PASS. Continue any remaining UI polish or real device bugfixes as a cohesive batch without rewriting F-Droid or WinGet.
