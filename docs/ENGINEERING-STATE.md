@@ -262,3 +262,25 @@ Read [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md) for 
 - Source adds `scripts/build_ui_contract.py`: deterministic catalogue-digest-backed read-only engine/action model; existing review gates for F-Droid official companion, Microsoft WinGet and web; embeds generated snapshot in Android/Windows/PWA build outputs. Tests reject planned binary flags, invalid repo, unreviewed WinGet map and missing trust inputs.
 - Workflow candidates: hosted CI #41891737942, Android #41891738123, Windows #41891738016, owner installable previews #41891737837, CodeQL #41891738509, PWA browser #41891737842, supply chain #41891737814. THESE ARE INITIAL STARTED RUNS, NOT PASS CLAIMS; later source edits create new SHA/runs.
 - Read `docs/UI-BACKEND-CONTRACT.md` before native/UI revisions. UniGetUI is evaluated as MIT upstream reference but is NOT imported; adding its full GUI would duplicate current WinGet capability and complicate the requested dedicated UI. No new production key, publisher or package approval. PR #72 official F-Droid in-client v2 install/update still requires exact acceptance. Overall product still PARTIAL.
+
+## RUN16 accepted engine integration and transition to UI campaign (2026-11-04)
+
+- Actual live source at acceptance: PR #72 merge main `791b1c562ba310e4f592fdfa7f9103bf416d066b`, PR #82 merge main `f3dbd0f2d1c5e3fae5ccee877d035e3594342ee4`. The older PR #82 candidate note above is historical and SUPERSEDED by this acceptance section.
+- PR #72 real official F-Droid in-client v1 install + signed-test-repo v2 update on Android emulator: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41694151059 SUCCESS, validated true client APK GET and independently checked native installed version 1 and 2 bytes and signer. Also CI #41694151047, CodeQL #41694151471, supply chain #41694151109 SUCCESS. Disposable test signer/HTTPS only.
+- PR #82 exact tested head `c81e1156c56c737d86cd30d4620f7582ef80b92e`, all 12 workflow conclusions SUCCESS before merge:
+  - Hosted Linux+Windows CI: #41893624391
+  - Android preview APK build: #41893624649
+  - Windows preview EXE, authentic hosted NSIS install/upgrade/downgrade/uninstall: #41893624475
+  - Owner-downloadable Android APK and Windows EXE+unsigned NSIS preview artifacts: #41893624072
+  - Real Chromium PWA: #41893624266
+  - CodeQL: #41893624789
+  - Source supply-chain scan: #41893624377
+  - Actual ClamAV APK scan: #41893624580
+  - Official F-Droid launch+repo Intent: #41893624157
+  - Actual official F-Droid in-client signed-test-repo install+update: #41893625232
+  - Android native emulator UI smoke: #41893624831
+  - Android debug two-version upgrade: #41893624806
+- Implemented `scripts/build_ui_contract.py` deterministic `hamapp-ui-backend-v1`, negative trust-boundary unit tests, generated shared capability files in Android assets, Windows owner-preview EXE and website, native Android `FdroidEngine.java` official-client action abstraction, hosted jobs verifying all generations.
+- Third-party reuse: F-Droid official installed companion and fdroidserver, Microsoft WinGet. UniGetUI was evaluated but deliberately NOT bundled, because it wraps existing WinGet and would introduce a redundant GUI, dependencies and maintenance work before the explicitly requested custom UI design. No private sources, production keys or dangerous permissions added.
+- Engineering acceptance: **PASS for THIS UI-backend/upstream reuse tranche; global HamApp production store still PARTIAL**. Public Android repository registry null, Windows approved Winget map empty, all three public catalogue entries planned, true developer signers/MFA/issuer/trust roots and HTTPS production publisher service not authorized, owner real phone/Windows device acceptance absent. DEBUG APK and unsigned Windows setup are owner test only.
+- Next integrated UI campaign: native Android/Windows and PWA premium Persian RTL design with real app detail/navigation/keyboard/accessibility, connected to `hamapp-ui-backend-v1` and existing trust/installer adapters. Do not reopen working package-manager infrastructure without an evidenced defect.
