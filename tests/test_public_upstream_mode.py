@@ -49,6 +49,8 @@ class PublicUpstreamModeTests(unittest.TestCase):
         explorer = (ROOT / "windows_client/winget_explorer_ui.py").read_text("utf-8")
         self.assertIn("open_explorer(root)", ui)
         self.assertIn("execute_external(identity, operation)", explorer)
+        self.assertIn("table.selection() != (identity,)", explorer)
+        self.assertIn("selected_id = None", explorer)
         self.assertIn('messagebox.askyesno(', explorer)
         self.assertIn("منبع ثالث", explorer)
         self.assertNotIn("shell=True", explorer)
