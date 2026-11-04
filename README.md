@@ -21,7 +21,7 @@
 - JSON catalogue schema + security validation. Planned apps cannot advertise unverified downloads.
 - Automated tests, reproducible zero-third-party-dependency build, GitHub Actions CI, Pages deploy, Dependabot.
 - Owner Windows QA on a separate repository-scoped self-hosted runner label (`hamapp-windows`), triggered by trusted main changes or manually.
-- Native Java Android Material 3 UI with explicit official F-Droid public catalogue launcher (no embedded APK installer, source code reused under Apache-2.0).
+- Native Java Android Material 3 UI (Google Material Components under Apache-2.0) with an external official F-Droid public catalogue launcher. No GPL F-Droid client code or APK installer is embedded.
 - Native Windows Python Tkinter/ttkbootstrap interface with separate official WinGet community browsing and independently checked interactive actions.
 - Hosted owner-preview packaging for Android APK and Windows portable EXE/NSIS with SHA-256 receipt and one-click local integrity verification.
 - A one-file self-extracting Windows `HamApp-SETUP.cmd` bootstrap distributed separately.
