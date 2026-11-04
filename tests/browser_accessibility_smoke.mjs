@@ -19,7 +19,7 @@ async function checkA11y(label) {
   const violations = result.violations.filter(v => ['critical', 'serious'].includes(v.impact));
   for (const violation of violations) {
     console.error('ACCESSIBILITY_FAIL', label, violation.id,
-                  violation.impact, violation.nodes.slice(0,4).map(n=>n.target));
+                  violation.impact, violation.nodes.slice(0,4).map(n=>({target:n.target,reason:n.failureSummary})));
   }
   assert.equal(violations.length, 0, 'Serious/critical accessibility violations in ' + label);
   console.log('ACCESSIBILITY_ACCEPTED', label, 'rules', result.passes.length);
@@ -35,6 +35,7 @@ try {
   assert.ok(width <= 390, 'Mobile viewport overflows horizontally: ' + width);
   await checkA11y('mobile-dark');
   await page.locator('#toggleTheme').click();
+  console.log('LIGHT_FILTER_COMPUTED', await page.locator('button[data-filter="android"]').evaluate(el => ({color: getComputedStyle(el).color, background: getComputedStyle(el).backgroundColor, opacity: getComputedStyle(el).opacity, root: document.documentElement.className})));
   await checkA11y('mobile-light');
 
   const button = page.locator('#cards .detail-button').first();
