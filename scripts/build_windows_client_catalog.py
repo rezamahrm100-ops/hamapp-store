@@ -76,6 +76,9 @@ def main():
     out = ROOT / "dist/windows-client/windows-client-catalog.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    # Bundle an engine-neutral capability snapshot for the forthcoming desktop UI.
+    import build_ui_contract
+    build_ui_contract.write_contract(out.parent / "store-capabilities.json")
     print("Windows catalogue built:", len(payload["apps"]), "entries,",
           sum(v["status"] == "available" for v in payload["apps"]), "approved winget packages")
 
