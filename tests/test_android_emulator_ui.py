@@ -15,11 +15,12 @@ class EmulatorUiParserTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.xml = Path(self.tmp.name) / "window.xml"
 
-    def write(self, disabled=True, title=True, planned=True):
+    def write(self, disabled=True, title=True, planned=True, public=True, public_enabled=True):
         content = [
             '<hierarchy rotation="0">',
             '<node text="' + ("هَماپ" if title else "other") + '" enabled="true"/>',
             '<node text="مدیریت از طریق F-Droid" enabled="' + ("false" if disabled else "true") + '"/>',
+            ('<node text="بازکردن فروشگاه عمومی F-Droid" enabled="' + ("true" if public_enabled else "false") + '"/>') if public else "",
             '<node text="' + ("در دست توسعه" if planned else "آماده") + '" enabled="true"/>',
             '</hierarchy>',
         ]
@@ -32,6 +33,14 @@ class EmulatorUiParserTests(unittest.TestCase):
     def test_rejects_enabled_install(self):
         self.write(disabled=False)
         with self.assertRaisesRegex(ValueError, "must be disabled"):
+            module.check_ui(self.xml)
+
+    def test_public_explorer_is_separate_and_must_be_enabled(self):
+        self.write(public=False)
+        with self.assertRaisesRegex(ValueError, "public F-Droid"):
+            module.check_ui(self.xml)
+        self.write(public_enabled=False)
+        with self.assertRaisesRegex(ValueError, "public F-Droid"):
             module.check_ui(self.xml)
 
     def test_rejects_missing_title(self):
