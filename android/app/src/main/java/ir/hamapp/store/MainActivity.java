@@ -2,11 +2,8 @@ package ir.hamapp.store;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
-import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -182,42 +179,7 @@ public final class MainActivity extends Activity {
     }
 
     private void openApprovedRepo() {
-        if (repo == null) return;
-        String url = repo.optString("url", "");
-        String fingerprint = repo.optString("fingerprint", "");
-        if (!RepoPolicy.isAllowed(url, fingerprint)) {
-            showError("پیکربندی مخزن نامعتبر است.");
-            return;
-        }
-        new AlertDialog.Builder(this)
-            .setTitle("انتقال به F-Droid")
-            .setMessage("برای نصب یا به‌روزرسانی از مخزن امضاشده، برنامهٔ F-Droid باید روی گوشی نصب باشد. "
-                       + "هَماپ هیچ بسته‌ای را در پس‌زمینه نصب نمی‌کند. ادامه می‌دهید؟")
-            .setNegativeButton("لغو", null)
-            .setPositiveButton("ادامه", (dialog, which) -> {
-                // F-Droid registers fdroidrepos:// for arbitrary approved repos.
-                // Plain HTTPS ACTION_VIEW may open a browser instead of F-Droid.
-                // F-Droid's fdroidrepos:// is a URI SCHEME replacing https://,
-                // not a prefix to the full URL (which would make host="https").
-                // Keep the independently approved host/path and exact signer pin.
-                Uri fdroidUri = Uri.parse(url).buildUpon()
-                        .scheme("fdroidrepos")
-                        .appendQueryParameter("fingerprint", fingerprint.toUpperCase(java.util.Locale.ROOT))
-                        .build();
-                if (!"fdroidrepos".equals(fdroidUri.getScheme())
-                        || !Uri.parse(url).getHost().equals(fdroidUri.getHost())
-                        || !"/fdroid/repo/".equals(fdroidUri.getPath())) {
-                    showError("نشانی انتقال به F-Droid نامعتبر است.");
-                    return;
-                }
-                Intent intent = new Intent(Intent.ACTION_VIEW, fdroidUri);
-                intent.addCategory(Intent.CATEGORY_BROWSABLE);
-                intent.setPackage("org.fdroid.fdroid");
-                try { startActivity(intent); }
-                catch (ActivityNotFoundException ex) {
-                    showError("کلاینت رسمی F-Droid نصب نیست یا پیوند مخزن را نمی‌پذیرد.");
-                }
-            }).show();
+        FdroidEngine.requestOpen(this, repo);
     }
 
     private void showError(String message) {
