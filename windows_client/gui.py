@@ -41,6 +41,16 @@ def main(build_label="preview-v1"):
     search = ttk.Entry(root, textvariable=query, justify="right")
     search.pack(fill="x", padx=20, pady=8, ipady=6)
     search.insert(0, "")
+    # Independent, opt-in source explorer. HamApp's own publisher-approved
+    # catalogue below remains fail-closed until genuine releases are signed.
+    from windows_client.winget_explorer_ui import open_explorer
+    tools = tk.Frame(root, bg=bg)
+    tools.pack(fill="x", padx=20, pady=(0, 7))
+    tk.Button(tools, text="کاوش و نصب نرم‌افزارهای عمومی از WinGet",
+              bg="#2b6e63", fg="white", bd=0, padx=15, pady=10,
+              command=lambda: open_explorer(root)).pack(side="right")
+    tk.Label(tools, text="منبع عمومی ثالث؛ مستقل از برنامه‌های تأییدشدهٔ هَماپ",
+             bg=bg, fg=muted, font=("Segoe UI", 9)).pack(side="right", padx=12)
     pane = tk.PanedWindow(root, orient="horizontal", bg=bg, bd=0, sashwidth=7)
     pane.pack(expand=True, fill="both", padx=20, pady=10)
     sidebar = tk.Frame(pane, bg=surface)
@@ -131,7 +141,7 @@ def main(build_label="preview-v1"):
                         padx=8, pady=9, activebackground="#348d7d")
         btn.pack(side="right", padx=(0, 8), pady=4)
         buttons.append(btn)
-    disclaimer = tk.Label(root, text="فقط بسته‌های دارای تأیید قبلی | نصب با رضایت کاربر | بدون دورزدن UAC",
+    disclaimer = tk.Label(root, text="کاتالوگ اختصاصی: فقط بسته‌های تأییدشده | کاوش عمومی: منبع ثالث WinGet با رضایت کاربر | بدون دورزدن UAC",
                           bg=bg, fg=muted, font=("Segoe UI", 9), anchor="e")
     disclaimer.pack(fill="x", padx=21, pady=(0, 12))
 
