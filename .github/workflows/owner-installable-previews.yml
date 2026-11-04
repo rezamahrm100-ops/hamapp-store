@@ -118,6 +118,22 @@ jobs:
           Copy-Item 'scripts/HamApp-Verify-Preview.cmd' 'dist/owner-preview/windows/HamApp-Verify-Preview.cmd'
           python scripts/package_owner_preview.py --platform windows --directory 'dist/owner-preview/windows'
           if ($LASTEXITCODE -ne 0) { throw 'Manifest failed' }
+      - name: Real one-click integrity verifier positive and tamper negative checks
+        shell: pwsh
+        run: |
+          & cmd.exe /d /c "dist\\owner-preview\\windows\\HamApp-Verify-Preview.cmd --ci"
+          if ($LASTEXITCODE -ne 0) { throw 'Owner one-click hash verifier rejected genuine Windows preview' }
+          $tamper = Join-Path $env:RUNNER_TEMP 'hamapp-owner-preview-corrupt'
+          Copy-Item -LiteralPath 'dist/owner-preview/windows' -Destination $tamper -Recurse
+          Add-Content -LiteralPath (Join-Path $tamper 'HamApp-Windows-Preview.exe') -Value 'corrupt' -NoNewline
+          Push-Location $tamper
+          try {
+            & cmd.exe /d /c "HamApp-Verify-Preview.cmd --ci"
+            if ($LASTEXITCODE -eq 0) { throw 'Owner integrity verifier accepted altered EXE' }
+            Write-Host 'HAMAPP_PREVIEW_SHA256_TAMPER_REJECTION_PASS'
+          } finally {
+            Pop-Location
+          }
       - name: Upload portable EXE, per-user Setup, SHA256 and Persian notes
         uses: actions/upload-artifact@v4
         with:
