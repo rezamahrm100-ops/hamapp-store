@@ -111,3 +111,7 @@ body{background:
  *,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
  .card:hover,.cta:hover,.external-grid article:hover{transform:none}
 }
+
+/* WCAG AA: inactive platform filter labels must remain dark on light surfaces. */
+:root.light .chip{background:#e8edf6;color:#1b304b;border-color:#b7c4d5}
+:root.light .chip.active{background:#e1f3ec;color:#155544;border-color:#1b6655}
