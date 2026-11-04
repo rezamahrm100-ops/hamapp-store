@@ -2,7 +2,18 @@
 
 **همهٔ برنامه‌های ما، یک‌جا.**  Independent software storefront for Android, Windows, and web.
 
-> Status: usable static PWA catalogue + GitHub CI/Pages automation. A native Android store client, binary repository signing, APK installation and update agent, paid accounts, and publisher portal are NOT implemented. The initial entries are clearly marked **planned** and have no download links.
+> Status (2026-11-05): **owner-installable native Android DEBUG APK, native unsigned Windows EXE/NSIS preview, and Persian RTL web/PWA**, with public-source browsing via official F-Droid and WinGet. Android/Windows proprietary catalogue entries remain **planned**, with no owner-approved binaries. Production signing, publisher releases, device-owner acceptance and paid marketplace operations are NOT established.
+
+## نصب نسخه‌های آزمایشی فعلی (Android / Windows)
+
+این نسخه‌ها برای **نصب و استفادهٔ آزمایشی شخصی** هستند؛ انتشار تجاری امضاشده نیستند. ZIPها در GitHub Actions موقت‌اند (۷ روز)، بنابراین برای دریافت ممکن است ورود به GitHub لازم باشد.
+
+- **اندروید:** [دریافت فایل APK آزمایشی و راهنما](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41914613853/artifacts/13363542959) — فایل `HamApp-Android-Preview-debug.apk` با امضای موقت Debug است. از داخل برنامه می‌توان با رضایت کاربر فروشگاه عمومی رسمی F-Droid را باز کرد.
+- **ویندوز:** [دریافت برنامهٔ پرتابل و نصب‌کنندهٔ NSIS](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41914613853/artifacts/13364660881) — فایل‌های `HamApp-Windows-Preview.exe` و `HamApp-Preview-Setup-UNSIGNED.exe` امضای تجاری ندارند. بخش WinGet جست‌وجو، اطلاعات، نصب/ارتقا، فهرست نصب‌شده‌ها و حذف انتخابی را با تأیید صریح کاربر فراهم می‌کند.
+- در ویندوز، ZIP را استخراج و قبل از اجرای فایل‌های نصب، **`HamApp-Verify-Preview.cmd`** را اجرا کنید. این برنامه فقط SHA-256 و اندازهٔ فایل‌های بسته را کنترل می‌کند؛ معتبر بودن امضای ناشر را ثابت نمی‌کند و چیزی نصب نمی‌کند.
+- **وب:** https://rezamahrm100-ops.github.io/hamapp-store/ — نمایش کاتالوگ مستقل، حالت روشن/تیره و دسترسی آفلاین.
+
+جزئیات و موارد باز: [فهرست کمبودها و آزمون‌های پذیرش](docs/OWNER-READY-GAP-LEDGER-2026-11-05.md). اجرا و آزمون روی دستگاه واقعی مالک هنوز جداگانه لازم است.
 
 ## Features delivered
 
@@ -10,9 +21,12 @@
 - JSON catalogue schema + security validation. Planned apps cannot advertise unverified downloads.
 - Automated tests, reproducible zero-third-party-dependency build, GitHub Actions CI, Pages deploy, Dependabot.
 - Owner Windows QA on a separate repository-scoped self-hosted runner label (`hamapp-windows`), triggered by trusted main changes or manually.
+- Native Java Android Material 3 UI with explicit official F-Droid public catalogue launcher (no embedded APK installer, source code reused under Apache-2.0).
+- Native Windows Python Tkinter/ttkbootstrap interface with separate official WinGet community browsing and independently checked interactive actions.
+- Hosted owner-preview packaging for Android APK and Windows portable EXE/NSIS with SHA-256 receipt and one-click local integrity verification.
 - A one-file self-extracting Windows `HamApp-SETUP.cmd` bootstrap distributed separately.
 
-## First run
+## Original first-time repository bootstrap (not required for preview installation)
 
 1. Download and run **HamApp-SETUP.cmd** on your own Windows PC.
 2. The launcher extracts the full project into `%USERPROFILE%\HamAppStore`, checks `git` and `gh`, and attempts installation through `winget` if missing.
