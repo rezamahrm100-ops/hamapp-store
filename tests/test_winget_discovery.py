@@ -123,9 +123,58 @@ class ExternalWinGetTests(unittest.TestCase):
 
     def test_source_unsupported_operations_rejected(self):
         with self.assertRaises(discovery.DiscoveryError):
-            discovery.execute_external("Git.Git", "uninstall",
+            discovery.execute_external("Git.Git", "purge-all",
                                        runner=self.runner, verifier=lambda _: None)
         self.assertFalse(self.calls)
+
+    def test_installed_inventory_is_read_only_and_source_labeled(self):
+        source = discovery.installed_packages(runner=self.runner,
+                 reader=lambda **kwargs: [{"id": "Git.Git", "version": "2.50.1", "source": "winget"}])
+        self.assertFalse(source["results_are_owner_approved"])
+        self.assertEqual(source["packages"][0]["id"], "Git.Git")
+        self.assertEqual(self.calls, [])
+
+    def test_uninstall_requires_verified_installed_identity(self):
+        with self.assertRaises(discovery.DiscoveryError):
+            discovery.execute_external("Git.Git", "uninstall",
+                                       runner=self.runner, verifier=lambda _: None)
+        self.assertEqual([c[0][1] for c in self.calls], ["show"])
+
+    def test_interactive_uninstall_confirms_absence_without_bypass(self):
+        versions = iter(["2.50.1", None])
+        receipt = discovery.execute_external("Git.Git", "uninstall",
+                    runner=self.runner, verifier=lambda _: next(versions))
+        self.assertTrue(receipt["removed_from_winget_inventory"])
+        self.assertIsNone(receipt["installed_version_readback"])
+        self.assertFalse(receipt["installer_signature_independently_verified"])
+        self.assertEqual([c[0][1] for c in self.calls], ["show", "uninstall"])
+        cmd, opts = self.calls[1]
+        self.assertEqual(cmd, ["winget", "uninstall", "--id", "Git.Git",
+                               "--exact", "--source", "winget", "--interactive"])
+        self.assertFalse(opts["shell"])
+        self.assertNotIn("--silent", cmd)
+        self.assertNotIn("--force", cmd)
+        self.assertNotIn("--purge", cmd)
+
+    def test_uninstall_failed_postcondition_cannot_be_success(self):
+        with self.assertRaises(discovery.DiscoveryError):
+            discovery.execute_external("Git.Git", "uninstall",
+                                       runner=self.runner, verifier=lambda _: "2.50.1")
+        self.assertEqual([c[0][1] for c in self.calls], ["show", "uninstall"])
+
+    def test_upgrade_must_confirm_newer_version(self):
+        versions = iter(["2.50.1", "2.50.1"])
+        with self.assertRaises(discovery.DiscoveryError):
+            discovery.execute_external("Git.Git", "upgrade",
+                    runner=self.runner, verifier=lambda _: next(versions))
+        self.assertEqual([c[0][1] for c in self.calls], ["show", "upgrade"])
+        self.calls.clear()
+        versions = iter(["2.50.1", "2.51.0"])
+        receipt = discovery.execute_external("Git.Git", "upgrade",
+                    runner=self.runner, verifier=lambda _: next(versions))
+        self.assertEqual(receipt["installed_version_readback"], "2.51.0")
+        self.assertFalse(receipt["removed_from_winget_inventory"])
+
 
 
 if __name__ == "__main__":
