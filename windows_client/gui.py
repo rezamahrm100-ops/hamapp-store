@@ -15,6 +15,8 @@ def main(build_label="preview-v1"):
         raise SystemExit("Tkinter unavailable in this Windows build") from exc
 
     root = tk.Tk()
+    from windows_client.ui_theme import install_theme
+    install_theme(root)
     # An actual compiled source marker makes the two hosted installer test
     # versions observably different Windows EXE APPLICATION builds.
     if build_label not in ("preview-v1", "ci-test-v2"):
@@ -46,9 +48,9 @@ def main(build_label="preview-v1"):
     from windows_client.winget_explorer_ui import open_explorer
     tools = tk.Frame(root, bg=bg)
     tools.pack(fill="x", padx=20, pady=(0, 7))
-    tk.Button(tools, text="کاوش و نصب نرم‌افزارهای عمومی از WinGet",
-              bg="#2b6e63", fg="white", bd=0, padx=15, pady=10,
-              command=lambda: open_explorer(root)).pack(side="right")
+    ttk.Button(tools, text="کاوش و نصب نرم‌افزارهای عمومی از WinGet",
+               style="HamApp.Primary.TButton",
+               command=lambda: open_explorer(root)).pack(side="right")
     tk.Label(tools, text="منبع عمومی ثالث؛ مستقل از برنامه‌های تأییدشدهٔ هَماپ",
              bg=bg, fg=muted, font=("Segoe UI", 9)).pack(side="right", padx=12)
     pane = tk.PanedWindow(root, orient="horizontal", bg=bg, bd=0, sashwidth=7)
@@ -136,9 +138,8 @@ def main(build_label="preview-v1"):
 
     buttons = []
     for label, op in (("اطلاعات بسته", "show"), ("نصب", "install"), ("به‌روزرسانی", "upgrade")):
-        btn = tk.Button(actions, text=label, command=lambda action=op: launch(action),
-                        bg="#276b60", fg="white", font=("Segoe UI", 10), bd=0,
-                        padx=8, pady=9, activebackground="#348d7d")
+        btn = ttk.Button(actions, text=label, command=lambda action=op: launch(action),
+                         style="HamApp.Primary.TButton" if op == "install" else "HamApp.Secondary.TButton")
         btn.pack(side="right", padx=(0, 8), pady=4)
         buttons.append(btn)
     disclaimer = tk.Label(root, text="کاتالوگ اختصاصی: فقط بسته‌های تأییدشده | کاوش عمومی: منبع ثالث WinGet با رضایت کاربر | بدون دورزدن UAC",
