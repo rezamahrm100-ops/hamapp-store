@@ -17,8 +17,11 @@ def install_theme(root):
     except ImportError:
         ttk.Style(root).theme_use("clam")
     style = ttk.Style(root)
-    style.configure("HamApp.Primary.TButton", font=("Segoe UI", 10, "bold"), padding=(15, 11))
-    style.configure("HamApp.Secondary.TButton", font=("Segoe UI", 10), padding=(12, 9))
+    style.configure("HamApp.Primary.TButton", font=("Segoe UI", 10, "bold"), padding=(15, 11),
+                    background="#2B7465", foreground="#FFFFFF")
+    style.map("HamApp.Primary.TButton", background=[("active", "#368E78"), ("disabled", "#354154")])
+    style.configure("HamApp.Secondary.TButton", font=("Segoe UI", 10), padding=(12, 9),
+                    background="#28364C", foreground="#F8FAFC")
     style.configure("HamApp.Treeview", font=("Segoe UI", 10), rowheight=30)
     style.configure("HamApp.Treeview.Heading", font=("Segoe UI", 10, "bold"))
     return engine
