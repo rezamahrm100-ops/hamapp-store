@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'android/**'
+      - 'scripts/build_ui_contract.py'
+      - 'tests/test_build_ui_contract.py'
       - 'catalog/**'
       - 'scripts/build_android_catalog.py'
       - 'tests/test_android_catalog.py'
@@ -19,6 +21,8 @@ on:
     branches: [main]
     paths:
       - 'android/**'
+      - 'scripts/build_ui_contract.py'
+      - 'tests/test_build_ui_contract.py'
       - 'catalog/**'
       - 'scripts/build_android_catalog.py'
       - 'tests/test_android_catalog.py'
@@ -63,6 +67,7 @@ jobs:
         run: |
           python3 -m unittest discover -s tests -v
           python3 scripts/build_android_catalog.py
+          test -s android/app/src/main/assets/store-capabilities.json
       - name: Assemble native Android preview
         run: gradle --no-daemon -p android :app:assembleDebug :app:lintDebug
       - name: Verify debug APK exists and inspect its signing identity

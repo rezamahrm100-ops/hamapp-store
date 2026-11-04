@@ -30,6 +30,9 @@ def main():
     (output / "catalog/planned-offline.json").write_text(
         json.dumps(snapshot, sort_keys=True, ensure_ascii=False, separators=(",", ":")) + "\n",
         encoding="utf-8")
+    # Browser and native clients share one read-only, approval-derived model.
+    import build_ui_contract
+    build_ui_contract.write_contract(output / "catalog/store-capabilities.json")
     (output / ".nojekyll").write_text("", encoding="utf-8")
     print(f"Site ready: {output}")
     return 0

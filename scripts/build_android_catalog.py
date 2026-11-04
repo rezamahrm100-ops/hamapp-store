@@ -72,6 +72,9 @@ def main():
         json.dumps(listing, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (output / "android-repository.json").write_text(
         json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    # Share exactly the same trust-gated action model with the future native UI.
+    import build_ui_contract
+    build_ui_contract.write_contract(output / "store-capabilities.json")
     print("Android preview metadata:", len(listing["apps"]), "apps,",
           sum(app["status"] == "available" for app in listing["apps"]), "installable")
     return 0

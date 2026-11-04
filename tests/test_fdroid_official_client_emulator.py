@@ -7,27 +7,37 @@ import os
 import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
-ANDROID=ROOT/"android/app/src/main/java/ir/hamapp/store/MainActivity.java"
+ANDROID=ROOT/"android/app/src/main/java/ir/hamapp/store/FdroidEngine.java"
 SCRIPT=ROOT/"scripts/fdroid_official_client_emulator.sh"
 
 class OfficialFdroidHandoffTests(unittest.TestCase):
     def test_source_invokes_official_client_not_arbitrary_browser(self):
         src=ANDROID.read_text(encoding="utf-8")
+        main=(ROOT/"android/app/src/main/java/ir/hamapp/store/MainActivity.java").read_text(encoding="utf-8")
+        self.assertIn("FdroidEngine.requestOpen(this, repo)", main)
         self.assertIn('.scheme("fdroidrepos")',src)
-        self.assertIn('Uri.parse(url).getHost().equals(fdroidUri.getHost())',src)
+        self.assertIn('!source.getHost().equals(target.getHost())',src)
         self.assertNotIn('Uri.parse("fdroidrepos://" + pinnedRepoUrl)',src)
         self.assertIn('intent.setPackage("org.fdroid.fdroid")',src)
         self.assertIn('if (!RepoPolicy.isAllowed(url, fingerprint))',src)
         self.assertIn('appendQueryParameter("fingerprint"',src)
-        self.assertIn("new AlertDialog.Builder(this)",src)
+        self.assertIn("new AlertDialog.Builder(activity)",src)
         self.assertNotIn('new Intent(Intent.ACTION_VIEW, uri)',src)
-        self.assertNotIn("ACTION_INSTALL_PACKAGE",src)
+        self.assertNotIn("ACTION_INSTALL_PACKAGE",src+main)
 
     def test_emulator_fixture_uses_real_canonical_fdroidrepos_host(self):
         source = SCRIPT.read_text(encoding="utf-8")
         self.assertIn('dummy="fdroidrepos://example.invalid/', source)
         self.assertIn('example.invalid/fdroid/repo/?fingerprint=', source)
         self.assertNotIn('dummy="fdroidrepos://https://', source)
+
+    def test_official_client_native_process_check_is_bounded_and_fail_closed(self):
+        source = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("official_ready=false", source)
+        self.assertIn("OFFICIAL_FDROID_INTENT_NATIVE_ACTIVITY_OR_PROCESS_NOT_READY", source)
+        self.assertIn('if [[ "$official_ready" != true ]]; then', source)
+        self.assertIn("adb shell pidof org.fdroid.fdroid", source)
+        self.assertNotIn("adb shell pm grant", source)
 
     def test_unapproved_storefront_has_no_downloads(self):
         repo=json.loads((ROOT/"catalog/android_repository.json").read_text(encoding="utf-8"))

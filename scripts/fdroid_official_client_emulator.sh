@@ -2,6 +2,7 @@
 # Official F-Droid Android client authenticity and actual isolated emulator intent acceptance.
 # NEVER deploy a repository, auto-confirm installer permissions or touch owner devices.
 set -euo pipefail
+trap 'rc=$?; echo "OFFICIAL_FDROID_VERIFY_FAILED_LINE=$LINENO EXIT=$rc" >&2' ERR
 [[ "${GITHUB_ACTIONS:-}" == "true" ]] || { echo "HOSTED_CI_ONLY" >&2; exit 1; }
 out=dist/official-fdroid-client
 apk="$RUNNER_TEMP/hamapp-official-fdroid/F-Droid.apk"
@@ -72,13 +73,27 @@ case "${1:-}" in
       cat "$RUNNER_TEMP/fdroid-repo-intent.txt" >&2
       exit 1
     fi
-    adb shell dumpsys activity activities > "$RUNNER_TEMP/fdroid-activities.txt"
-    grep -Fq 'org.fdroid.fdroid' "$RUNNER_TEMP/fdroid-activities.txt"
+    # am start -W can return before Android commits its activity/process.
+    # Poll actual native state for a bounded interval; never infer success.
+    official_ready=false
+    for attempt in 1 2 3 4 5 6 7 8 9 10; do
+      adb shell dumpsys activity activities > "$RUNNER_TEMP/fdroid-activities.txt" || true
+      if grep -Fq 'org.fdroid.fdroid' "$RUNNER_TEMP/fdroid-activities.txt" \
+          && adb shell pidof org.fdroid.fdroid | grep -Eq '^[0-9]+( [0-9]+)*$'; then
+        official_ready=true
+        break
+      fi
+      sleep 1
+    done
+    if [[ "$official_ready" != true ]]; then
+      echo "OFFICIAL_FDROID_INTENT_NATIVE_ACTIVITY_OR_PROCESS_NOT_READY" >&2
+      grep -m 3 -F 'org.fdroid.fdroid' "$RUNNER_TEMP/fdroid-activities.txt" >&2 || true
+      exit 1
+    fi
+    echo "OFFICIAL_FDROID_INTENT_NATIVE_ACTIVITY_AND_PROCESS_CONFIRMED"
     mkdir -p "$out"
     # Android UIAutomator can return a null root node for this official
-    # upstream APK on emulators. Do not pretend a UI dump was verified;
-    # assert the real app process and real ACTION_VIEW dispatch instead.
-    adb shell pidof org.fdroid.fdroid | grep -Eq '^[0-9]+( [0-9]+)*$'
+    # upstream APK on emulators. Require real activity, process and dispatch.
     adb exec-out screencap -p > "$out/client-intent.png"
     test "$(stat -c %s "$out/client-intent.png")" -gt 1000
     ui_ok=false
