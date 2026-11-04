@@ -8,6 +8,7 @@ on:
       - 'scripts/build_ui_contract.py'
       - 'tests/test_build_ui_contract.py'
       - 'scripts/package_owner_preview.py'
+      - 'scripts/HamApp-Verify-Preview.cmd'
       - 'tests/test_package_owner_preview.py'
       - 'android/**'
       - 'windows_client/**'
@@ -60,6 +61,7 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$apk" | grep -F "package: name='ir.hamapp.store'"
           mkdir -p dist/owner-preview/android
           cp "$apk" dist/owner-preview/android/HamApp-Android-Preview-debug.apk
+          cp scripts/HamApp-Verify-Preview.cmd dist/owner-preview/android/
           python3 scripts/package_owner_preview.py --platform android --directory dist/owner-preview/android
       - name: Upload APK, SHA256 and Persian installation notes
         uses: actions/upload-artifact@v4
@@ -113,6 +115,7 @@ jobs:
           $outputExe = (Join-Path (Resolve-Path 'dist/owner-preview/windows').Path 'HamApp-Preview-Setup-UNSIGNED.exe')
           & $compiler '/V3' '/DPACKAGE_CODE=1' "/DINPUT_EXE=$inputExe" "/DOUTPUT_EXE=$outputExe" 'windows_installer/HamAppPreview.nsi'
           if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $outputExe -PathType Leaf)) { throw 'NSIS setup compilation failed' }
+          Copy-Item 'scripts/HamApp-Verify-Preview.cmd' 'dist/owner-preview/windows/HamApp-Verify-Preview.cmd'
           python scripts/package_owner_preview.py --platform windows --directory 'dist/owner-preview/windows'
           if ($LASTEXITCODE -ne 0) { throw 'Manifest failed' }
       - name: Upload portable EXE, per-user Setup, SHA256 and Persian notes
