@@ -6,6 +6,8 @@ on:
       - 'windows_client/**'
       - 'run_windows_client.py'
       - 'scripts/build_windows_client_catalog.py'
+      - 'scripts/build_ui_contract.py'
+      - 'tests/test_build_ui_contract.py'
       - 'catalog/**'
       - 'tests/test_windows_client.py'
       - 'tests/test_windows_authenticode_real_drill.py'
@@ -26,6 +28,8 @@ on:
       - 'windows_client/**'
       - 'run_windows_client.py'
       - 'scripts/build_windows_client_catalog.py'
+      - 'scripts/build_ui_contract.py'
+      - 'tests/test_build_ui_contract.py'
       - 'catalog/**'
       - 'tests/test_windows_client.py'
       - 'tests/test_windows_authenticode_real_drill.py'
@@ -69,12 +73,13 @@ jobs:
         run: |
           python scripts/build_windows_client_catalog.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path 'dist/windows-client/store-capabilities.json' -PathType Leaf)) { throw 'UI backend contract missing' }
       - name: Install pinned open-source PyInstaller on ephemeral hosted runner
         run: python -m pip install --disable-pip-version-check pyinstaller==6.22.3
       - name: Build one-file Windows GUI (unsigned preview)
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name HamApp-Windows-Preview --add-data "dist/windows-client/windows-client-catalog.json:." run_windows_client.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name HamApp-Windows-Preview --add-data "dist/windows-client/windows-client-catalog.json:." --add-data "dist/windows-client/store-capabilities.json:." run_windows_client.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path dist/HamApp-Windows-Preview.exe)) { throw "Preview EXE not produced" }
           Get-FileHash dist/HamApp-Windows-Preview.exe -Algorithm SHA256 | Format-List
