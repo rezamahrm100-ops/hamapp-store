@@ -176,3 +176,13 @@ PR #86 accepted `af33be11479a8728a27387a67b0030a58613b4e3` after 12/12 exact-HEA
 Immediate usable output: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41910093475 — download Android APK artifact #13361458489 or Windows portable+NSIS artifact #13361933549 (each ZIP has SHA256SUMS and README_FA). Android displays Material 3 branded UI with official external F-Droid browse; Windows ttkbootstrap theme with independent approved catalog and opt-in interactive WinGet explorer; PWA has improved self-contained responsive RTL design. These are personal debug/unsigned previews; **no owner-device acceptance or commercial production signature** verified.
 
 Future coding should prioritize confirmed owner UX defects or user-selected premium visual refinement; avoid rewriting functioning F-Droid/WinGet engines and do not enable releases without signed owner publisher approvals. If the user says «بریم», read live main SHA, docs and latest Actions before acting; treat this accepted UI design as baseline.
+
+## Next accepted state — owner install/test, not another engine rewrite (2026-11-05)
+
+Current main after integrated PR #88: `6acf4297393d5685da2bd0def474befcf9300fc1`; exact-head hosted work passed 5/5. See `docs/OWNER-READY-GAP-LEDGER-2026-11-05.md`. Owner-use WinGet now supports source-pinned search, details, install/upgrade, read-only installed inventory and explicit uninstall, each protected by local verification and/or consent. No owner-approved proprietary package is fabricated.
+
+Download new 7-day preview ZIP artifacts (NOT production releases) from https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41914613853 : Android APK #13363542959, Windows EXE+NSIS #13364660881. Before Windows install, unzip and double-click `HamApp-Verify-Preview.cmd` for SHA256+manifest checks (integrity, not signed publisher attestation).
+
+The owner self-hosted Windows runner workflow is `.github/workflows/windows-qa.yml`, main-only, read-only WinGet version probe and source tests. **Do not claim the runner successfully executed** until live main-only run ID, job allocation and logs are obtained; the currently available GitHub connector's commit-workflow list is PR-only. Do not run unreviewed PR code or installers on the owner machine.
+
+Remaining owner/external tasks: install Android/Windows previews on actual devices, approve genuine publisher identity/release, offline production F-Droid key/origin and backup, actual Windows developer certificate, commercial backend/hosting decisions if required. Do not silently alter device settings or prematurely mark releases approved.
