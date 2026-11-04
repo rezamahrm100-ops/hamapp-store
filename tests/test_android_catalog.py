@@ -80,9 +80,12 @@ class RepoTests(unittest.TestCase):
 
     def test_native_client_delegates_to_fdroid(self):
         src = (ROOT / "android/app/src/main/java/ir/hamapp/store/MainActivity.java").read_text("utf-8")
-        self.assertIn("Intent.ACTION_VIEW", src)
-        self.assertNotIn("PackageInstaller.Session", src)
-        self.assertNotIn("ACTION_INSTALL_PACKAGE", src)
+        engine = (ROOT / "android/app/src/main/java/ir/hamapp/store/FdroidEngine.java").read_text("utf-8")
+        self.assertIn("FdroidEngine.requestOpen(this, repo)", src)
+        self.assertIn("Intent.ACTION_VIEW", engine)
+        self.assertIn('intent.setPackage("org.fdroid.fdroid")', engine)
+        self.assertNotIn("PackageInstaller.Session", src + engine)
+        self.assertNotIn("ACTION_INSTALL_PACKAGE", src + engine)
 
 
 if __name__ == "__main__":
