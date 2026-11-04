@@ -2,6 +2,8 @@
 # Official F-Droid Android client authenticity and actual isolated emulator intent acceptance.
 # NEVER deploy a repository, auto-confirm installer permissions or touch owner devices.
 set -euo pipefail
+# CI diagnostics: preserve the exact failed shell line without weakening assertions.
+trap 'rc=$?; echo "OFFICIAL_FDROID_VERIFY_FAILED_LINE=$LINENO EXIT=$rc" >&2' ERR
 [[ "${GITHUB_ACTIONS:-}" == "true" ]] || { echo "HOSTED_CI_ONLY" >&2; exit 1; }
 out=dist/official-fdroid-client
 apk="$RUNNER_TEMP/hamapp-official-fdroid/F-Droid.apk"
@@ -72,13 +74,73 @@ case "${1:-}" in
       cat "$RUNNER_TEMP/fdroid-repo-intent.txt" >&2
       exit 1
     fi
-    adb shell dumpsys activity activities > "$RUNNER_TEMP/fdroid-activities.txt"
-    grep -Fq 'org.fdroid.fdroid' "$RUNNER_TEMP/fdroid-activities.txt"
+    # am start -W may return before Android commits the new activity/process
+    # state. Poll ACTUAL native state for a bounded time; never infer success
+    # from am's exit code or fabricate a UI receipt.
+    official_ready=false
+    for attempt in 1 2 3 4 5 6 7 8 9 10; do
+      adb shell dumpsys activity activities > "$RUNNER_TEMP/fdroid-activities.txt" || true
+      if grep -Fq 'org.fdroid.fdroid' "$RUNNER_TEMP/fdroid-activities.txt" \
+          && adb shell pidof org.fdroid.fdroid | grep -Eq '^[0-9]+( [0-9]+)*
+    adb exec-out screencap -p > "$out/client-intent.png"
+    test "$(stat -c %s "$out/client-intent.png")" -gt 1000
+    ui_ok=false
+    for attempt in 1 3; do
+      if adb shell uiautomator dump /sdcard/fdroid-client.xml > "$RUNNER_TEMP/fdroid-ui-attempt.txt" 2>&1 \
+         && adb pull /sdcard/fdroid-client.xml "$out/ui.xml" >/dev/null 2>&1 \
+         && grep -Fq 'package="org.fdroid.fdroid"' "$out/ui.xml"; then
+        ui_ok=true
+        break
+      fi
+      sleep 2
+    done
+    echo "OFFICIAL_FDROID_APK_INSTALLED_PROCESS_ALIVE_AND_INTENT_DISPATCHED; UI_DUMP_VERIFIED=$ui_ok"
+    FDROID_UI_VERIFIED="$ui_ok" python3 - <<'PY'
+import hashlib, json, os
+from pathlib import Path
+apk=Path(os.environ["RUNNER_TEMP"])/"hamapp-official-fdroid/F-Droid.apk"
+receipt={
+"schema_version":1,
+"scope":"official-F-Droid-signed-client-emulator-intent-only",
+"official_gpg_primary_fingerprint_pinned":True,
+"official_apk_cert_fingerprint_pinned":True,
+"official_apk_sha256":hashlib.sha256(apk.read_bytes()).hexdigest(),
+"real_emulator_official_fdroid_apk_installed":True,
+"real_fdroidrepos_intent_activity_launched":True,
+"official_fdroid_process_alive_after_intent":True,
+"ui_hierarchy_verified":os.environ.get("FDROID_UI_VERIFIED") == "true",
+"example_invalid_repository_added":False,
+"owner_repo_subscription_verified":False,
+"official_client_app_install_or_update_verified":False,
+"production_smartphone_acceptance":False,
+"production_ready":False
+}
+p=Path("dist/official-fdroid-client/receipt.json")
+p.write_text(json.dumps(receipt,sort_keys=True,indent=2)+"\n",encoding="utf-8")
+PY
+    echo "OFFICIAL_FDROID_ANDROID_EMULATOR_INTENT_ROUTING_ACCEPTED_NOT_REPO_SUBSCRIPTION"
+    ;;
+  *)
+    echo "usage: $0 prepare|verify" >&2
+    exit 2
+    ;;
+esac
+; then
+        official_ready=true
+        break
+      fi
+      sleep 1
+    done
+    if [[ "$official_ready" != true ]]; then
+      echo "OFFICIAL_FDROID_INTENT_NATIVE_ACTIVITY_OR_PROCESS_NOT_READY" >&2
+      grep -m 3 -F 'org.fdroid.fdroid' "$RUNNER_TEMP/fdroid-activities.txt" >&2 || true
+      exit 1
+    fi
+    echo "OFFICIAL_FDROID_INTENT_NATIVE_ACTIVITY_AND_PROCESS_CONFIRMED"
     mkdir -p "$out"
     # Android UIAutomator can return a null root node for this official
     # upstream APK on emulators. Do not pretend a UI dump was verified;
-    # assert the real app process and real ACTION_VIEW dispatch instead.
-    adb shell pidof org.fdroid.fdroid | grep -Eq '^[0-9]+( [0-9]+)*$'
+    # require actual process, activity and ACTION_VIEW dispatch instead.
     adb exec-out screencap -p > "$out/client-intent.png"
     test "$(stat -c %s "$out/client-intent.png")" -gt 1000
     ui_ok=false
