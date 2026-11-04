@@ -74,7 +74,7 @@ approved app downloads.
 - Exact 5/5 accepted **hosted PR** workflow head:
   `2ba38498477385449567fffb8cbfcab4c9f6b6af`;
   main merged SHA `6acf4297393d5685da2bd0def474befcf9300fc1`.
-  - Windows/Linux CI #41914613684 **SUCCESS**, includes 390+ Python tests, Windows inventory, uninstall, approval separation and runner controls.
+  - Windows/Linux CI #41914613684 **SUCCESS**, includes the full Python test suite, Windows inventory, uninstall, approval separation and runner controls.
   - Source-supply-chain scan #41914614082 **SUCCESS**.
   - CodeQL #41914614831 **SUCCESS**.
   - Owner installable Android debug APK + Windows unsigned portable/NSIS + one-click integrity checker #41914613853 **SUCCESS**; Windows verifier genuine artifact accepted, corrupted EXE rejected in real PowerShell/CMD host.
