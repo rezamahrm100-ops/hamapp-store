@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/owner-installable-previews.yml'
+      - 'scripts/build_ui_contract.py'
+      - 'tests/test_build_ui_contract.py'
       - 'scripts/package_owner_preview.py'
       - 'tests/test_package_owner_preview.py'
       - 'android/**'
@@ -16,6 +18,8 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/owner-installable-previews.yml'
+      - 'scripts/build_ui_contract.py'
+      - 'tests/test_build_ui_contract.py'
       - 'scripts/package_owner_preview.py'
       - 'tests/test_package_owner_preview.py'
       - 'android/**'
@@ -47,6 +51,7 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -s tests -v
           python3 scripts/build_android_catalog.py
+          test -s android/app/src/main/assets/store-capabilities.json
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-35' 'build-tools;35.0.0'
           gradle --no-daemon -p android :app:assembleDebug :app:lintDebug
           apk=android/app/build/outputs/apk/debug/app-debug.apk
@@ -88,9 +93,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Tests failed' }
           python scripts/build_windows_client_catalog.py
           if ($LASTEXITCODE -ne 0) { throw 'Manifest generation failed' }
+          if (-not (Test-Path 'dist/windows-client/store-capabilities.json' -PathType Leaf)) { throw 'UI contract missing' }
           python -m pip install --disable-pip-version-check pyinstaller==6.22.3
           if ($LASTEXITCODE -ne 0) { throw 'Pinned PyInstaller failed' }
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name HamApp-Windows-Preview --add-data "dist/windows-client/windows-client-catalog.json:." run_windows_client.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name HamApp-Windows-Preview --add-data "dist/windows-client/windows-client-catalog.json:." --add-data "dist/windows-client/store-capabilities.json:." run_windows_client.py
           if ($LASTEXITCODE -ne 0 -or -not (Test-Path 'dist/HamApp-Windows-Preview.exe' -PathType Leaf)) { throw 'Portable EXE build failed' }
           New-Item -ItemType Directory -Force 'dist/owner-preview/windows' | Out-Null
           Copy-Item 'dist/HamApp-Windows-Preview.exe' 'dist/owner-preview/windows/HamApp-Windows-Preview.exe'
