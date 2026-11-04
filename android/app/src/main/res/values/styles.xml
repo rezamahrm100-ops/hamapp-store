@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-<style name="Theme.HamApp" parent="android:style/Theme.Material.Light.NoActionBar">
-  <item name="android:fontFamily">sans</item>
-  <item name="android:colorAccent">#137E74</item>
-  <item name="android:statusBarColor">#111827</item>
-  <item name="android:navigationBarColor">#111827</item>
-  <item name="android:windowLightStatusBar">false</item>
-</style>
+  <style name="Theme.HamApp" parent="Theme.Material3.Dark.NoActionBar">
+    <item name="colorPrimary">#9FE3C7</item>
+    <item name="colorOnPrimary">#09241E</item>
+    <item name="colorSecondary">#B6C6FF</item>
+    <item name="colorSurface">#1B293D</item>
+    <item name="colorOnSurface">#F3F6FC</item>
+    <item name="colorOutline">#455772</item>
+    <item name="android:fontFamily">sans</item>
+    <item name="android:statusBarColor">#0B1220</item>
+    <item name="android:navigationBarColor">#0B1220</item>
+    <item name="android:windowLightStatusBar">false</item>
+    <item name="android:windowLightNavigationBar">false</item>
+    <item name="android:windowActionModeOverlay">true</item>
+  </style>
 </resources>
