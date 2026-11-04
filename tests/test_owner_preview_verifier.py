@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class OwnerPreviewVerifier(unittest.TestCase):
     def test_local_hash_verification_does_not_run_installer(self):
         script = (ROOT / "scripts/HamApp-Verify-Preview.cmd").read_text("utf-8")
-        for token in ("Get-FileHash", "SHA256SUMS.txt", "manifest.json",
+        for token in ("Security.Cryptography.SHA256", "SHA256SUMS.txt", "manifest.json",
                       "source", "production_signed", "public_release_authorized",
                       "Get-Item", "ReparsePoint", "ALL_ARTIFACT_SHA256_CHECKS_PASSED"):
             if token == "source":
