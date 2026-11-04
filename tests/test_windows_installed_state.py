@@ -60,6 +60,42 @@ class WinGetStateTests(unittest.TestCase):
         self.assertEqual(state.read_installed_version("Example.App", runner=fake_winget),
                          "1.2.3")
 
+    def test_local_inventory_only_official_winget_without_install_approval(self):
+        entries = state.parse_installed_inventory(self.export)
+        self.assertEqual(entries, [
+            {"id": "Example.App", "version": "1.2.3", "source": "winget"},
+            {"id": "Example.Other", "version": "2.4.0", "source": "winget"},
+        ])
+        self.export["Sources"].append({
+            "SourceDetails": {"Name": "msstore"},
+            "Packages": [{"PackageIdentifier": "Microsoft.Store", "Version": "1.2.3"}]
+        })
+        self.assertEqual(state.parse_installed_inventory(self.export), entries)
+
+    def test_ambiguous_and_poisoned_inventory_rejected(self):
+        self.export["Sources"][0]["Packages"].append(
+            {"PackageIdentifier": "Example.App", "Version": "1.2.3"})
+        with self.assertRaises(state.StateError):
+            state.parse_installed_inventory(self.export)
+        self.export["Sources"][0]["Packages"].pop()
+        self.export["Sources"][0]["Packages"][0]["PackageIdentifier"] = "Evil.App;cmd"
+        with self.assertRaises(state.StateError):
+            state.parse_installed_inventory(self.export)
+
+    def test_local_inventory_export_is_temporary(self):
+        temporary_file = []
+        def fake(cmd, **kwargs):
+            self.assertEqual(cmd[:2], ["winget", "export"])
+            self.assertEqual(cmd[cmd.index("--source") + 1], "winget")
+            self.assertFalse(kwargs["shell"])
+            path = Path(cmd[cmd.index("--output") + 1])
+            temporary_file.append(path)
+            path.write_text(json.dumps(self.export), encoding="utf-8")
+            return SimpleNamespace(returncode=0)
+        result = state.read_installed_inventory(runner=fake)
+        self.assertEqual(result[0]["id"], "Example.App")
+        self.assertFalse(temporary_file[0].exists())
+
     def test_failed_export_rejected(self):
         with self.assertRaises(state.StateError):
             state.read_installed_version(

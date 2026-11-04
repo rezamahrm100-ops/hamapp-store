@@ -10,7 +10,7 @@ import subprocess
 import sys
 import unicodedata
 
-from windows_client.installed_state import read_installed_version, StateError
+from windows_client.installed_state import read_installed_version, read_installed_inventory, numeric_version, StateError
 
 PACKAGE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9.-]{2,127}\Z")
 ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
@@ -108,6 +108,18 @@ def show(package_id, runner=subprocess.run):
             "details": output[:12000], "hamapp_publisher_verified": False}
 
 
+def installed_packages(*, runner=subprocess.run, reader=read_installed_inventory):
+    """Read private machine-local WinGet inventory; never upload installed apps."""
+    if not _on_windows():
+        raise DiscoveryError("WinGet requires native Windows")
+    try:
+        rows = reader(runner=runner)
+    except (StateError, ValueError, OSError) as exc:
+        raise DiscoveryError("WinGet installed inventory unavailable or untrusted") from exc
+    return {"source": "winget", "packages": rows,
+            "results_are_owner_approved": False}
+
+
 def execute_external(package_id, operation, *, runner=subprocess.run,
                      verifier=read_installed_version):
     """Invoke interactive official WinGet on a user-selected third-party ID.
@@ -116,8 +128,8 @@ def execute_external(package_id, operation, *, runner=subprocess.run,
     catalog. Source is hard-pinned; OS dialogs and package EULAs stay visible.
     """
     identity = checked_id(package_id)
-    if operation not in ("install", "upgrade"):
-        raise DiscoveryError("only explicit third-party install/upgrade is supported")
+    if operation not in ("install", "upgrade", "uninstall"):
+        raise DiscoveryError("only explicit third-party install/upgrade/uninstall is supported")
     # Reconfirm exact official source metadata before every state change.
     show(identity, runner=runner)
     if not _on_windows():
@@ -126,8 +138,8 @@ def execute_external(package_id, operation, *, runner=subprocess.run,
         previous = verifier(identity)
     except (StateError, ValueError) as exc:
         raise DiscoveryError("installed package preflight is not trustworthy") from exc
-    if operation == "upgrade" and previous is None:
-        raise DiscoveryError("cannot upgrade a package not confirmed installed")
+    if operation in ("upgrade", "uninstall") and previous is None:
+        raise DiscoveryError("cannot update/remove a package not confirmed installed")
     if operation == "install" and previous is not None:
         raise DiscoveryError("already installed; use explicit upgrade instead")
     cmd = ["winget", operation, "--id", identity, "--exact", "--source", "winget",
@@ -145,10 +157,17 @@ def execute_external(package_id, operation, *, runner=subprocess.run,
         after = verifier(identity)
     except (StateError, ValueError) as exc:
         raise DiscoveryError("WinGet ended but independent installed readback failed") from exc
-    if after is None:
-        raise DiscoveryError("WinGet ended but matching package was not registered")
-    # Do not claim an exact target version when source metadata was not pinned.
+    if operation == "uninstall":
+        if after is not None:
+            raise DiscoveryError("WinGet ended but package remains installed")
+    else:
+        if after is None:
+            raise DiscoveryError("WinGet ended but matching package was not registered")
+        if operation == "upgrade" and numeric_version(after) <= numeric_version(previous):
+            raise DiscoveryError("WinGet ended without an independently confirmed newer version")
+    # Do not claim an installer signature or an owner-approved publisher.
     return {"package_id": identity, "source": "winget", "operation": operation,
             "installed_version_readback": after,
+            "removed_from_winget_inventory": operation == "uninstall",
             "hamapp_publisher_verified": False,
             "installer_signature_independently_verified": False}
