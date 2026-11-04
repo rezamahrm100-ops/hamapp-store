@@ -48,8 +48,8 @@ def parse_export(payload, package_id):
     return found[0] if found else None
 
 
-def read_installed_version(package_id, runner=subprocess.run):
-    # Caller must validate approved package ID before reaching this function.
+def _read_official_export(runner):
+    """Private temporary WinGet JSON; never uploaded or retained."""
     with tempfile.TemporaryDirectory(prefix="hamapp-winget-state-") as temporary:
         output = Path(temporary) / "installed.json"
         command = ["winget", "export", "--source", "winget",
@@ -65,7 +65,49 @@ def read_installed_version(package_id, runner=subprocess.run):
         if not 0 < output.stat().st_size <= 8_000_000:
             raise StateError("WinGet installed-state export is empty or oversized")
         try:
-            data = json.loads(output.read_text(encoding="utf-8-sig"))
+            return json.loads(output.read_text(encoding="utf-8-sig"))
         except (UnicodeError, ValueError, OSError) as exc:
             raise StateError("WinGet installed-state export has malformed JSON") from exc
-        return parse_export(data, package_id)
+
+
+def parse_installed_inventory(payload):
+    """Only exact source-tagged WinGet IDs with comparable installed versions.
+
+    This is read-only machine-local inventory; not evidence that HamApp
+    approved these publishers or independently verified installer signatures.
+    """
+    if not isinstance(payload, dict) or not isinstance(payload.get("Sources"), list):
+        raise StateError("invalid WinGet inventory export")
+    found = {}
+    for source in payload["Sources"]:
+        if not isinstance(source, dict) or not isinstance(source.get("Packages"), list):
+            raise StateError("invalid WinGet inventory source block")
+        details = source.get("SourceDetails")
+        if not isinstance(details, dict):
+            raise StateError("WinGet export source identity missing")
+        if details.get("Name", "").lower() != "winget":
+            continue
+        for entry in source["Packages"]:
+            if not isinstance(entry, dict):
+                raise StateError("invalid WinGet inventory package record")
+            key, version = entry.get("PackageIdentifier"), entry.get("Version")
+            if not isinstance(key, str) or not re.fullmatch(
+                    r"[A-Za-z0-9][A-Za-z0-9.-]{2,127}", key) or "." not in key or ".." in key:
+                raise StateError("invalid WinGet inventory package identity")
+            numeric_version(version)
+            if key in found:
+                raise StateError("ambiguous WinGet inventory identity")
+            found[key] = version
+            if len(found) > 500:
+                raise StateError("oversized WinGet inventory")
+    return [{"id": key, "version": found[key], "source": "winget"}
+            for key in sorted(found, key=str.casefold)]
+
+
+def read_installed_inventory(runner=subprocess.run):
+    return parse_installed_inventory(_read_official_export(runner))
+
+
+def read_installed_version(package_id, runner=subprocess.run):
+    # Caller validates exact package ID before reaching this function.
+    return parse_export(_read_official_export(runner), package_id)
