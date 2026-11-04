@@ -6,10 +6,16 @@ on:
     paths:
       - 'scripts/**'
       - 'tests/**'
+      - 'windows_client/**'
+      - 'run_windows_client.py'
+      - 'windows_installer/**'
       - 'catalog/trusted_signers.json'
       - '.github/workflows/windows-qa.yml'
 permissions:
   contents: read
+concurrency:
+  group: hamapp-owner-main-windows-qa
+  cancel-in-progress: false
 jobs:
   owner-validation:
     # Trusted main branch only; public pull requests never execute on owner PCs.
@@ -32,3 +38,15 @@ jobs:
           else { & python -m unittest discover -s tests -v; if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}; & python scripts/build_site.py }
           if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
           if(-not (Test-Path 'dist/site/index.html')){throw 'Missing site'}
+      - name: Read-only native WinGet presence on trusted main
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $winget=Get-Command winget.exe -ErrorAction SilentlyContinue
+          if($winget) {
+            $value=(& winget.exe --version 2>&1 | Select-Object -First 1)
+            if($LASTEXITCODE -ne 0) { Write-Output 'HAMAPP_OWNER_WINGET_VERSION=UNAVAILABLE' }
+            else { Write-Output ('HAMAPP_OWNER_WINGET_VERSION=' + $value) }
+          } else { Write-Output 'HAMAPP_OWNER_WINGET_VERSION=NOT_INSTALLED' }
+          Write-Output 'HAMAPP_OWNER_HOST_PACKAGE_INSTALL=NEVER_EXECUTED'
+
