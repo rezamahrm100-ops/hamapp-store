@@ -284,3 +284,26 @@ Read [ENGINEERING-CLOSURE-2026-11-02.md](ENGINEERING-CLOSURE-2026-11-02.md) for 
 - Third-party reuse: F-Droid official installed companion and fdroidserver, Microsoft WinGet. UniGetUI was evaluated but deliberately NOT bundled, because it wraps existing WinGet and would introduce a redundant GUI, dependencies and maintenance work before the explicitly requested custom UI design. No private sources, production keys or dangerous permissions added.
 - Engineering acceptance: **PASS for THIS UI-backend/upstream reuse tranche; global HamApp production store still PARTIAL**. Public Android repository registry null, Windows approved Winget map empty, all three public catalogue entries planned, true developer signers/MFA/issuer/trust roots and HTTPS production publisher service not authorized, owner real phone/Windows device acceptance absent. DEBUG APK and unsigned Windows setup are owner test only.
 - Next integrated UI campaign: native Android/Windows and PWA premium Persian RTL design with real app detail/navigation/keyboard/accessibility, connected to `hamapp-ui-backend-v1` and existing trust/installer adapters. Do not reopen working package-manager infrastructure without an evidenced defect.
+
+## RUN17 — real-use preview accepted via existing open-source package managers (2026-11-04)
+
+- Source: PR #84 https://github.com/rezamahrm100-ops/hamapp-store/pull/84; tested exact head `bc2019f44ad733b07bbcfc7e490c680c329142b1`, merge main `7095d11c4ca1210014ad279f05ef1b4eb737f13d`.
+- Implemented: Android native opt-in public F-Droid companion launcher with official HTTPS fallback; scoped package visibility, no INTERNET/REQUEST_INSTALL_PACKAGES. Existing private F-Droid app install remains approval-gated. Android native app details.
+- Implemented: Windows native WinGet Explorer with strict source/ID/query parsing, official WinGet `search` + `show`, exact interactive user-confirmed third-party install/upgrade, no bypass/elevation/EULA autoaccept, independent official export installed-version readback, and user selection identity race protection. Separate from HamApp publisher-approved catalogue, which remains empty.
+- Web public external source cards and accessible visible labels; SW cache upgraded. No phantom approved releases.
+- All **12** exact-HEAD workflows SUCCESS:
+  1. Hosted Linux/Windows CI: #41898734129
+  2. CodeQL: #41898734311
+  3. Real Chromium/PWA accessibility+offline: #41898734175
+  4. Hosted source supply-chain scan: #41898734025
+  5. ClamAV APK signature scan: #41898734527
+  6. Android native APK build: #41898734029
+  7. Owner installable Android debug APK + Windows unsigned EXE/NSIS: #41898734093
+  8. Windows native EXE + actual isolated NSIS lifecycle and disposable certificate tests: #41898735266
+  9. Android emulator UI smoke (public launcher enabled / private install disabled): #41898734085
+  10. Android two-version debug upgrade/downgrade: #41898734253
+  11. Official signed F-Droid companion intent: #41898734221
+  12. Official F-Droid native signed-repo v1→v2 in-client APK install/update: #41898734010
+- Downloadable short-lived owner artifacts on #41898734093: `HamApp-Android-Owner-Test-APK` artifact #13356768640 and `HamApp-Windows-Owner-Test-EXE-Setup` artifact #13355929375. ZIP includes SHA256SUMS + Persian README. These were built from feature branch; new main-only builds may have separately generated hashes.
+- IMPORTANT distinction: **PASS for installable, functional personal-use upstream-source preview engineering**; no actual owner physical-device install/use has been independently accepted and whole HamApp production marketplace remains **PARTIAL**. Windows third-party packages come from the official WinGet source and are user-selected with OS prompts; HamApp has NOT independently audited those external signers nor committed a production installer certificate. F-Droid public browser delegates installation to official GPL client. Production application listings still planned-only, no publishing credentials, stable signed F-Droid public origin/key, Windows Authenticode, owner real device QA, branch ruleset or complete multi-publisher commercial marketplace.
+- Next: owner installs/tests the two downloadable previews; fix any real device UX failures, then finish bespoke Persian RTL UI across 3 clients without overwriting proven upstream management logic. See `docs/USABLE-PREVIEW-UPSTREAM-2026-11-04.md`.
