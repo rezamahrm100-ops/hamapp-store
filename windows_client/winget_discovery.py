@@ -35,6 +35,7 @@ def checked_id(package_id):
 
 def checked_query(query):
     if (not isinstance(query, str) or not 2 <= len(query.strip()) <= 80
+            or query.strip().startswith("-")
             or any(unicodedata.category(ch).startswith("C") for ch in query)):
         raise DiscoveryError("search requires 2–80 printable characters")
     return query.strip()
