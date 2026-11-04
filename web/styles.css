@@ -17,3 +17,15 @@
 /* Light theme status badges need independent WCAG AA text/background contrast. */
 :root.light .badge{color:#6c4809;background:#fff0c2}
 :root.light .badge.live{color:#165c41;background:#e6f5e9}
+
+/* Public upstream sources are distinct from the approved HamApp catalogue. */
+.external-sources{margin:40px 0 26px;border:1px solid var(--stroke);border-radius:24px;padding:28px;background:var(--surface)}
+.external-sources h2{margin:6px 0 8px;font-size:25px}
+.external-sources>p{color:var(--muted);margin:0 0 22px;max-width:820px}
+.external-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.external-grid article{border:1px solid var(--stroke);background:var(--card);border-radius:18px;padding:22px}
+.external-grid h3{margin:0 0 8px;font-size:19px}
+.external-grid p{margin:0 0 18px;color:var(--muted);font-size:14px}
+.external-grid a{display:inline-block;border:1px solid var(--accent);border-radius:12px;color:var(--accent);padding:8px 13px;font-size:14px;font-weight:700}
+.external-grid a:hover{background:var(--bg)}
+@media(max-width:720px){.external-sources{padding:20px}.external-grid{grid-template-columns:1fr}}

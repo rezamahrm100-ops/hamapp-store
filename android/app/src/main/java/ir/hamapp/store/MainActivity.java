@@ -106,7 +106,20 @@ public final class MainActivity extends Activity {
         main.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
         main.addView(text("هَماپ", 29, white, true), margin(0, 3));
-        main.addView(text("فروشگاه برنامه‌ها | نسخهٔ آزمایشی اندروید", 13, muted, false), margin(0, 14));
+        main.addView(text("فروشگاه برنامه‌ها | نسخهٔ آزمایشی اندروید", 13, muted, false), margin(0, 7));
+        // A usable, separately governed upstream catalogue even when the
+        // private HamApp publisher registry has no verified releases yet.
+        TextView upstreamLabel = text(
+                "کاوش عمومی: برنامه‌های متن‌باز در F-Droid | مستقل از انتشارهای هَماپ",
+                12, muted, false);
+        main.addView(upstreamLabel, margin(0, 7));
+        Button explore = new Button(this);
+        explore.setAllCaps(false);
+        explore.setText("بازکردن فروشگاه عمومی F-Droid");
+        explore.setContentDescription(
+                "با رضایت شما فروشگاه رسمی F-Droid یا وب‌سایت آن باز می‌شود");
+        explore.setOnClickListener(view -> FdroidEngine.requestPublicCatalog(this));
+        main.addView(explore, margin(0, 14));
 
         query = new EditText(this);
         query.setTextColor(white);
@@ -170,7 +183,20 @@ public final class MainActivity extends Activity {
             action.setContentDescription(approved ? "بازکردن مخزن امضاشده در F-Droid"
                     : "نصب هنوز فعال نیست");
             if (approved) action.setOnClickListener(view -> openApprovedRepo());
-            card.addView(action, margin(0, 0));
+            card.addView(action, margin(0, 4));
+            Button info = new Button(this);
+            info.setAllCaps(false);
+            info.setText("جزئیات برنامه");
+            info.setContentDescription("نمایش جزئیات " + name);
+            info.setOnClickListener(view -> new AlertDialog.Builder(this)
+                    .setTitle(name)
+                    .setMessage(description + "\\n\\n"
+                            + (approved ? "نسخهٔ ثبت‌شده: " + app.optString("version")
+                                    + "\\nمدیریت نصب: کلاینت رسمی F-Droid"
+                                    : "وضعیت: در دست توسعه؛ فایل قابل نصب تأیید نشده است.")
+                            + "\\n\\nکاتالوگ عمومی F-Droid مستقل از این برنامه است.")
+                    .setPositiveButton("بستن", null).show());
+            card.addView(info, margin(0, 0));
             cards.addView(card, margin(0, 10));
         }
         if (cards.getChildCount() == 0) {
