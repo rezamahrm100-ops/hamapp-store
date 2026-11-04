@@ -168,3 +168,11 @@ Verified code merge: main `7095d11c4ca1210014ad279f05ef1b4eb737f13d`, PR #84; ex
 - Android: app's **public** F-Droid explorer opens the official installed companion/website after consent. Windows: WinGet Explorer searches exact pinned `winget` source, shows publisher metadata and allows explicit user-confirmed third-party interactive install/upgrade; no arbitrary shell, stealth install or claim of HamApp approval.
 - Work AFTER owner preview acceptance: fix only real observed deficits and implement premium custom native UI/UX across Android/Windows/PWA, retaining existing secure independent upstream operations; maintain test/build automation and deliver owner previews again.
 - The private HamApp publisher/release catalogue has NO authorized binary entry. Commercial store production requires real publisher identity/attestation, offline F-Droid signing key, approved HTTPS origin and Authenticode certificates; owner physical-device tests are not yet verified. Engineering verdict for usable preview: PASS, whole product: PARTIAL.
+
+## Next run — owner preview install and premium UI review, NOT infrastructure rewind (2026-11-04)
+
+PR #86 accepted `af33be11479a8728a27387a67b0030a58613b4e3` after 12/12 exact-HEAD workflow SUCCESS. See `docs/ATLAS-UI-OPEN-SOURCE-INTEGRATION.md` and latest `docs/ENGINEERING-STATE.md`.
+
+Immediate usable output: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41910093475 — download Android APK artifact #13361458489 or Windows portable+NSIS artifact #13361933549 (each ZIP has SHA256SUMS and README_FA). Android displays Material 3 branded UI with official external F-Droid browse; Windows ttkbootstrap theme with independent approved catalog and opt-in interactive WinGet explorer; PWA has improved self-contained responsive RTL design. These are personal debug/unsigned previews; **no owner-device acceptance or commercial production signature** verified.
+
+Future coding should prioritize confirmed owner UX defects or user-selected premium visual refinement; avoid rewriting functioning F-Droid/WinGet engines and do not enable releases without signed owner publisher approvals. If the user says «بریم», read live main SHA, docs and latest Actions before acting; treat this accepted UI design as baseline.
