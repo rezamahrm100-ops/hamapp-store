@@ -62,8 +62,9 @@ class RealFdroidClientLabTests(unittest.TestCase):
                          '<node package="org.fdroid.fdroid" clickable="true" '
                          'text="Refresh" bounds="[100,200][300,260]"/></hierarchy>',encoding="utf-8")
             self.assertEqual(ui.select(f),(200,230))
-            # A generic refresh must not touch the real Add repository button.
-            # The sole authorization path is select_actual_repository_add().
+            # Real failed emulator #41653381148 showed "Adding repository"
+            # because generic select had already clicked the Add button.
+            # Only the dedicated selector may make that authorization tap.
             f.write_text('<hierarchy><node package="org.fdroid.fdroid" clickable="true" '
                          'text="Add repository" bounds="[100,200][300,260]"/></hierarchy>',
                          encoding="utf-8")
@@ -193,6 +194,12 @@ class RealFdroidClientLabTests(unittest.TestCase):
         self.assertIn('openssl x509 -subject_hash_old',sh)
         self.assertIn('DISPOSABLE_TEST_CA_INSTALLED_ON_ROOTED_EMULATOR_ONLY',sh)
         self.assertIn('scripts/fdroid_client_accessible_ui.py',sh)
+        self.assertIn('scripts/fdroid_official_inclient_install_emulator.py --stage 1',sh)
+        self.assertIn('scripts/fdroid_official_inclient_install_emulator.py --stage 2',sh)
+        self.assertIn('python3 scripts/fdroid_official_repo_refresh_ui.py', sh)
+        self.assertIn('REAL_OFFICIAL_FDROID_SAVED_REPO_FORCE_REFRESH_V2_HTTP_REQUEST_OBSERVED',sh)
+        self.assertIn('OFFICIAL_FDROID_SAVED_REPO_FORCED_REFRESH_DID_NOT_FETCH_SIGNED_INDEX_V2',sh)
+        self.assertNotIn('> "$base/v2-intent-private.txt"', sh)
         self.assertIn('--deny-notification-prompt',sh)
         self.assertIn('--dismiss-onboarding',sh)
         self.assertIn('OFFICIAL_FDROID_REAL_ONBOARDING_TIP_DISMISSED',sh)
@@ -200,14 +207,14 @@ class RealFdroidClientLabTests(unittest.TestCase):
         self.assertIn('OFFICIAL_FDROID_NATIVE_ADD_REPOSITORY_BUTTON_ACTUALLY_TAPPED',sh)
         self.assertIn('OFFICIAL_FDROID_UNNECESSARY_NOTIFICATION_PERMISSION_DENIED_ON_DISPOSABLE_EMULATOR',sh)
         self.assertIn('request_count',sh)
-        self.assertIn('"actual_fdroid_client_app_install_verified":False',sh)
-        self.assertIn('"actual_fdroid_client_app_upgrade_verified":False',sh)
+        self.assertIn('"actual_fdroid_client_app_install_verified":True',sh)
+        self.assertIn('"actual_fdroid_client_app_upgrade_verified":True',sh)
         self.assertIn('"official_client_repository_persisted_in_database_verified":True',sh)
         self.assertIn('"official_client_repo_signer_pin_in_database_verified":True',sh)
         self.assertIn('db_proof["real_official_client_repo_host_saved_in_native_sqlite"] is True',sh)
         self.assertIn('db_proof["source_sha"]==state["source_sha"]',sh)
         self.assertIn('db_proof["signature_fingerprint_persisted_in_client_database_verified"] is True',sh)
-        self.assertIn('ACTUAL_FDROID_CLIENT_V1_V2_SIGNED_INDEX_AND_NATIVE_SQLITE_REPO_CERT_PIN_VERIFIED',sh)
+        self.assertIn('ACTUAL_FDROID_CLIENT_SIGNED_REPO_NATIVE_DB_CERT_PIN_AND_INCLIENT_V1_TO_V2_APK_INSTALL_UPDATE_VERIFIED',sh)
         self.assertIn('"production_ready":False',sh)
 
     def test_signed_repo_v1_v2_job_never_runs_on_owner_or_uploads_keys(self):
@@ -217,6 +224,8 @@ class RealFdroidClientLabTests(unittest.TestCase):
         self.assertIn('fdroidserver==2.4.5',yaml)
         self.assertIn('scripts/fdroid_client_private_repo_lab.py',yaml)
         self.assertIn('scripts/fdroid_real_client_subscription_emulator.sh',yaml)
+        self.assertIn('scripts/fdroid_official_repo_refresh_ui.py',yaml)
+        self.assertIn('tests/test_fdroid_official_repo_refresh_ui.py',yaml)
         self.assertIn('scripts/fdroid_official_client_emulator.sh prepare',yaml)
         self.assertNotIn('runs-on: self-hosted',yaml)
         self.assertNotIn('dist/android-two-version/v1.apk\n          if-no-files-found',yaml)
