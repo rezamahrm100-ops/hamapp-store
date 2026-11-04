@@ -67,7 +67,9 @@ def open_explorer(parent):
         selectable = verified_id is not None and verified_id == selected_id
         install_btn.config(state="normal" if selectable and not busy else "disabled")
         upgrade_btn.config(state="normal" if selectable and not busy else "disabled")
+        uninstall_btn.config(state="normal" if selectable and not busy else "disabled")
         find_btn.config(state="normal" if not busy else "disabled")
+        installed_btn.config(state="normal" if not busy else "disabled")
 
     def job(fn, done):
         nonlocal busy
@@ -120,6 +122,29 @@ def open_explorer(parent):
             display(response["output"] or "پاسخی از WinGet دریافت نشد.")
         job(lambda: winget_discovery.search(query.get()), done)
 
+    def view_installed():
+        nonlocal selected_id, verified_id
+        if busy:
+            return
+        selected_id = None
+        verified_id = None
+        table.delete(*table.get_children())
+        packages.clear()
+        update_controls()
+        state.config(text="خواندن محلی برنامه‌های نصب‌شده از منبع WinGet...")
+        def done(data, error):
+            if error:
+                state.config(text="خواندن فهرست نصب‌شده‌ها ناموفق بود؛ عملیاتی مجاز نیست.")
+                display(error)
+                return
+            for item in data["packages"]:
+                packages[item["id"]] = dict(item, name=item["id"], version_label=item["version"])
+                table.insert("", "end", iid=item["id"],
+                             values=(item["id"], item["id"], item["version"]))
+            state.config(text=f"{len(packages)} برنامه از منبع WinGet در این دستگاه یافت شد.")
+            display("فهرست فقط از رایانهٔ شما خوانده می‌شود و ارسال نمی‌شود. برای مدیریت بسته، ابتدا آن را انتخاب و اطلاعات را بررسی کنید.")
+        job(lambda: winget_discovery.installed_packages(), done)
+
     def show_selection(*_):
         nonlocal selected_id, verified_id
         if busy:
@@ -157,7 +182,9 @@ def open_explorer(parent):
                   "WinGet از منبع رسمی خودش فایل را می‌گیرد و ممکن است نصب‌کننده، "
                   "مجوز مدیر، قرارداد نرم‌افزار و پنجرهٔ جداگانه نشان دهد. "
                   "هَماپ هیچ‌یک را خودکار تأیید نمی‌کند.\n\n"
-                  + ("نصب شود؟" if operation == "install" else "به‌روزرسانی شود؟"))
+                  + ("نصب شود؟" if operation == "install" else
+                     "به‌روزرسانی شود؟" if operation == "upgrade" else
+                     "این برنامه حذف شود؟ ممکن است داده‌های برنامه نیز پاک شوند."))
         if not messagebox.askyesno("رضایت آگاهانه برای بستهٔ ثالث", prompt, parent=window):
             return
         state.config(text="WinGet با پنجرهٔ تعاملی اجرا می‌شود؛ نتیجهٔ نصب جداگانه خوانده خواهد شد.")
@@ -165,22 +192,33 @@ def open_explorer(parent):
             if error:
                 state.config(text="عملیات تأیید نشد.")
                 messagebox.showerror("نتیجهٔ WinGet", error, parent=window)
+            elif operation == "uninstall":
+                state.config(text="عدم ثبت بسته در فهرست WinGet پس از حذف تأیید شد.")
+                messagebox.showinfo("نتیجهٔ حذف",
+                    f"شناسه: {identity}\nبسته دیگر در فهرست WinGet ثبت نیست.",
+                    parent=window)
             else:
-                state.config(text="نسخهٔ ثبت‌شده از WinGet خوانده شد؛ امضای ناشر مستقلاً توسط هَماپ تأیید نشده است.")
-                messagebox.showinfo(
-                    "نتیجهٔ نصب", f"شناسه: {identity}\nنسخهٔ ثبت‌شده در WinGet: {receipt['installed_version_readback']}\n"
-                    "این نتیجه اثبات اعتبار مستقل ناشر نیست.", parent=window)
+                state.config(text="نسخهٔ نصب‌شده از WinGet خوانده شد؛ امضای ناشر مستقلاً توسط هَماپ بررسی نشده است.")
+                messagebox.showinfo("نتیجهٔ WinGet",
+                    f"شناسه: {identity}\nنسخهٔ ثبت‌شده: {receipt['installed_version_readback']}\n"
+                    "این نتیجه اثبات مستقل اصالت ناشر نیست.", parent=window)
         job(lambda: winget_discovery.execute_external(identity, operation), done)
 
     find_btn = ttk.Button(bar, text="جستجو در WinGet", style="HamApp.Primary.TButton",
                           command=start_search)
     find_btn.pack(side="left")
+    installed_btn = ttk.Button(bar, text="نصب‌شده‌ها", style="HamApp.Secondary.TButton",
+                               command=view_installed)
+    installed_btn.pack(side="left", padx=(7, 0))
     install_btn = ttk.Button(footer, text="نصب انتخابی", style="HamApp.Primary.TButton",
                              command=lambda: perform("install"))
     install_btn.pack(side="right", padx=(7, 0))
     upgrade_btn = ttk.Button(footer, text="به‌روزرسانی انتخابی",
                              style="HamApp.Secondary.TButton", command=lambda: perform("upgrade"))
     upgrade_btn.pack(side="right")
+    uninstall_btn = ttk.Button(footer, text="حذف انتخابی",
+                               style="HamApp.Secondary.TButton", command=lambda: perform("uninstall"))
+    uninstall_btn.pack(side="right", padx=(7, 0))
     ttk.Button(footer, text="بستن", style="HamApp.Secondary.TButton",
                command=window.destroy).pack(side="left")
     table.bind("<<TreeviewSelect>>", show_selection)
