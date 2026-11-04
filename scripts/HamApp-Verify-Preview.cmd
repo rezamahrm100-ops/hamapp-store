@@ -7,9 +7,9 @@ set "HAMAPP_VERIFY_EXIT=%ERRORLEVEL%"
 popd
 if not "%HAMAPP_VERIFY_EXIT%"=="0" (
   echo FAILED: do not open or install these files.
-  pause
+  if /I not "%~1"=="--ci" pause
   exit /b %HAMAPP_VERIFY_EXIT%
 )
 echo Verified checksums only. This does not prove a trusted publisher signature.
-pause
+if /I not "%~1"=="--ci" pause
 exit /b 0
