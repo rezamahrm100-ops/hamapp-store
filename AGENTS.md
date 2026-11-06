@@ -285,3 +285,37 @@ For routine, previously authorized repository work, **do not instruct the owner 
 - A queued or accepted GitHub run is **not** a successful build. Check real jobs and outputs. Keep product implementation and delivery as the goal; do not generate repeated probes when a reviewed build can proceed.
 
 This is a workflow usability policy, not a blanket privilege or host-operation authorization.
+
+<!-- BEGIN OWNER_RUNNER_FABRIC_MANAGED_V1 -->
+## GLOBAL DEFAULT — Owner Runner Fabric / استاندارد دائمی تمام مخزن‌ها
+
+این مخزن تحت استاندارد مرکزی Runner Fabric حساب rezamahrm100-ops است.
+برای کارهای GitHub Actions، Build، Sandbox، Runner یا Release، مرجع زنده:
+
+https://github.com/rezamahrm100-ops/windows-command-center/blob/main/docs/OWNER_ISOLATED_EXECUTION_STANDARD_FA.md
+https://github.com/rezamahrm100-ops/windows-command-center/blob/main/docs/RUNNER_FLEET_RELEASE_STANDARD_FA.md
+
+قواعد دائمی:
+- هر مخزن ثبت رانر اختصاصی، مسیر کار، کش و خروجی مستقل خودش را داشته باشد.
+- انتشار private Release از Artifact تأییدشده منتظر Windows Sandbox نماند.
+- Build روی میزبان فقط با SHA و اسکریپت/وابستگی بازبینی‌شده و مجوز مربوط؛
+  BUILD-ONLY به‌تنهایی دلیل امن بودن نیست.
+- کد PR نامطمئن و آزمون بومی/GUI آن فقط در محیط ایزولهٔ معتبر اجرا شود.
+- هر job استفاده‌کننده از Windows Sandbox، کتابخانهٔ همگام‌شدهٔ
+  .github/owner-runner-fabric/Owner-SandboxLease.ps1 را در همان فرایند
+  PowerShell اجرا کند و تا پایان عمر مهمان قفل مشترک را نگه دارد.
+- Sandbox ناشناس/متعلق به پروژهٔ دیگر هرگز stop/attach/kill/reset نشود.
+  فقط فعالیت وابسته به مهمان به تعویق بیفتد.
+- این بند و کتابخانه توسط WICC خودکار و فقط در مسیرهای مدیریت‌شده همگام
+  می‌شوند. آن‌ها را جداگانه در هر پروژه بازنویسی نکن.
+- نصب روی دستگاه مالک، UAC، تغییر سیاست‌های امنیتی و اسرار تولیدی
+  نیازمند مجوز مستقل هستند؛ خودکارسازی گیت ایمنی را دور نمی‌زند.
+- این متن به‌تنهایی workflow فعلی را امن یا مجهز به قفل نمی‌کند؛
+  workflow مهمان باید کتابخانه را واقعاً فراخوانی کند.
+- قواعد اختصاصی پروژه بدون تعارض با ایمنی و هویت رانر محفوظ‌اند.
+
+مخزن تازه با فهرست زندهٔ GitHub شناسایی می‌شود و در اجرای بعدی
+کنترل‌گر WICC این بند و کتابخانه را دریافت می‌کند؛ اگر اجازهٔ
+نوشتن در شاخهٔ اصلی وجود نداشته باشد، مانع گزارش می‌شود و
+Branch Protection به‌طور خودکار تضعیف نمی‌شود.
+<!-- END OWNER_RUNNER_FABRIC_MANAGED_V1 -->
