@@ -1,0 +1,28 @@
+name: Owner runner mesh fixed read-only handshake
+on:
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: owner-runner-mesh-fixed-probe
+  cancel-in-progress: false
+jobs:
+  verify-registered-runner:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.repository == 'rezamahrm100-ops/hamapp-store' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor == 'rezamahrm100-ops'
+    runs-on: [self-hosted, Windows, X64, hamapp-windows]
+    timeout-minutes: 4
+    steps:
+      - name: Verify trusted main branch and exact existing runner (no source execution)
+        shell: cmd
+        run: |
+          @echo off
+          if /I not "%GITHUB_REPOSITORY%"=="rezamahrm100-ops/hamapp-store" exit /b 4
+          if /I not "%GITHUB_REF%"=="refs/heads/main" exit /b 5
+          if /I not "%RUNNER_NAME%"=="hamapp-DESKTOP-2SD873N-ba2c6e" exit /b 6
+          echo MESH_RUNNER_IDENTITY=PASS
+          echo MESH_REPO=rezamahrm100-ops/hamapp-store
+          echo MESH_SCOPE=READ_ONLY_NO_CHECKOUT_NO_SECRETS
+          echo MESH_ACCEPTED=YES
