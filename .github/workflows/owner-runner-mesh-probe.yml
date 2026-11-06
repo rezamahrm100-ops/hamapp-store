@@ -3,6 +3,11 @@ on:
   workflow_dispatch:
   issue_comment:
     types: [created]
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
 permissions: {}
 concurrency:
   group: owner-runner-mesh-fixed-probe
@@ -12,6 +17,7 @@ jobs:
     if: >-
       (
         github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'push' && github.actor == 'rezamahrm100-ops') ||
         (github.event_name == 'issue_comment' &&
          github.event.action == 'created' &&
          github.event.issue.number == 90 &&
