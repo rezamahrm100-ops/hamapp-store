@@ -17,9 +17,10 @@ class AtlasOpenSourceUIContract(unittest.TestCase):
             self.assertIn(material, native)
         self.assertIn("action.setEnabled(approved)", native)
         self.assertIn('app.optString("status").equals("available") && repo != null', native)
-        self.assertIn("FdroidEngine.requestOpen(this, repo)", native)
-        self.assertIn("FdroidEngine.requestPublicCatalog(this)", native)
-        self.assertNotIn("PackageInstaller.Session", native)
+        self.assertIn("InternalFdroidStore.openApproved(this, repo)", native)
+        self.assertIn("InternalFdroidStore.openPublic(this", native)
+        self.assertIn("org.fdroid:index:0.2.0", gradle)
+        self.assertNotIn("FdroidEngine", native)
 
     def test_windows_real_ttkbootstrap_builds_and_safe_fallback(self):
         helper = (ROOT / "windows_client/ui_theme.py").read_text("utf-8")

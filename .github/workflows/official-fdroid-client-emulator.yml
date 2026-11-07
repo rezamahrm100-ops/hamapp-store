@@ -39,7 +39,7 @@ jobs:
       - name: Install official Android SDK tooling
         shell: bash
         run: |
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-35' 'build-tools;35.0.0'
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-36' 'build-tools;35.0.0'
       - name: Source regression suite
         run: python3 -m unittest discover -s tests -v
       - name: Verify upstream official Android client GPG and APK certificate

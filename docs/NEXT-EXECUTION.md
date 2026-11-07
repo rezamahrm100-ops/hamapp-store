@@ -1,5 +1,16 @@
 # HamApp — next integrated execution contract
 
+## CURRENT ENGINE DIRECTION (2026-11-08, PR #92)
+
+Prior external F-Droid companion notes below are historical. Native Android
+now builds with `org.fdroid:index` upstream signature verification, verified
+repository metadata, and OS-mediated in-app APK install requests; native
+Windows continues to use the same-process WinGet explorer and system installer
+prompts. Do not import duplicate Droid-ify/UniGetUI graphical shells or
+fabricate private publisher IDs/keys. Deliver exact-main signed/unsigned
+artifacts, record physical-device QA as NOT_RUN until genuine owner action.
+
+
 ## OVERRIDING EXECUTION PRIORITY — all feasible engineering in one integrated run (effective 2026-11-02)
 
 The owner has explicitly changed the goal: **stop optimizing for the next microfix, incremental paper gate, or status-only reply. Optimize for closure of the entire technically actionable backlog in one coordinated run.** The controlling document is **[ONE-RUN-TECHNICAL-CLOSURE.md](ONE-RUN-TECHNICAL-CLOSURE.md)**. Read it first and use its complete workstream inventory, acceptance matrix and end-state contract.

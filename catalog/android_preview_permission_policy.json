@@ -5,6 +5,7 @@
   "version_name": "0.1.0-preview",
   "allowed_permissions": [
     "android.permission.INTERNET",
+    "android.permission.REQUEST_INSTALL_PACKAGES",
     "ir.hamapp.store.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
   ]
 }

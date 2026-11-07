@@ -1,5 +1,16 @@
 # HamApp — canonical agent handoff
 
+## CURRENT NATIVE ENGINE IMPLEMENTATION (2026-11-08, PR #92)
+
+Android client source now embeds official Apache-2.0 F-Droid index verification
+(`org.fdroid:index:0.2.0`) and a separately implemented OS-approved native
+PackageInstaller flow. It does **not** launch the external F-Droid client. Native
+Windows already uses local WinGet in its HamApp GUI. All historical handoff
+sections below mentioning `FdroidEngine` or companion apps are snapshots,
+not current code. Production publisher/repo signing and physical-device install
+acceptance remain missing. See `docs/EMBEDDED-ENGINES-ONEPASS-2026-11-08.md`.
+
+
 ## PRIMARY EXECUTION DIRECTIVE — full technical closure, not another microfix (effective 2026-11-02)
 
 **The next engineering run MUST target end-to-end closure of all technically actionable HamApp workstreams in one integrated execution.** Do not treat a one-defect PR, a scan of current status, or a planning-only response as completion. Read **[docs/ONE-RUN-TECHNICAL-CLOSURE.md](docs/ONE-RUN-TECHNICAL-CLOSURE.md)** before doing anything beyond verifying live GitHub. It is the controlling mission and acceptance contract; keep existing safety, private-key custody, review and trusted-main-only runner limits.

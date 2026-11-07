@@ -99,7 +99,7 @@ class UIBackendContractTests(unittest.TestCase):
                 self.assertEqual(action["enabled"], False)
                 self.assertEqual(
                     action["backend"],
-                    {"android": "official-fdroid-companion",
+                    {"android": "embedded-fdroid-native",
                      "windows": "microsoft-winget",
                      "web": "verified-https-origin"}[name],
                 )

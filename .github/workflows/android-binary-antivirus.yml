@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           python3 -m unittest discover -s tests -v
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-35' 'build-tools;35.0.0'
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-36' 'build-tools;35.0.0'
       - name: Build real DEBUG APK on isolated hosted runner
         run: gradle --no-daemon -p android :app:assembleDebug
       - name: Install ClamAV and refresh signature database

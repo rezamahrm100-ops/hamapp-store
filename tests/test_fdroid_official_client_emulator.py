@@ -7,23 +7,20 @@ import os
 import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
-ANDROID=ROOT/"android/app/src/main/java/ir/hamapp/store/FdroidEngine.java"
+ANDROID=ROOT/"android/app/src/main/java/ir/hamapp/store/InternalFdroidStore.java"
 SCRIPT=ROOT/"scripts/fdroid_official_client_emulator.sh"
 
 class OfficialFdroidHandoffTests(unittest.TestCase):
-    def test_source_invokes_official_client_not_arbitrary_browser(self):
+    def test_current_client_embeds_verified_index_not_external_launcher(self):
         src=ANDROID.read_text(encoding="utf-8")
         main=(ROOT/"android/app/src/main/java/ir/hamapp/store/MainActivity.java").read_text(encoding="utf-8")
-        self.assertIn("FdroidEngine.requestOpen(this, repo)", main)
-        self.assertIn('.scheme("fdroidrepos")',src)
-        self.assertIn('!source.getHost().equals(target.getHost())',src)
-        self.assertNotIn('Uri.parse("fdroidrepos://" + pinnedRepoUrl)',src)
-        self.assertIn('intent.setPackage("org.fdroid.fdroid")',src)
-        self.assertIn('if (!RepoPolicy.isAllowed(url, fingerprint))',src)
-        self.assertIn('appendQueryParameter("fingerprint"',src)
-        self.assertIn("new AlertDialog.Builder(activity)",src)
-        self.assertNotIn('new Intent(Intent.ACTION_VIEW, uri)',src)
-        self.assertNotIn("ACTION_INSTALL_PACKAGE",src+main)
+        installer=(ROOT/"android/app/src/main/java/ir/hamapp/store/EmbeddedApkInstaller.java").read_text(encoding="utf-8")
+        self.assertIn("InternalFdroidStore.openApproved(this, repo)", main)
+        self.assertIn("EntryVerifier", src)
+        self.assertIn("RepoPolicy.isAllowed(url, fingerprint)", src)
+        self.assertIn("PackageInstaller.Session", installer)
+        self.assertNotIn("FdroidEngine", main)
+        self.assertNotIn("PublicFdroidSearch", main)
 
     def test_emulator_fixture_uses_real_canonical_fdroidrepos_host(self):
         source = SCRIPT.read_text(encoding="utf-8")

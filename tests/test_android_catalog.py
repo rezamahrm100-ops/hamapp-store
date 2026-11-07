@@ -72,24 +72,32 @@ class RepoTests(unittest.TestCase):
         output = json.loads((ROOT / "android/app/src/main/assets/android-catalog.json").read_text("utf-8"))
         self.assertTrue(all(x["status"] == "planned" for x in output["apps"]))
 
-    def test_android_does_not_request_package_install_permission(self):
+    def test_android_requires_explicit_os_install_permission(self):
         manifest = (ROOT / "android/app/src/main/AndroidManifest.xml").read_text("utf-8")
-        self.assertNotIn("REQUEST_INSTALL_PACKAGES", manifest)
+        self.assertIn('android.permission.REQUEST_INSTALL_PACKAGES', manifest)
+        self.assertIn('android:exported="false"', manifest)
+        self.assertNotIn("QUERY_ALL_PACKAGES", manifest)
         self.assertIn('<uses-permission android:name="android.permission.INTERNET"/>', manifest)
         self.assertIn('android:usesCleartextTraffic="false"', manifest)
         policy = json.loads((ROOT / "catalog/android_preview_permission_policy.json").read_text("utf-8"))
         self.assertIn("android.permission.INTERNET", policy["allowed_permissions"])
-        self.assertNotIn("android.permission.REQUEST_INSTALL_PACKAGES", policy["allowed_permissions"])
+        self.assertIn("android.permission.REQUEST_INSTALL_PACKAGES", policy["allowed_permissions"])
         self.assertIn("android:exported=\"true\"", manifest)
 
-    def test_native_client_delegates_to_fdroid(self):
-        src = (ROOT / "android/app/src/main/java/ir/hamapp/store/MainActivity.java").read_text("utf-8")
-        engine = (ROOT / "android/app/src/main/java/ir/hamapp/store/FdroidEngine.java").read_text("utf-8")
-        self.assertIn("FdroidEngine.requestOpen(this, repo)", src)
-        self.assertIn("Intent.ACTION_VIEW", engine)
-        self.assertIn('intent.setPackage("org.fdroid.fdroid")', engine)
-        self.assertNotIn("PackageInstaller.Session", src + engine)
-        self.assertNotIn("ACTION_INSTALL_PACKAGE", src + engine)
+    def test_native_store_uses_upstream_signed_index_and_os_installer(self):
+        java = ROOT / "android/app/src/main/java/ir/hamapp/store"
+        main = (java / "MainActivity.java").read_text("utf-8")
+        engine = (java / "InternalFdroidStore.java").read_text("utf-8")
+        installer = (java / "EmbeddedApkInstaller.java").read_text("utf-8")
+        self.assertIn("InternalFdroidStore.openPublic(this", main)
+        self.assertIn("InternalFdroidStore.openApproved(this, repo)", main)
+        self.assertIn("EntryVerifier", engine)
+        self.assertIn("shaFile(existing)", engine)
+        self.assertIn("PackageInstaller.Session", installer)
+        self.assertIn("getPackageArchiveInfo", installer)
+        self.assertIn("canRequestPackageInstalls", installer)
+        self.assertNotIn("FdroidEngine", main)
+        self.assertNotIn("PublicFdroidSearch", main)
 
 
 if __name__ == "__main__":

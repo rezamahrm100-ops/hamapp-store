@@ -1,5 +1,17 @@
 # HamApp — engineering state and evidence ledger
 
+## 2026-11-08 IMPLEMENTATION OVERRIDE — embedded store, PR #92
+
+Source implementation: embedded F-Droid signed index verifier and Android OS
+PackageInstaller in HamApp; legacy external F-Droid client handoff removed.
+`minSdk=28`, `compileSdk=36`, target SDK remains 35. The native Windows WinGet
+UI and PWA remain unchanged. This is engineering source pending exact CI/emulator
+and main release verification; do not claim real user-device installation or
+production-signed release from a DEBUG APK. Existing retrospective milestones
+below are historic, not the current state. Production F-Droid signing identity,
+owner-released APK/EXE and publisher registrations remain external blockers.
+
+
 ## Effective next-run objective (2026-11-02): integrated engineering closure
 
 The project owner has replaced the incremental microfix/status-report mission with **one coordinated effort to close every technically actionable workstream**. The mandatory contract is [docs/ONE-RUN-TECHNICAL-CLOSURE.md](ONE-RUN-TECHNICAL-CLOSURE.md); root AGENTS.md and both NEXT-EXECUTION.md files link to it. Agents must inventory gaps, execute implementation and real checks across Android/Windows/PWA/publisher/security/release pipelines, integrate reviewable PRs where possible, and record a strict PASS/PARTIAL engineering verdict.

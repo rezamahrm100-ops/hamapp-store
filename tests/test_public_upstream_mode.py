@@ -8,49 +8,37 @@ WEB = ROOT / "web"
 
 
 class PublicUpstreamModeTests(unittest.TestCase):
-    def test_fdroid_public_explorer_stays_explicit_and_external(self):
-        engine = (JAVA / "FdroidEngine.java").read_text("utf-8")
+    def test_embedded_upstream_repository_is_cryptographically_verified(self):
+        engine = (JAVA / "InternalFdroidStore.java").read_text("utf-8")
         main = (JAVA / "MainActivity.java").read_text("utf-8")
-        self.assertIn("FdroidEngine.requestPublicCatalog(this)", main)
-        self.assertIn("getLaunchIntentForPackage(\"org.fdroid.fdroid\")", engine)
-        self.assertIn("https://f-droid.org/", engine)
-        self.assertIn(".setNegativeButton(\"لغو\", null)", engine)
-        self.assertIn('activity.startActivity(launch)', engine)
-        self.assertIn("requestOpen(Activity activity, JSONObject reviewedRepository)", engine)
-        self.assertIn("signedRepositoryUri(", engine)
-        self.assertNotIn("PackageInstaller.Session", engine + main)
-        self.assertNotIn("ACTION_INSTALL_PACKAGE", engine + main)
+        self.assertIn("org.fdroid.index.v2.EntryVerifier", engine)
+        self.assertIn("https://f-droid.org/repo/", engine)
+        self.assertIn("entry.jar", engine)
+        self.assertIn("index-v2.json", engine)
+        self.assertIn("shaFile(existing)", engine)
+        self.assertIn("setInstanceFollowRedirects(false)", engine)
+        self.assertIn("InternalFdroidStore.openPublic(this", main)
+        self.assertNotIn("FdroidEngine", main)
+        self.assertNotIn("PublicFdroidSearch", main)
 
-    def test_network_search_does_not_grant_install_or_package_enumeration(self):
+    def test_internal_install_still_requires_android_user_consent_and_signer(self):
+        install = (JAVA / "EmbeddedApkInstaller.java").read_text("utf-8")
+        result = (JAVA / "InstallResultActivity.java").read_text("utf-8")
         manifest = (ROOT / "android/app/src/main/AndroidManifest.xml").read_text("utf-8")
-        self.assertIn('<package android:name="org.fdroid.fdroid"/>', manifest)
+        self.assertIn("PackageInstaller.Session", install)
+        self.assertIn("canRequestPackageInstalls", install)
+        self.assertIn("getApkContentsSigners", install)
+        self.assertIn("STATUS_PENDING_USER_ACTION", result)
+        self.assertIn("android.permission.REQUEST_INSTALL_PACKAGES", manifest)
         self.assertNotIn("QUERY_ALL_PACKAGES", manifest)
-        self.assertNotIn("REQUEST_INSTALL_PACKAGES", manifest)
-        self.assertIn('<uses-permission android:name="android.permission.INTERNET"/>', manifest)
-        self.assertIn('android:usesCleartextTraffic="false"', manifest)
-        self.assertNotIn("android.permission.QUERY_ALL_PACKAGES", manifest)
-
-
-    def test_fdroid_public_search_only_displays_and_opens_official_app_links(self):
-        src = (JAVA / "PublicFdroidSearch.java").read_text("utf-8")
-        main = (JAVA / "MainActivity.java").read_text("utf-8")
-        policy = (ROOT / "catalog/android_preview_permission_policy.json").read_text("utf-8")
-        self.assertIn("PublicFdroidSearch.request(this", main)
-        self.assertIn("https://search.f-droid.org/api/search_apps", src)
-        self.assertIn("https://f-droid.org/packages/", src)
-        self.assertIn('intent.setPackage("org.fdroid.fdroid")', src)
-        self.assertIn("setInstanceFollowRedirects(false)", src)
-        self.assertIn("new Thread(", src)
-        self.assertIn("android.permission.INTERNET", policy)
-        for forbidden in ("REQUEST_INSTALL_PACKAGES", "PackageInstaller.Session", "ACTION_INSTALL_PACKAGE",
-                          "QUERY_ALL_PACKAGES", "setDoOutput(true)"):
-            self.assertNotIn(forbidden, src)
+        self.assertNotIn("org.fdroid.fdroid", manifest)
+        self.assertIn('android:exported="false"', manifest)
 
     def test_own_planned_app_install_remains_disabled(self):
         src = (JAVA / "MainActivity.java").read_text("utf-8")
         self.assertIn('action.setEnabled(approved)', src)
         self.assertIn('app.optString("status").equals("available") && repo != null', src)
-        self.assertIn("F-Droid مستقل از این برنامه است.", src)
+        self.assertIn("فروشگاه عمومی متن‌باز از ناشران اختصاصی جداست.", src)
 
     def test_web_public_links_are_explicit_and_disjoint_from_owned_release(self):
         index = (WEB / "index.html").read_text("utf-8")

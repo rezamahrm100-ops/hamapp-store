@@ -19,8 +19,8 @@ class EmulatorUiParserTests(unittest.TestCase):
         content = [
             '<hierarchy rotation="0">',
             '<node text="' + ("هَماپ" if title else "other") + '" enabled="true"/>',
-            '<node text="مدیریت از طریق F-Droid" enabled="' + ("false" if disabled else "true") + '"/>',
-            ('<node text="بازکردن فروشگاه عمومی F-Droid" enabled="' + ("true" if public_enabled else "false") + '"/>') if public else "",
+            '<node text="مدیریت در هَماپ" enabled="' + ("false" if disabled else "true") + '"/>',
+            ('<node text="فروشگاه عمومی داخل هَماپ" enabled="' + ("true" if public_enabled else "false") + '"/>') if public else "",
             '<node text="' + ("در دست توسعه" if planned else "آماده") + '" enabled="true"/>',
             '</hierarchy>',
         ]
