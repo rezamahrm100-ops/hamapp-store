@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- HTTPS search only; no APK download or installation permission. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Visibility limited to the official external F-Droid companion. -->
     <queries><package android:name="org.fdroid.fdroid"/></queries>
     <application

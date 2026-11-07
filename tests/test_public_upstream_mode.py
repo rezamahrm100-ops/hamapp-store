@@ -21,13 +21,30 @@ class PublicUpstreamModeTests(unittest.TestCase):
         self.assertNotIn("PackageInstaller.Session", engine + main)
         self.assertNotIn("ACTION_INSTALL_PACKAGE", engine + main)
 
-    def test_no_new_android_install_permission_or_network_permission(self):
+    def test_network_search_does_not_grant_install_or_package_enumeration(self):
         manifest = (ROOT / "android/app/src/main/AndroidManifest.xml").read_text("utf-8")
         self.assertIn('<package android:name="org.fdroid.fdroid"/>', manifest)
         self.assertNotIn("QUERY_ALL_PACKAGES", manifest)
         self.assertNotIn("REQUEST_INSTALL_PACKAGES", manifest)
-        self.assertNotIn("android.permission.INTERNET", manifest)
+        self.assertIn('<uses-permission android:name="android.permission.INTERNET"/>', manifest)
+        self.assertIn('android:usesCleartextTraffic="false"', manifest)
         self.assertNotIn("android.permission.QUERY_ALL_PACKAGES", manifest)
+
+
+    def test_fdroid_public_search_only_displays_and_opens_official_app_links(self):
+        src = (JAVA / "PublicFdroidSearch.java").read_text("utf-8")
+        main = (JAVA / "MainActivity.java").read_text("utf-8")
+        policy = (ROOT / "catalog/android_preview_permission_policy.json").read_text("utf-8")
+        self.assertIn("PublicFdroidSearch.request(this", main)
+        self.assertIn("https://search.f-droid.org/api/search_apps", src)
+        self.assertIn("https://f-droid.org/packages/", src)
+        self.assertIn('intent.setPackage("org.fdroid.fdroid")', src)
+        self.assertIn("setInstanceFollowRedirects(false)", src)
+        self.assertIn("new Thread(", src)
+        self.assertIn("android.permission.INTERNET", policy)
+        for forbidden in ("REQUEST_INSTALL_PACKAGES", "PackageInstaller.Session", "ACTION_INSTALL_PACKAGE",
+                          "QUERY_ALL_PACKAGES", "setDoOutput(true)"):
+            self.assertNotIn(forbidden, src)
 
     def test_own_planned_app_install_remains_disabled(self):
         src = (JAVA / "MainActivity.java").read_text("utf-8")
