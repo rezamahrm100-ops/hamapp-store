@@ -9,7 +9,7 @@ def check_ui(path):
     root = ET.parse(path).getroot()
     nodes = list(root.iter("node"))
     labels = [n.attrib.get("text", "") for n in nodes]
-    if not any("هَماپ" in label for label in labels):
+    if not any(label == "هَماپ" for label in labels):
         raise ValueError("HamApp title not rendered on emulator")
     # Distinguish approved-repository install handoff (must be disabled when
     # no owner-approved release) from public F-Droid app launch (must work).
