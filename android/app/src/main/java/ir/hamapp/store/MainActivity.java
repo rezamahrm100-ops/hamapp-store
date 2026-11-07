@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-/** HamApp Android native preview. F-Droid is the installer; no APK sideloading. */
+/** HamApp native store: signed F-Droid index and OS-confirmed embedded installation. */
 public final class MainActivity extends Activity {
     private final int bg = Color.rgb(11, 18, 32);
     private final int accent = Color.rgb(159, 227, 199);
@@ -135,20 +135,19 @@ public final class MainActivity extends Activity {
         // A usable, separately governed upstream catalogue even when the
         // private HamApp publisher registry has no verified releases yet.
         TextView upstreamLabel = text(
-                "کاوش عمومی: برنامه‌های متن‌باز در F-Droid | مستقل از انتشارهای هَماپ",
+                "فهرست امضاشدهٔ F-Droid داخل هَماپ | مستقل از ناشران اختصاصی",
                 12, muted, false);
         main.addView(upstreamLabel, margin(0, 7));
-        MaterialButton explore = actionButton("بازکردن فروشگاه عمومی F-Droid", true);
+        MaterialButton explore = actionButton("فروشگاه عمومی داخل هَماپ", true);
         explore.setContentDescription(
-                "با رضایت شما فروشگاه رسمی F-Droid یا وب‌سایت آن باز می‌شود");
-        explore.setOnClickListener(view -> FdroidEngine.requestPublicCatalog(this));
+                "فهرست امضاشده و نصب با تأیید اندروید، در خود هَماپ");
+        explore.setOnClickListener(view -> InternalFdroidStore.openPublic(this, ""));
         main.addView(explore, margin(0, 14));
-        // Public upstream search is read-only. Package installation stays in
-        // the separately installed official F-Droid client.
+        // Signed index and native OS installer remain inside the HamApp process.
         MaterialButton searchPublic = actionButton("جست‌وجوی عمومی در F-Droid", false);
-        searchPublic.setContentDescription("جست‌وجوی آنلاین برنامه‌های متن‌باز؛ بدون نصب در هَماپ");
+        searchPublic.setContentDescription("جست‌وجو و نصب برنامه‌های عمومی درون هَماپ");
         searchPublic.setOnClickListener(view ->
-                PublicFdroidSearch.request(this, query == null ? "" : query.getText().toString()));
+                InternalFdroidStore.openPublic(this, query == null ? "" : query.getText().toString()));
         main.addView(searchPublic, margin(0, 13));
 
 
@@ -166,8 +165,8 @@ public final class MainActivity extends Activity {
         main.addView(searchField, margin(0, 10));
 
         TextView status = text(repo == null
-                ? "مخزن امضاشده هنوز تأیید نشده؛ نصب غیرفعال است."
-                : "نصب برنامه‌ها از طریق کلاینت رسمی F-Droid انجام می‌شود.", 12, muted, false);
+                ? "مخزن اختصاصی هنوز تأیید نشده؛ بخش عمومی مستقل در دسترس است."
+                : "مدیریت برنامه‌های اختصاصی از مخزن امضاشده، درون هَماپ است.", 12, muted, false);
         main.addView(status, margin(0, 13));
 
         ScrollView scroll = new ScrollView(this);
@@ -178,7 +177,7 @@ public final class MainActivity extends Activity {
         scroll.addView(cards);
         main.addView(scroll, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-        main.addView(text("هیچ بسته‌ای بدون تأیید ناشر و امضای مخزن قابل نصب نیست.", 11, muted, false),
+        main.addView(text("هر نصب نیازمند امضای معتبر مخزن و بسته و تأیید اندروید است.", 11, muted, false),
                 margin(10, 0));
         setContentView(main);
         query.addTextChangedListener(new TextWatcher() {
@@ -210,9 +209,9 @@ public final class MainActivity extends Activity {
             String state = approved ? "برنامهٔ تأییدشده: " + app.optString("version") : "در دست توسعه";
             card.addView(text(state, 12, approved ? Color.rgb(130, 231, 190) : muted, false),
                     margin(0, 9));
-            MaterialButton action = actionButton("مدیریت از طریق F-Droid", approved);
+            MaterialButton action = actionButton("مدیریت در هَماپ", approved);
             action.setEnabled(approved);
-            action.setContentDescription(approved ? "بازکردن مخزن امضاشده در F-Droid"
+            action.setContentDescription(approved ? "مدیریت مخزن امضاشده در خود هَماپ"
                     : "نصب هنوز فعال نیست");
             if (approved) action.setOnClickListener(view -> openApprovedRepo());
             card.addView(action, margin(0, 4));
@@ -222,9 +221,9 @@ public final class MainActivity extends Activity {
                     .setTitle(name)
                     .setMessage(description + "\\n\\n"
                             + (approved ? "نسخهٔ ثبت‌شده: " + app.optString("version")
-                                    + "\\nمدیریت نصب: کلاینت رسمی F-Droid"
+                                    + "\\nمدیریت نصب: موتور داخلی هَماپ"
                                     : "وضعیت: در دست توسعه؛ فایل قابل نصب تأیید نشده است.")
-                            + "\\n\\nکاتالوگ عمومی F-Droid مستقل از این برنامه است.")
+                            + "\\n\\nفروشگاه عمومی متن‌باز از ناشران اختصاصی جداست.")
                     .setPositiveButton("بستن", null).show());
             card.addView(info, margin(0, 0));
             cards.addView(card, margin(0, 10));
@@ -235,7 +234,7 @@ public final class MainActivity extends Activity {
     }
 
     private void openApprovedRepo() {
-        FdroidEngine.requestOpen(this, repo);
+        InternalFdroidStore.openApproved(this, repo);
     }
 
     private void showError(String message) {

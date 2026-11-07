@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- HTTPS search only; no APK download or installation permission. -->
+    <!-- Embedded signed-index download + explicit Android OS install approval. -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- Visibility limited to the official external F-Droid companion. -->
-    <queries><package android:name="org.fdroid.fdroid"/></queries>
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <application
         android:allowBackup="false"
         android:usesCleartextTraffic="false"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.HamApp">
+        <activity android:name=".InstallResultActivity" android:exported="false"/>
         <activity
             android:name=".MainActivity"
             android:exported="true">

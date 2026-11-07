@@ -13,14 +13,14 @@ def check_ui(path):
         raise ValueError("HamApp title not rendered on emulator")
     # Distinguish approved-repository install handoff (must be disabled when
     # no owner-approved release) from public F-Droid app launch (must work).
-    fdroid = [n for n in nodes if n.attrib.get("text", "") == "مدیریت از طریق F-Droid"]
-    public = [n for n in nodes if n.attrib.get("text", "") == "بازکردن فروشگاه عمومی F-Droid"]
+    fdroid = [n for n in nodes if n.attrib.get("text", "") == "مدیریت در هَماپ"]
+    public = [n for n in nodes if n.attrib.get("text", "") == "فروشگاه عمومی داخل هَماپ"]
     if not fdroid:
-        raise ValueError("F-Droid handoff button not rendered")
+        raise ValueError("HamApp owner install button not rendered")
     if any(n.attrib.get("enabled") != "false" for n in fdroid):
-        raise ValueError("unverified F-Droid handoff must be disabled")
+        raise ValueError("unverified owner install must be disabled")
     if len(public) != 1 or public[0].attrib.get("enabled") != "true":
-        raise ValueError("separate public F-Droid launcher must be enabled")
+        raise ValueError("embedded public F-Droid storefront must be enabled")
     if not any("در دست توسعه" in label for label in labels):
         raise ValueError("planned app status not rendered")
     return len(fdroid)

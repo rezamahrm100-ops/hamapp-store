@@ -3,7 +3,7 @@
 
 This contract is descriptive, not an authorization token. Windows operations
 must still pass windows_client.core; Android installation belongs to the
-official F-Droid client; web links require the existing release gate.
+embedded signed-index verifier and OS PackageInstaller; web is separate.
 """
 import argparse
 import hashlib
@@ -64,8 +64,8 @@ def build(sources):
                 available = (android_by_id[app["id"]]["status"] == "available"
                              and android_repo["repository"] is not None)
                 targets[platform] = {
-                    "backend": "official-fdroid-companion",
-                    "action": "open_signed_repository",
+                    "backend": "embedded-fdroid-native",
+                    "action": "browse_verified_repository",
                     "enabled": bool(available),
                     "requires_user_consent": True,
                     "repository": android_repo["repository"] if available else None,
@@ -110,9 +110,8 @@ def build(sources):
         "catalog_sha256": digest,
         "engines": {
             "android": {
-                "id": "fdroid-client",
-                "integration": "official-external-client",
-                "package": "org.fdroid.fdroid",
+                "id": "fdroid-index",
+                "integration": "embedded-library-and-android-os-installer",
                 "repository_configured": android_repo["repository"] is not None,
             },
             "windows": {

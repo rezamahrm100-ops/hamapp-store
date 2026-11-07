@@ -8,7 +8,7 @@
 
 این نسخه‌ها برای **نصب و استفادهٔ آزمایشی شخصی** هستند؛ انتشار تجاری امضاشده نیستند. ZIPها در GitHub Actions موقت‌اند (۷ روز)، بنابراین برای دریافت ممکن است ورود به GitHub لازم باشد.
 
-- **اندروید:** [دریافت فایل APK آزمایشی و راهنما](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41914613853/artifacts/13363542959) — فایل `HamApp-Android-Preview-debug.apk` با امضای موقت Debug است. از داخل برنامه می‌توان با رضایت کاربر فروشگاه عمومی رسمی F-Droid را باز کرد.
+- **اندروید:** [دریافت فایل APK آزمایشی و راهنما](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41914613853/artifacts/13363542959) — فایل `HamApp-Android-Preview-debug.apk` با امضای موقت Debug است. فهرست امضاشدهٔ F-Droid را داخل هَماپ دریافت و جست‌وجو کرده و پس از بررسی امضای بسته با تأیید اندروید نصب یا به‌روزرسانی کرد؛ نصب کلاینت جداگانهٔ F-Droid لازم نیست. بارگیری نخست فهرست می‌تواند ده‌ها مگابایت مصرف داشته باشد.
 - **ویندوز:** [دریافت برنامهٔ پرتابل و نصب‌کنندهٔ NSIS](https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/41914613853/artifacts/13364660881) — فایل‌های `HamApp-Windows-Preview.exe` و `HamApp-Preview-Setup-UNSIGNED.exe` امضای تجاری ندارند. بخش WinGet جست‌وجو، اطلاعات، نصب/ارتقا، فهرست نصب‌شده‌ها و حذف انتخابی را با تأیید صریح کاربر فراهم می‌کند.
 - در ویندوز، ZIP را استخراج و قبل از اجرای فایل‌های نصب، **`HamApp-Verify-Preview.cmd`** را اجرا کنید. این برنامه فقط SHA-256 و اندازهٔ فایل‌های بسته را کنترل می‌کند؛ معتبر بودن امضای ناشر را ثابت نمی‌کند و چیزی نصب نمی‌کند.
 - **وب:** https://rezamahrm100-ops.github.io/hamapp-store/ — نمایش کاتالوگ مستقل، حالت روشن/تیره و دسترسی آفلاین.
@@ -21,7 +21,7 @@
 - JSON catalogue schema + security validation. Planned apps cannot advertise unverified downloads.
 - Automated tests, reproducible zero-third-party-dependency build, GitHub Actions CI, Pages deploy, Dependabot.
 - Owner Windows QA on a separate repository-scoped self-hosted runner label (`hamapp-windows`), triggered by trusted main changes or manually.
-- Native Java Android Material 3 UI (Google Material Components under Apache-2.0) with optional read-only official F-Droid HTTPS search results inside HamApp and an external official F-Droid client for all installs. Public search results are not HamApp publisher approvals. No GPL F-Droid client code or APK installer is embedded.
+- Native Java Android Material 3 UI (Google Material Components under Apache-2.0) with the Apache-2.0 F-Droid index 0.2.0 library integrated for signed index verification, streaming catalogue search and native PackageInstaller sessions. APK hash and publisher signing certificate are validated before OS/user confirmation. Public-source packages are not HamApp publisher approvals, and no external F-Droid client is needed.
 - Native Windows Python Tkinter/ttkbootstrap interface with separate official WinGet community browsing and independently checked interactive actions.
 - Hosted owner-preview packaging for Android APK and Windows portable EXE/NSIS with SHA-256 receipt and one-click local integrity verification.
 - A one-file self-extracting Windows `HamApp-SETUP.cmd` bootstrap distributed separately.

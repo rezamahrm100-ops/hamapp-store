@@ -1,0 +1,18 @@
+HamApp third-party open-source notice (2026-11-08)
+=================================================
+F-Droid Index Library, version 0.2.0
+SPDX-License-Identifier: Apache-2.0
+Source: https://gitlab.com/fdroid/fdroidclient/-/tree/master/libs/index
+Upstream repository mirror: https://github.com/f-droid/fdroidclient
+Upstream full license is included in third_party/fdroid-index/LICENSE.
+The library verifies the signed F-Droid repository entry/index. HamApp does
+not embed the GPLv3 F-Droid application client or the Droid-ify GUI.
+
+Microsoft Windows Package Manager (winget-cli)
+Source: https://github.com/microsoft/winget-cli
+HamApp invokes the installed official WinGet program in the user's Windows
+environment. It does not repackage WinGet itself.
+
+Material Components for Android: com.google.android.material:material:1.14.0
+Source: https://github.com/material-components/material-components-android
+Apache-2.0. Further transitive dependency notices remain applicable.
