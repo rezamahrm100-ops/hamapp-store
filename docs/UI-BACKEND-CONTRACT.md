@@ -1,5 +1,16 @@
 # HamApp UI-backend integration contract (2026-11-04)
 
+> **Current contract update (2026-11-08, PR #92):** The external F-Droid
+> companion described below is a **historical design** replaced by native
+> `InternalFdroidStore` + Apache-2.0 `org.fdroid:index:0.2.0` +
+> `EmbeddedApkInstaller` (Android OS PackageInstaller with explicit user
+> consent). The Android contract now declares `embedded-fdroid-native`.
+> Windows WinGet remains embedded in HamApp's GUI as a native platform
+> manager; web remains a PWA. No real production HamApp publisher/repository
+> identity has been activated. See
+> [EMBEDDED-ENGINES-ONEPASS-2026-11-08.md](EMBEDDED-ENGINES-ONEPASS-2026-11-08.md).
+>
+
 ## Decision: reuse working upstream engines, not vendor their entire graphical shells
 
 The store already uses: official F-Droid via explicit `fdroidrepos://` ACTION_VIEW,

@@ -1,5 +1,12 @@
 # هَماپ | HamApp
 
+> **Current preview note (2026-11-08):** Android uses the embedded F-Droid
+> signed-index engine and Android OS installer. Historic earlier APK download
+> links and descriptions below may predate PR #92; prefer the newest exact-main
+> `HamApp Owner Installable Previews` run. The private HamApp publisher
+> catalogue remains planned until real owner signers/releases are approved.
+>
+
 **همهٔ برنامه‌های ما، یک‌جا.**  Independent software storefront for Android, Windows, and web.
 
 > Status (2026-11-05): **owner-installable native Android DEBUG APK, native unsigned Windows EXE/NSIS preview, and Persian RTL web/PWA**, with public-source browsing via official F-Droid and WinGet. Android/Windows proprietary catalogue entries remain **planned**, with no owner-approved binaries. Production signing, publisher releases, device-owner acceptance and paid marketplace operations are NOT established.
