@@ -147,13 +147,16 @@ public final class EmbeddedApkInstaller {
         params.setSize(app.apkBytes);
         int id = manager.createSession(params);
         boolean committed = false;
-        try (PackageInstaller.Session session = manager.openSession(id);
-             InputStream input = new BufferedInputStream(new FileInputStream(verified));
-             OutputStream output = session.openWrite("base.apk", 0, app.apkBytes)) {
-            byte[] buf = new byte[65536];
-            int n;
-            while ((n = input.read(buf)) != -1) output.write(buf, 0, n);
-            session.fsync(output);
+        try (PackageInstaller.Session session = manager.openSession(id)) {
+            // Session.commit() MUST run after every session output stream
+            // has been closed, otherwise Android rejects the transaction.
+            try (InputStream input = new BufferedInputStream(new FileInputStream(verified));
+                 OutputStream output = session.openWrite("base.apk", 0, app.apkBytes)) {
+                byte[] buf = new byte[65536];
+                int n;
+                while ((n = input.read(buf)) != -1) output.write(buf, 0, n);
+                session.fsync(output);
+            }
             Intent callback = new Intent(activity, InstallResultActivity.class);
             callback.setAction("ir.hamapp.store.INSTALL_COMPLETED");
             callback.putExtra("expected_package", app.id);
