@@ -75,7 +75,11 @@ class RepoTests(unittest.TestCase):
     def test_android_does_not_request_package_install_permission(self):
         manifest = (ROOT / "android/app/src/main/AndroidManifest.xml").read_text("utf-8")
         self.assertNotIn("REQUEST_INSTALL_PACKAGES", manifest)
-        self.assertNotIn("android.permission.INTERNET", manifest)
+        self.assertIn('<uses-permission android:name="android.permission.INTERNET"/>', manifest)
+        self.assertIn('android:usesCleartextTraffic="false"', manifest)
+        policy = json.loads((ROOT / "catalog/android_preview_permission_policy.json").read_text("utf-8"))
+        self.assertIn("android.permission.INTERNET", policy["allowed_permissions"])
+        self.assertNotIn("android.permission.REQUEST_INSTALL_PACKAGES", policy["allowed_permissions"])
         self.assertIn("android:exported=\"true\"", manifest)
 
     def test_native_client_delegates_to_fdroid(self):
