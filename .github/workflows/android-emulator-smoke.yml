@@ -38,7 +38,9 @@ jobs:
         with:
           gradle-version: '8.13'
       - name: Install Android 36 compile SDK
-        run: "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-36' 'build-tools;35.0.0'
+        shell: bash
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-36' 'build-tools;35.0.0'
       - name: Allow isolated hosted emulator KVM access
         shell: bash
         run: |
