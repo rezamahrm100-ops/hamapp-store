@@ -64,7 +64,7 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/fdroid-signed-lab-venv"
           "$RUNNER_TEMP/fdroid-signed-lab-venv/bin/python" -m pip install --disable-pip-version-check "fdroidserver==2.4.5" "androguard==4.1.4"
           echo "$RUNNER_TEMP/fdroid-signed-lab-venv/bin" >> "$GITHUB_PATH"
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-35' 'build-tools;35.0.0'
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-36' 'build-tools;35.0.0'
           echo "$ANDROID_HOME/build-tools/35.0.0" >> "$GITHUB_PATH"
       - name: Build two real APK versions with stable debug signer
         shell: bash

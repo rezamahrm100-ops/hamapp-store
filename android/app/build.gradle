@@ -3,7 +3,7 @@ plugins {
 }
 android {
     namespace 'ir.hamapp.store'
-    compileSdk 35
+    compileSdk 36
     defaultConfig {
         applicationId 'ir.hamapp.store'
         minSdk 26
