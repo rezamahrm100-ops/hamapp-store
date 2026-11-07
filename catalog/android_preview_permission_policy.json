@@ -4,6 +4,7 @@
   "version_code": 1,
   "version_name": "0.1.0-preview",
   "allowed_permissions": [
+    "android.permission.INTERNET",
     "ir.hamapp.store.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
   ]
 }

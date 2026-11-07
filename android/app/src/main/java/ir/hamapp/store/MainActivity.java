@@ -143,6 +143,14 @@ public final class MainActivity extends Activity {
                 "با رضایت شما فروشگاه رسمی F-Droid یا وب‌سایت آن باز می‌شود");
         explore.setOnClickListener(view -> FdroidEngine.requestPublicCatalog(this));
         main.addView(explore, margin(0, 14));
+        // Public upstream search is read-only. Package installation stays in
+        // the separately installed official F-Droid client.
+        MaterialButton searchPublic = actionButton("جست‌وجوی عمومی در F-Droid", false);
+        searchPublic.setContentDescription("جست‌وجوی آنلاین برنامه‌های متن‌باز؛ بدون نصب در هَماپ");
+        searchPublic.setOnClickListener(view ->
+                PublicFdroidSearch.request(this, query == null ? "" : query.getText().toString()));
+        main.addView(searchPublic, margin(0, 13));
+
 
         query = new TextInputEditText(this);
         query.setTextColor(white);
