@@ -470,7 +470,7 @@ public final class InternalFdroidStore {
                 .setMessage(message)
                 .setNegativeButton("بستن", null)
                 .setPositiveButton("نصب / به‌روزرسانی در هَماپ", (dialog, which) ->
-                        EmbeddedApkInstaller.request(activity, source.url, app))
+                        EmbeddedApkInstaller.request(activity, source, app))
                 .show();
     }
 
