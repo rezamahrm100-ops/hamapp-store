@@ -114,6 +114,31 @@ public final class UserRepoSettings {
             throw new IllegalStateException("repository trust settings were not saved");
     }
 
+    // These operations are exercised in an actual Android emulator using
+    // private app preferences, not merely asserted in a source-text test.
+    static void addForUser(Activity activity, String endpoint, String fingerprint) {
+        Repository candidate = new Repository(endpoint, fingerprint);
+        List<Repository> items = new ArrayList<>(saved(activity));
+        if (items.size() >= MAX_REPOSITORIES)
+            throw new IllegalArgumentException("حداکثر شش مخزن شخصی مجاز است.");
+        for (Repository item : items) {
+            if (item.url.equals(candidate.url))
+                throw new IllegalArgumentException(
+                        "برای تعویض کلید امضای این مخزن، ابتدا مخزن قبلی را حذف کنید.");
+        }
+        items.add(candidate);
+        persist(activity, items);
+    }
+
+    static void removeForUser(Activity activity, Repository selected) {
+        List<Repository> items = new ArrayList<>(saved(activity));
+        boolean removed = items.removeIf(item -> item.url.equals(selected.url)
+                && item.fingerprint.equals(selected.fingerprint));
+        if (!removed) throw new IllegalArgumentException("repository not registered");
+        persist(activity, items);
+        InternalFdroidStore.dropCache(activity, selected.url, selected.fingerprint);
+    }
+
     public static boolean configured(Activity activity) {
         try {
             return !saved(activity).isEmpty();
@@ -203,19 +228,9 @@ public final class UserRepoSettings {
                         String endpoint = url.getText().toString().trim();
                         String fingerprint = pin.getText().toString().replace(":", "")
                                 .trim().toLowerCase(Locale.ROOT);
-                        Repository candidate = new Repository(endpoint, fingerprint);
-                        List<Repository> items = new ArrayList<>(saved(activity));
-                        if (items.size() >= MAX_REPOSITORIES)
-                            throw new IllegalArgumentException("حداکثر شش مخزن شخصی مجاز است.");
-                        for (Repository item : items) {
-                            if (item.url.equals(candidate.url))
-                                throw new IllegalArgumentException(
-                                        "برای تعویض کلید امضای این مخزن، ابتدا مخزن قبلی را حذف کنید.");
-                        }
-                        items.add(candidate);
-                        persist(activity, items);
+                        addForUser(activity, endpoint, fingerprint);
                         InternalFdroidStore.openSubscribed(
-                                activity, candidate.url, candidate.fingerprint, "");
+                                activity, endpoint, fingerprint, "");
                     } catch (IllegalArgumentException | IllegalStateException ex) {
                         failure(activity, "مخزن ثبت نشد: " + ex.getMessage());
                     }
@@ -242,12 +257,7 @@ public final class UserRepoSettings {
                                 .setNegativeButton("لغو", null)
                                 .setPositiveButton("تأیید حذف", (confirm, button) -> {
                                     try {
-                                        List<Repository> remaining = new ArrayList<>(saved(activity));
-                                        remaining.removeIf(r -> r.url.equals(selected.url) &&
-                                                r.fingerprint.equals(selected.fingerprint));
-                                        persist(activity, remaining);
-                                        InternalFdroidStore.dropCache(
-                                                activity, selected.url, selected.fingerprint);
+                                        removeForUser(activity, selected);
                                         show(activity);
                                     } catch (IllegalStateException ex) {
                                         failure(activity, "حذف مخزن به‌طور کامل ثبت نشد.");
