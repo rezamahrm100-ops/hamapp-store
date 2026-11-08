@@ -30,6 +30,13 @@ class EmulatorUiParserTests(unittest.TestCase):
         self.write()
         self.assertEqual(module.check_ui(self.xml), 1)
 
+    def test_two_real_snapshots_do_not_count_the_public_action_twice(self):
+        # Fixed header actions are present in both captures. Preserve the
+        # requirement that public browsing is enabled and owner installs are
+        # disabled; do not reject the same node simply for being seen twice.
+        self.write()
+        self.assertEqual(module.check_ui(self.xml, self.xml), 1)
+
     def test_rejects_enabled_install(self):
         self.write(disabled=False)
         with self.assertRaisesRegex(ValueError, "must be disabled"):
