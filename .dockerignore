@@ -1,0 +1,15 @@
+.git
+.github
+dist
+.gradle
+**/build
+**/__pycache__
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.jks
+**/*.keystore
+**/.env
+**/.env.*
+**/credentials.json
+**/private_data

@@ -49,4 +49,10 @@ jobs:
             else { Write-Output ('HAMAPP_OWNER_WINGET_VERSION=' + $value) }
           } else { Write-Output 'HAMAPP_OWNER_WINGET_VERSION=NOT_INSTALLED' }
           Write-Output 'HAMAPP_OWNER_HOST_PACKAGE_INSTALL=NEVER_EXECUTED'
+          # An inaccessible WinGet alias in a service logon is a diagnostic
+          # blocker for on-device package operations, not a Python CI failure.
+          # Keep the explicit UNAVAILABLE result; never install App Installer
+          # or modify PATH, account, policy or machine-wide security here.
+          Write-Output 'HAMAPP_OWNER_WINGET_CAN_OPERATE_IN_SERVICE=NOT_PROVEN_WHEN_UNAVAILABLE'
+          exit 0
 

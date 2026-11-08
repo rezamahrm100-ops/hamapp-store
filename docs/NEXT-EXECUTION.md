@@ -1,5 +1,17 @@
 # HamApp — next integrated execution contract
 
+## NEXT CANONICAL ENGINE-LEVEL BATCH (2026-11-08)
+
+Unify official upstream WinGet through one typed advanced command-family
+surface; preserve safe exact-ID package lifecycle. Package existing owner-only
+TLS quarantine into one Docker Compose local service and configure credentials
+via Windows DPAPI, supply no-secret reproducible ZIP in owner preview pipeline.
+Preserve Android's verified F-Droid index/native installer but do NOT represent
+that as the complete F-Droid client: its full database/mirror/download-manager
+and background policy feature set remains a separate engineering milestone.
+No real signer/key/production publisher/release invented; all PR work hosted.
+See `docs/ENGINE-WIDE-SERVICE-INTEGRATION-2026-11-08.md`.
+
 ## OWNER NO-CODE POST-INSTALL CONNECTIONS — 2026-11-08
 
 A unified PR adds in-app setup on both native clients. Android: optional user

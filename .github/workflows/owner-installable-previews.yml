@@ -11,6 +11,12 @@ on:
       - 'scripts/HamApp-Verify-Preview.cmd'
       - 'tests/test_package_owner_preview.py'
       - 'android/**'
+      - 'deployment/**'
+      - 'scripts/hamapp_operator.py'
+      - 'scripts/build_service_kit.py'
+      - 'scripts/hamapp_service_windows_setup.py'
+      - 'tests/test_hamapp_service_operator.py'
+      - 'tests/test_winget_full_surface.py'
       - 'windows_client/**'
       - 'windows_installer/**'
       - 'run_windows_client.py'
@@ -24,6 +30,12 @@ on:
       - 'scripts/package_owner_preview.py'
       - 'tests/test_package_owner_preview.py'
       - 'android/**'
+      - 'deployment/**'
+      - 'scripts/hamapp_operator.py'
+      - 'scripts/build_service_kit.py'
+      - 'scripts/hamapp_service_windows_setup.py'
+      - 'tests/test_hamapp_service_operator.py'
+      - 'tests/test_winget_full_surface.py'
       - 'windows_client/**'
       - 'windows_installer/**'
       - 'run_windows_client.py'
@@ -76,6 +88,44 @@ jobs:
         run: |
           echo "### HamApp Android native DEBUG APK (owner test)" >> "$GITHUB_STEP_SUMMARY"
           echo "Source SHA: $GITHUB_SHA. Build/signature checked, NOT production-signed, installed on owner phone, or approved for public release. Download Android Owner Test artifact." >> "$GITHUB_STEP_SUMMARY"
+
+  service-kit:
+    # Builds the backend from the same immutable checkout as both native
+    # clients. PR builds use only hosted workers and disposable source.
+    if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify actual POSIX private TLS backend, token lifecycle and one ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p 'test_hamapp_service_operator.py' -v
+          python3 -m unittest discover -s tests -p 'test_owner_publisher_real_tls.py' -v
+          docker compose -f deployment/compose.yaml -p hamapp-private-ci config --quiet
+          docker compose -f deployment/compose.yaml -p hamapp-private-ci build publisher-intake
+          mkdir -p dist/owner-preview/service
+          python3 scripts/build_service_kit.py \
+            --output dist/owner-preview/service/HamApp-Private-Service-Kit.zip \
+            --source-sha "$GITHUB_SHA"
+          test -s dist/owner-preview/service/HamApp-Private-Service-Kit.zip
+          sha256sum dist/owner-preview/service/HamApp-Private-Service-Kit.zip > dist/owner-preview/service/SHA256SUMS.txt
+      - name: Upload backend self-configure kit (no signing keys or accounts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: HamApp-Private-Service-Ready-To-Configure
+          path: dist/owner-preview/service/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Boundaries of the private service build
+        if: success()
+        shell: bash
+        run: |
+          echo "### HamApp Private Service" >> "$GITHUB_STEP_SUMMARY"
+          echo "Source: $GITHUB_SHA; assembled Docker service and local configuration kit; no production deployment, real signer, owner identity, or public release." >> "$GITHUB_STEP_SUMMARY"
 
   windows:
     if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
