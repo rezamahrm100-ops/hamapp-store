@@ -1,5 +1,16 @@
 # HamApp — engineering state and evidence ledger
 
+## 2026-11-08 ENGINE-WIDE INTEGRATION WORK (PENDING CI)
+
+A new one-PR batch adds one reusable WinGet full-family typed command adapter
+and native advanced window, while preserving the verified exact-ID install flow;
+one private Docker-packaged backend wrapping the existing TLS quarantine,
+source and token lifecycle; Windows first-run owner setup; and no-secret backend
+ZIP attached to the same Android/Windows preview pipeline. Once CI succeeds,
+record exact feature/main SHAs and evidence. Do not mark production publisher
+approval, full F-Droid client feature parity, stable signing keys or owner device
+checks PASS merely because this code builds.
+
 ## 2026-11-08 IMPLEMENTATION OVERRIDE — embedded store, PR #92
 
 Source implementation: embedded F-Droid signed index verifier and Android OS

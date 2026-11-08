@@ -1,0 +1,40 @@
+# The ONLY exposed local publisher service. No public route without an
+# independently authorized TLS/reverse-proxy deployment.
+name: hamapp-private
+services:
+  publisher-intake:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    image: hamapp-private-operator:2026-11-08
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 96
+    mem_limit: 1536m
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    ports:
+      - "127.0.0.1:${HAMAPP_LOCAL_TLS_PORT:-8766}:8766"
+    volumes:
+      - hamapp_private:/data
+    command:
+      - start
+      - --root
+      - /data/service
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8766"
+      - --allow-public-bind
+    healthcheck:
+      test: ["CMD", "python", "-c", "import ssl,socket; c=ssl._create_unverified_context(); s=c.wrap_socket(socket.socket(),server_hostname='localhost'); s.settimeout(3); s.connect(('127.0.0.1',8766)); s.close()"]
+      interval: 30s
+      timeout: 6s
+      start_period: 20s
+      retries: 3
+volumes:
+  hamapp_private:

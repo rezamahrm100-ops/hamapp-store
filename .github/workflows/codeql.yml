@@ -27,3 +27,34 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: none
       - uses: github/codeql-action/analyze@v4
+        with:
+          # Preserve normal upload/check behavior; also keep local SARIF for a
+          # bounded non-secret diagnostics summary in hosted PR job logs.
+          output: ${{ runner.temp }}/hamapp-codeql-diagnostics
+      - name: Report CodeQL rule and location only (no snippets or secret flows)
+        if: always()
+        shell: bash
+        env:
+          SARIF_DIR: ${{ runner.temp }}/hamapp-codeql-diagnostics
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["SARIF_DIR"])
+          total = 0
+          for file in sorted(root.glob("**/*.sarif")):
+              data = json.loads(file.read_text(encoding="utf-8"))
+              for run in data.get("runs", []):
+                  for result in run.get("results", []):
+                      total += 1
+                      if total > 100:
+                          break
+                      locs = result.get("locations") or []
+                      place = locs[0].get("physicalLocation", {}) if locs else {}
+                      uri = place.get("artifactLocation", {}).get("uri", "")
+                      line = place.get("region", {}).get("startLine", 0)
+                      # Avoid printing alert messages or source/sink values.
+                      print("CODEQL_FINDING rule=" + str(result.get("ruleId", "")) +
+                            " file=" + str(uri) + " line=" + str(line))
+          print("CODEQL_RESULT_COUNT=" + str(total))
+          PY

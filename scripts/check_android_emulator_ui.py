@@ -5,16 +5,32 @@ import sys
 import xml.etree.ElementTree as ET
 
 
-def check_ui(path):
+def check_ui(path, scrolled=None):
+    # The top-level title is fixed. The owner-reviewed app cards reside in a
+    # separate ScrollView: the capture after a native swipe is necessary on
+    # small Android displays. Both snapshots must be from the same foreground
+    # package, and failure to capture either never passes acceptance.
     root = ET.parse(path).getroot()
-    nodes = list(root.iter("node"))
+    top_nodes = list(root.iter("node"))
+    if not any(n.attrib.get("text", "") == "هَماپ" for n in top_nodes):
+        raise ValueError("HamApp title not rendered on emulator")
+    if scrolled is not None:
+        second = ET.parse(scrolled).getroot()
+        bottom_nodes = list(second.iter("node"))
+    else:
+        bottom_nodes = []
+    nodes = top_nodes + bottom_nodes
     labels = [n.attrib.get("text", "") for n in nodes]
     if not any(label == "هَماپ" for label in labels):
         raise ValueError("HamApp title not rendered on emulator")
     # Distinguish approved-repository install handoff (must be disabled when
     # no owner-approved release) from public F-Droid app launch (must work).
-    fdroid = [n for n in nodes if n.attrib.get("text", "") == "مدیریت در هَماپ"]
-    public = [n for n in nodes if n.attrib.get("text", "") == "برنامه‌های عمومی"]
+    owner_top = [n for n in top_nodes if n.attrib.get("text", "") == "مدیریت در هَماپ"]
+    owner_scrolled = [n for n in bottom_nodes if n.attrib.get("text", "") == "مدیریت در هَماپ"]
+    fdroid = owner_top + owner_scrolled
+    # Fixed-position public action must be enabled in the TOP snapshot.
+    # Counting the same node again in the scrolled snapshot is a false fail.
+    public = [n for n in top_nodes if n.attrib.get("text", "") == "برنامه‌های عمومی"]
     if not fdroid:
         raise ValueError("HamApp owner install button not rendered")
     if any(n.attrib.get("enabled") != "false" for n in fdroid):
@@ -23,13 +39,13 @@ def check_ui(path):
         raise ValueError("embedded public F-Droid storefront must be enabled")
     if not any("در دست توسعه" in label for label in labels):
         raise ValueError("planned app status not rendered")
-    return len(fdroid)
+    return max(len(owner_top), len(owner_scrolled))
 
 
 def main():
-    if len(sys.argv) != 2:
-        raise SystemExit("usage: check_android_emulator_ui.py WINDOW_XML")
-    n = check_ui(Path(sys.argv[1]))
+    if len(sys.argv) not in (2, 3):
+        raise SystemExit("usage: check_android_emulator_ui.py TOP_XML [SCROLLED_XML]")
+    n = check_ui(Path(sys.argv[1]), Path(sys.argv[2]) if len(sys.argv) == 3 else None)
     print(f"ANDROID_EMULATOR_UI_PASS: {n} F-Droid action(s) disabled")
 
 

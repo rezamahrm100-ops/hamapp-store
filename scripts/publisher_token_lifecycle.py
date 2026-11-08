@@ -12,6 +12,8 @@ except ImportError:
 import hashlib
 import json
 import os
+import re
+import sys
 from pathlib import Path
 import secrets
 import stat
@@ -43,8 +45,8 @@ def _secure_owner_lock(path):
     return path
 
 
-def change_registry(path, action, publisher):
-    """Linearizable private mutation; return one new token ONLY for add/rotate."""
+def change_registry(path, action, publisher, *, token=None):
+    """Linearizable mutation; optional caller-held secret avoids log disclosure."""
     if os.name != "posix" or action not in ("add", "rotate", "revoke"):
         raise CredentialOperationError("owner-controlled POSIX lifecycle action required")
     publisher = validate_publisher(publisher)
@@ -77,7 +79,9 @@ def change_registry(path, action, publisher):
                     raise CredentialOperationError("publisher is not enrolled")
             secret = None
             if action in ("add", "rotate"):
-                secret = secrets.token_urlsafe(48)
+                secret = token if token is not None else secrets.token_urlsafe(48)
+                if not isinstance(secret, str) or not re.fullmatch(r"[A-Za-z0-9_-]{64}", secret):
+                    raise CredentialOperationError("invalid externally supplied publisher token")
                 digest = hashlib.sha256(secret.encode("ascii")).hexdigest()
                 if digest in observed.values():
                     raise CredentialOperationError("unexpected duplicate token digest")
@@ -129,15 +133,21 @@ def main():
     parser.add_argument("action", choices=("add", "rotate", "revoke"))
     parser.add_argument("--registry", type=Path, required=True)
     parser.add_argument("--publisher", required=True)
+    parser.add_argument("--token-stdin", action="store_true")
     args = parser.parse_args()
     try:
-        receipt = change_registry(args.registry, args.action, args.publisher)
+        caller_token = None
+        if args.action in ("add", "rotate"):
+            if not args.token_stdin:
+                raise CredentialOperationError("private stdin required for token lifecycle")
+            value = sys.stdin.buffer.read(65)
+            if not re.fullmatch(rb"[A-Za-z0-9_-]{64}", value):
+                raise CredentialOperationError("invalid private token stdin envelope")
+            caller_token = value.decode("ascii")
+        receipt = change_registry(args.registry, args.action, args.publisher, token=caller_token)
     except (ValueError, OSError, UnicodeError) as exc:
         parser.exit(1, "PRIVATE_PUBLISHER_TOKEN_ADMIN_REFUSED: " + str(exc) + "\n")
     print("OWNER_PRIVATE_PUBLISHER_TOKEN_" + args.action.upper() + "_COMMITTED")
-    if receipt["one_time_secret"]:
-        print("SHOW_NEW_TOKEN_ONCE_ONLY_IN_PRIVATE_OPERATOR_TERMINAL:",
-              receipt["one_time_secret"])
     print("NOT_LEGAL_PUBLISHER_IDENTITY; NOT_A_PUBLIC_RELEASE_APPROVAL")
 
 

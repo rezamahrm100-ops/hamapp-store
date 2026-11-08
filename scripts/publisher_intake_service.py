@@ -71,8 +71,8 @@ def load_credentials(path):
     return result
 
 
-def provision(path, publisher):
-    """Create the FIRST local registry and a single strong one-time token."""
+def provision(path, publisher, *, token=None):
+    """Create first registry with a caller-owned secret, or a random library token."""
     if os.name != "posix" or not isinstance(publisher, str) or not release_integrity.ID.fullmatch(publisher):
         raise IntakeServiceError("POSIX and valid publisher source repository required")
     path = Path(path)
@@ -82,7 +82,10 @@ def provision(path, publisher):
     if resolved == inbox.PROJECT_ROOT or inbox.PROJECT_ROOT in resolved.parents:
         raise IntakeServiceError("credentials cannot be committed to public repository")
     parent = inbox._private_dir(path.parent)
-    token = secrets.token_urlsafe(48)
+    if token is None:
+        token = secrets.token_urlsafe(48)
+    if not isinstance(token, str) or not re.fullmatch(r"[A-Za-z0-9_-]{64}", token):
+        raise IntakeServiceError("publisher token must be 64 characters of secure URL-safe entropy")
     payload = json.dumps({
         "schema_version": 1,
         "publishers": [{"source_repo": publisher,

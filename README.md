@@ -7,6 +7,28 @@
 > catalogue remains planned until real owner signers/releases are approved.
 >
 
+## یکپارچه‌سازی موتور و بستهٔ سرویس — ۲۰۲۶/۱۱/۰۸
+
+این نسخه مسیر WinGet پیشرفته را در همان پنجرهٔ مدیریت هَماپ قرار می‌دهد:
+خانواده‌های مستند فرمان رسمی با یک رابط واحد، بدون موتور موازی و بدون
+اجرای shell؛ نصب/ارتقا/حذف همچنان از مسیر شناسهٔ دقیق و رضایت کاربر است.
+
+برای سرویس خصوصی ناشران، بستهٔ مستقل **HamApp Private Service Kit** همراه
+فایل `deployment/HamApp-Service-Setup.cmd` ساخته می‌شود. در ویندوز ۱۱
+با Docker Desktop و Python 3.12 تنها یک پروژهٔ `hamapp-private` راه
+می‌اندازد، گواهی TLS لوکال را در صورت نیاز تولید می‌کند، توکن ناشر
+را یک‌بار نمایش می‌دهد و در DPAPI برنامه ذخیره می‌کند. از
+`HamApp-Service-Status.cmd` و `HamApp-Service-Tokens.cmd` می‌توان
+بدون تغییر سورس استفاده کرد. این بک‌اند برای **صف خصوصی بررسی فایل** است:
+سرویس تجاری عمومی، امضای تولیدی و تأیید حقوقی ناشران از آن نتیجه
+نمی‌شود. امضاها و کلیدهای واقعی فقط در محیط مورد اعتماد مالک ثبت می‌شوند.
+
+**مرز ادعای محصول:** موتور داخلی اندروید صرفاً F-Droid signed-index و
+Android PackageInstaller است؛ *تمام قابلیت‌های برنامهٔ کامل F-Droid* هنوز
+پوشش داده نشده‌اند. قابلیت‌های عمومی WinGet در سطح فرمان در دسترس‌اند
+اما بعضی گزینه‌های خطرناک عمداً محدودند. توضیح دقیق:
+`docs/ENGINE-WIDE-SERVICE-INTEGRATION-2026-11-08.md`.
+
 **همهٔ برنامه‌های ما، یک‌جا.**  Independent software storefront for Android, Windows, and web.
 
 > Status (2026-11-05): **owner-installable native Android DEBUG APK, native unsigned Windows EXE/NSIS preview, and Persian RTL web/PWA**, with public-source browsing via official F-Droid and WinGet. Android/Windows proprietary catalogue entries remain **planned**, with no owner-approved binaries. Production signing, publisher releases, device-owner acceptance and paid marketplace operations are NOT established.

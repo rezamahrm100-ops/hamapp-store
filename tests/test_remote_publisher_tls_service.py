@@ -40,8 +40,7 @@ class RealRemotePublisherTLSIntegrationTests(unittest.TestCase):
         self.credentials = self.work / "publisher-credentials.json"
         self.token = gateway.provision(self.credentials, "publisher-first")
         self.token_file = self.work / "first-secret-token.txt"
-        self.token_file.write_text(self.token + "\n", encoding="ascii")
-        self.token_file.chmod(0o600)
+        inbox._write_private(self.token_file, (self.token + "\n").encode("ascii"))
         self.second_token = secrets.token_urlsafe(48)
         reg = json.loads(self.credentials.read_text("utf-8"))
         reg["publishers"].append({
@@ -126,8 +125,10 @@ class RealRemotePublisherTLSIntegrationTests(unittest.TestCase):
         with self.assertRaises(local_submit_error()):
             self.send()
         fresh_file = self.work / "new-token-secret.txt"
-        fresh_file.write_text(changed["one_time_secret"] + "\n", encoding="ascii")
-        fresh_file.chmod(0o600)
+        # Preserve actual token-file/TLS integration without any initial
+        # world-readable creation window before chmod.
+        inbox._write_private(fresh_file,
+                             (changed["one_time_secret"] + "\n").encode("ascii"))
         # The same TLS service instance must immediately use the new token.
         second = self.send(token=fresh_file)
         self.assertEqual(second["status"], "quarantined")
@@ -167,8 +168,7 @@ class RealRemotePublisherTLSIntegrationTests(unittest.TestCase):
 
     def test_wrong_token_and_tenant_identity_rejected_without_private_copy(self):
         bad_token = self.work / "bad-secret.txt"
-        bad_token.write_text("Z" * 80, encoding="ascii")
-        bad_token.chmod(0o600)
+        inbox._write_private(bad_token, b"Z" * 80)
         with self.assertRaises(local_submit_error()):
             self.send(token=bad_token)
         # The local streaming client itself rejects the cross-tenant source

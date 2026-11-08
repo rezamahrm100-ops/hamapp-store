@@ -11,6 +11,12 @@ on:
       - 'scripts/HamApp-Verify-Preview.cmd'
       - 'tests/test_package_owner_preview.py'
       - 'android/**'
+      - 'deployment/**'
+      - 'scripts/hamapp_operator.py'
+      - 'scripts/build_service_kit.py'
+      - 'scripts/hamapp_service_windows_setup.py'
+      - 'tests/test_hamapp_service_operator.py'
+      - 'tests/test_winget_full_surface.py'
       - 'windows_client/**'
       - 'windows_installer/**'
       - 'run_windows_client.py'
@@ -24,6 +30,12 @@ on:
       - 'scripts/package_owner_preview.py'
       - 'tests/test_package_owner_preview.py'
       - 'android/**'
+      - 'deployment/**'
+      - 'scripts/hamapp_operator.py'
+      - 'scripts/build_service_kit.py'
+      - 'scripts/hamapp_service_windows_setup.py'
+      - 'tests/test_hamapp_service_operator.py'
+      - 'tests/test_winget_full_surface.py'
       - 'windows_client/**'
       - 'windows_installer/**'
       - 'run_windows_client.py'
@@ -76,6 +88,127 @@ jobs:
         run: |
           echo "### HamApp Android native DEBUG APK (owner test)" >> "$GITHUB_STEP_SUMMARY"
           echo "Source SHA: $GITHUB_SHA. Build/signature checked, NOT production-signed, installed on owner phone, or approved for public release. Download Android Owner Test artifact." >> "$GITHUB_STEP_SUMMARY"
+
+  service-kit:
+    # Builds the backend from the same immutable checkout as both native
+    # clients. PR builds use only hosted workers and disposable source.
+    if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify actual POSIX private TLS backend, token lifecycle and one ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p 'test_hamapp_service_operator.py' -v
+          python3 -m unittest discover -s tests -p 'test_owner_publisher_real_tls.py' -v
+          docker compose -f deployment/compose.yaml -p hamapp-private-ci config --quiet
+          docker compose -f deployment/compose.yaml -p hamapp-private-ci build publisher-intake
+          # Real OCI-level integration, using disposable hosted-CI-only data.
+          # No production accounts or private signing keys are used.
+          trap 'docker compose -f deployment/compose.yaml -p hamapp-private-ci down --volumes --remove-orphans >/dev/null 2>&1 || true' EXIT
+          # CI makes its own disposable credential in a mode-0600 runner file;
+          # no token is ever emitted to stdout, Docker logs, or GitHub summaries.
+          python3 - <<'PY'
+          import os, pathlib, secrets
+          target = pathlib.Path(os.environ["RUNNER_TEMP"]) / "hamapp-ci-private-first-token.txt"
+          fd = os.open(target, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+          with os.fdopen(fd, "wb") as handle:
+              handle.write(secrets.token_urlsafe(48).encode("ascii"))
+          PY
+          docker compose -f deployment/compose.yaml -p hamapp-private-ci run \
+            --rm --no-deps -T publisher-intake init \
+            --root /data/service --publisher ci-publisher --dev-local-cert \
+            --token-stdin < "$RUNNER_TEMP/hamapp-ci-private-first-token.txt"
+          docker compose -f deployment/compose.yaml -p hamapp-private-ci up \
+            -d --no-build publisher-intake >/dev/null
+          docker compose -f deployment/compose.yaml -p hamapp-private-ci run \
+            --rm --no-deps -T publisher-intake export-ca \
+            --root /data/service > "$RUNNER_TEMP/hamapp-ci-private-ca.pem"
+          # Verified TLS, exact certificate pin, authenticated binary
+          # quarantine and wrong-token rejection against the live container.
+          python3 - <<'PY'
+          import base64, hashlib, http.client, json, os, pathlib, ssl, time
+          tmp = pathlib.Path(os.environ["RUNNER_TEMP"])
+          secret = (tmp / "hamapp-ci-private-first-token.txt").read_text("ascii")
+          assert len(secret) == 64
+          ca = (tmp / "hamapp-ci-private-ca.pem").read_text("ascii")
+          pin = hashlib.sha256(ssl.PEM_cert_to_DER_cert(ca)).hexdigest()
+          context = ssl.create_default_context(cafile=str(tmp / "hamapp-ci-private-ca.pem"))
+          context.minimum_version = ssl.TLSVersion.TLSv1_2
+          def send(method, data=b"", token=None, candidate=None):
+              connection = http.client.HTTPSConnection(
+                  "localhost", 8766, context=context, timeout=10)
+              try:
+                  connection.connect()
+                  observed = hashlib.sha256(
+                      connection.sock.getpeercert(binary_form=True)).hexdigest()
+                  assert observed == pin
+                  headers = {"Content-Type": "application/octet-stream"}
+                  if token is not None:
+                      headers["Authorization"] = "Bearer " + token
+                      headers["X-HamApp-Publisher"] = "ci-publisher"
+                      headers["X-HamApp-Candidate-Base64"] = base64.b64encode(
+                          json.dumps(candidate).encode("utf-8")).decode("ascii")
+                  connection.request(method, "/v1/submissions", body=data, headers=headers)
+                  response = connection.getresponse()
+                  return response.status, json.loads(response.read(8192))
+              finally:
+                  connection.close()
+          for attempt in range(15):
+              try:
+                  status, output = send("GET")
+                  if status == 405:
+                      break
+              except (OSError, ssl.SSLError, AssertionError):
+                  time.sleep(1)
+          else:
+              raise AssertionError("real Docker TLS listener did not become reachable")
+          assert output == {"error": "read_api_disabled"}
+          artifact = b"NONEXECUTABLE-GITHUB-HOSTED-CONTAINER-TEST"
+          candidate = {
+              "release": {
+                  "app_id": "ci-demo", "platform": "windows", "version": "1.2.3",
+                  "asset_url": ("https://github.com/rezamahrm100-ops/ci-publisher/"
+                                "releases/download/v1.2.3/candidate.exe"),
+                  "sha256": hashlib.sha256(artifact).hexdigest(),
+                  "size_bytes": len(artifact)
+              },
+              "source_repo": "ci-publisher", "source_sha": "a" * 40,
+              "package_id": None, "version_code": None
+          }
+          rejected, _ = send("POST", artifact, "x" * 64, candidate)
+          assert rejected == 401
+          admitted, reply = send("POST", artifact, secret, candidate)
+          assert admitted == 202 and reply["status"] == "quarantined"
+          assert reply["owner_review_approved"] is False
+          assert reply["public_distribution_authorized"] is False
+          print("HAMAPP_REAL_DOCKER_TLS_TOKEN_BINARY_QUARANTINE_PASS")
+          PY
+          rm -f "$RUNNER_TEMP/hamapp-ci-private-first-token.txt" \
+            "$RUNNER_TEMP/hamapp-ci-private-ca.pem"
+          mkdir -p dist/owner-preview/service
+          python3 scripts/build_service_kit.py \
+            --output dist/owner-preview/service/HamApp-Private-Service-Kit.zip \
+            --source-sha "$GITHUB_SHA"
+          test -s dist/owner-preview/service/HamApp-Private-Service-Kit.zip
+          sha256sum dist/owner-preview/service/HamApp-Private-Service-Kit.zip > dist/owner-preview/service/SHA256SUMS.txt
+      - name: Upload backend self-configure kit (no signing keys or accounts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: HamApp-Private-Service-Ready-To-Configure
+          path: dist/owner-preview/service/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Boundaries of the private service build
+        if: success()
+        shell: bash
+        run: |
+          echo "### HamApp Private Service" >> "$GITHUB_STEP_SUMMARY"
+          echo "Source: $GITHUB_SHA; assembled Docker service and local configuration kit; no production deployment, real signer, owner identity, or public release." >> "$GITHUB_STEP_SUMMARY"
 
   windows:
     if: github.repository == 'rezamahrm100-ops/hamapp-store' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)

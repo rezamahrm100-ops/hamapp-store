@@ -1,5 +1,17 @@
 # HamApp — canonical agent handoff
 
+## 2026-11-08 ENGINE-WIDE INTEGRATION STATUS
+
+Source adds one typed Microsoft WinGet command-family adapter inside HamApp,
+retaining exact-ID protected installer flow, plus one Docker-packaged version
+of the existing POSIX TLS quarantine backend and a reproducible unsigned service
+ZIP, owner Windows one-click local launcher and DPAPI connection. This is not a
+commercial release platform; no proof of all F-Droid client capabilities is
+claimed. No unrelated Docker projects or signing keys are touched. Read
+`docs/ENGINE-WIDE-SERVICE-INTEGRATION-2026-11-08.md` and check exact PR/main CI.
+Do not merge PRs failing Docker/LInux/Windows/Android checks, and never run PR
+code on the owner Windows runner.
+
 ## OWNER NO-CODE POST-INSTALL CONNECTIONS — 2026-11-08
 
 A unified PR adds in-app setup on both native clients. Android: optional user

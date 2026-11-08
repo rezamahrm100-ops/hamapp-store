@@ -220,6 +220,12 @@ def open_explorer(parent):
     uninstall_btn = ttk.Button(footer, text="حذف انتخابی",
                                style="HamApp.Secondary.TButton", command=lambda: perform("uninstall"))
     uninstall_btn.pack(side="right", padx=(7, 0))
+    # One adapter covers the documented upstream command families; this
+    # remains a native HamApp window, never a second package-manager app.
+    from windows_client.winget_full_ui import open_full_surface
+    ttk.Button(footer, text="سایر قابلیت‌های WinGet",
+               style="HamApp.Secondary.TButton",
+               command=lambda: open_full_surface(window)).pack(side="left", padx=7)
     ttk.Button(footer, text="بستن", style="HamApp.Secondary.TButton",
                command=window.destroy).pack(side="left")
     table.bind("<<TreeviewSelect>>", show_selection)
