@@ -126,6 +126,8 @@ public final class SignedRepositoryLifecycleTest {
 
     @Test public void offlineIndexWithNoVerifiedReceiptNeverOpens() {
         run((activity, prefs) -> {
+            UserRepoSettings.addForUser(activity, A, PIN_A);
+            assertTrue(UserRepoSettings.isRegistered(activity, A, PIN_A));
             try {
                 Method read = InternalFdroidStore.class.getDeclaredMethod(
                         "verifiedOfflineIndex", Activity.class,
