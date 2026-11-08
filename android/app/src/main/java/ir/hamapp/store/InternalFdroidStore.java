@@ -66,27 +66,29 @@ public final class InternalFdroidStore {
         final String url;
         final String fingerprint;
         final String description;
+        final boolean personal;
 
-        private Source(String url, String fingerprint, String description) {
+        private Source(String url, String fingerprint, String description, boolean personal) {
             this.url = url;
             this.fingerprint = fingerprint.toLowerCase(Locale.ROOT);
             this.description = description;
+            this.personal = personal;
         }
 
         static Source official() {
-            return new Source(FDROID_BASE, FDROID_INDEX_FINGERPRINT, "F-Droid رسمی");
+            return new Source(FDROID_BASE, FDROID_INDEX_FINGERPRINT, "F-Droid رسمی", false);
         }
 
         static Source owner(String url, String fingerprint) {
             if (!RepoPolicy.isAllowed(url, fingerprint))
                 throw new IllegalArgumentException("unapproved HamApp repository");
-            return new Source(url, fingerprint, "مخزن امضاشدهٔ هَماپ");
+            return new Source(url, fingerprint, "مخزن امضاشدهٔ هَماپ", false);
         }
 
         static Source personal(String url, String fingerprint) {
             if (!RepoPolicy.isAllowed(url, fingerprint))
                 throw new IllegalArgumentException("invalid personal repository");
-            return new Source(url, fingerprint, "مخزن شخصی (مستقل از تأیید ناشر هَماپ)");
+            return new Source(url, fingerprint, "مخزن شخصی (مستقل از تأیید ناشر هَماپ)", true);
         }
     }
 
@@ -254,6 +256,12 @@ public final class InternalFdroidStore {
 
     // Fingerprint is part of the namespace: changing a publisher's signing
     // identity cannot silently reuse cached catalogues from another source.
+    private static void requireStillTrusted(Activity activity, Source source) throws IOException {
+        if (source.personal && !UserRepoSettings.isRegistered(
+                activity, source.url, source.fingerprint))
+            throw new IOException("personal source trust was removed or altered");
+    }
+
     private static String cacheKey(Source source) throws Exception {
         return digest((source.url + "\n" + source.fingerprint)
                 .getBytes(StandardCharsets.UTF_8));
@@ -268,16 +276,18 @@ public final class InternalFdroidStore {
     }
 
     private static void rememberVerified(Activity activity, String key,
-            long size, String digest) throws IOException {
+            long size, String digest, long timestamp) throws IOException {
         // The trust receipt is written only AFTER entry.jar signature and
         // exact index bytes were cryptographically verified online.
         if (!cacheReceipts(activity).edit()
                 .putString(key + "-sha256", digest.toLowerCase(Locale.ROOT))
-                .putLong(key + "-bytes", size).commit())
+                .putLong(key + "-bytes", size)
+                .putLong(key + "-timestamp", timestamp).commit())
             throw new IOException("verified cache receipt could not be committed");
     }
 
     private static File verifiedIndex(Activity activity, Source source) throws Exception {
+        requireStillTrusted(activity, source);
         String key = cacheKey(source);
         File existing = cacheFile(activity, key);
         File signedJar = File.createTempFile("fdroid-entry-", ".jar", activity.getCacheDir());
@@ -285,20 +295,29 @@ public final class InternalFdroidStore {
             Entry entry = signedEntry(source, signedJar);
             long size = entry.getIndex().getSize();
             String expected = entry.getIndex().getSha256();
+            long timestamp = entry.getTimestamp();
+            if (timestamp <= 0) throw new IOException("signed index timestamp invalid");
+            long previous = cacheReceipts(activity).getLong(key + "-timestamp", 0L);
+            String lastDigest = cacheReceipts(activity).getString(key + "-sha256", "");
+            if (previous > timestamp || (previous == timestamp &&
+                    !lastDigest.isEmpty() && !lastDigest.equalsIgnoreCase(expected)))
+                throw new IOException("signed repository index rollback/equivocation blocked");
+            requireStillTrusted(activity, source);
             if (existing.isFile() && existing.length() == size &&
                     shaFile(existing).equalsIgnoreCase(expected)) {
-                rememberVerified(activity, key, size, expected);
+                rememberVerified(activity, key, size, expected, timestamp);
                 return existing;
             }
             File incoming = File.createTempFile("fdroid-index-", ".json", activity.getFilesDir());
             try {
                 downloadExact(source, "index-v2.json", incoming, size, expected, MAX_INDEX_BYTES);
+                requireStillTrusted(activity, source);
                 // Both paths are on the same private file system. If atomic
                 // replace cannot be provided, keep the old valid index intact.
                 Files.move(incoming.toPath(), existing.toPath(),
                         StandardCopyOption.ATOMIC_MOVE,
                         StandardCopyOption.REPLACE_EXISTING);
-                rememberVerified(activity, key, size, expected);
+                rememberVerified(activity, key, size, expected, timestamp);
             } finally {
                 incoming.delete();
             }
@@ -314,11 +333,13 @@ public final class InternalFdroidStore {
      */
     private static File verifiedOfflineIndex(Activity activity, Source source) throws Exception {
         String key = cacheKey(source);
+        requireStillTrusted(activity, source);
         SharedPreferences receipts = cacheReceipts(activity);
         String expected = receipts.getString(key + "-sha256", "");
         long bytes = receipts.getLong(key + "-bytes", -1L);
+        long timestamp = receipts.getLong(key + "-timestamp", 0L);
         File file = cacheFile(activity, key);
-        if (!validHash(expected) || bytes <= 0 || bytes > MAX_INDEX_BYTES
+        if (!validHash(expected) || timestamp <= 0 || bytes <= 0 || bytes > MAX_INDEX_BYTES
                 || !file.isFile() || file.length() != bytes ||
                 !shaFile(file).equalsIgnoreCase(expected))
             throw new IOException("no locally verified signed index for the pinned source");
@@ -331,7 +352,7 @@ public final class InternalFdroidStore {
             String key = cacheKey(Source.personal(url, fingerprint));
             // Removing subscription removes its offline trust receipt first.
             cacheReceipts(activity).edit().remove(key + "-sha256")
-                    .remove(key + "-bytes").commit();
+                    .remove(key + "-bytes").remove(key + "-timestamp").commit();
             cacheFile(activity, key).delete();
         } catch (Exception ignored) {
             // Fail closed: without a matching subscription, cached metadata
