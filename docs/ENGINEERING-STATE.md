@@ -1,5 +1,10 @@
 # HamApp — engineering state and evidence ledger
 
+## 2026-11-08 ANDROID MULTI-REPO + OFFLINE ACCEPTANCE PENDING
+
+Engineering branch `feature/fdroid-multirepo-offline-catalogue-20261108` extends the existing embedded signed-index engine: up to six pinned personal repos, no silent signer replacement, safe migration of one-repo settings, per-identity atomic verified-index cache, and offline read-only browse with all APK install actions disabled. Actual Android instrumentation added to hosted emulator smoke to test registration, migration, malformed identities and offline fail-closed behavior. This is a candidate implementation **not yet proven on GitHub Actions**. The previous merged PR #94 and its exact 10 successful workflows remain accepted unchanged; this is a new separate review batch, not a retroactive modification of earlier acceptance. Full F-Droid downloader/database/background update parity and publisher promotion remain outstanding. See docs/ANDROID-SIGNED-MULTIREPO-2026-11-08.md.
+
+
 ## VERIFIED ONE-PASS ENGINE INTEGRATION — 2026-11-08 (MAIN)
 
 The latest accepted **source** is trusted main
