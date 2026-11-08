@@ -25,8 +25,12 @@ def check_ui(path, scrolled=None):
         raise ValueError("HamApp title not rendered on emulator")
     # Distinguish approved-repository install handoff (must be disabled when
     # no owner-approved release) from public F-Droid app launch (must work).
-    fdroid = [n for n in nodes if n.attrib.get("text", "") == "مدیریت در هَماپ"]
-    public = [n for n in nodes if n.attrib.get("text", "") == "برنامه‌های عمومی"]
+    owner_top = [n for n in top_nodes if n.attrib.get("text", "") == "مدیریت در هَماپ"]
+    owner_scrolled = [n for n in bottom_nodes if n.attrib.get("text", "") == "مدیریت در هَماپ"]
+    fdroid = owner_top + owner_scrolled
+    # Fixed-position public action must be enabled in the TOP snapshot.
+    # Counting the same node again in the scrolled snapshot is a false fail.
+    public = [n for n in top_nodes if n.attrib.get("text", "") == "برنامه‌های عمومی"]
     if not fdroid:
         raise ValueError("HamApp owner install button not rendered")
     if any(n.attrib.get("enabled") != "false" for n in fdroid):
@@ -35,7 +39,7 @@ def check_ui(path, scrolled=None):
         raise ValueError("embedded public F-Droid storefront must be enabled")
     if not any("در دست توسعه" in label for label in labels):
         raise ValueError("planned app status not rendered")
-    return len(fdroid)
+    return max(len(owner_top), len(owner_scrolled))
 
 
 def main():
