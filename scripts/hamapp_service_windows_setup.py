@@ -17,6 +17,8 @@ import subprocess
 import sys
 
 PROJECT = Path(__file__).resolve().parents[1]
+if str(PROJECT) not in sys.path:
+    sys.path.insert(0, str(PROJECT))
 COMPOSE = PROJECT / "deployment/compose.yaml"
 PUBLISHER = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 MAX_PEM = 256000
