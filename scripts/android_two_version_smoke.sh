@@ -69,24 +69,49 @@ PY
       echo "SECURITY FAILURE: truncated APK was accepted" >&2; exit 1
     fi
     adb shell dumpsys package ir.hamapp.store | grep -Eq 'versionCode=2([[:space:]]|$)'
-    adb shell am force-stop ir.hamapp.store || true
-    adb shell am start -W -n ir.hamapp.store/.MainActivity | tee "$out/activity.txt"
-    grep -q 'Status: ok' "$out/activity.txt"
-    # Newer emulators may briefly display a system overlay immediately after
-    # the first activity start. Keep the fail-closed UI assertions unchanged,
-    # retry only the accessibility capture, and never skip final validation.
-    for attempt in 1 2 3; do
-      adb shell uiautomator dump /sdcard/hamapp-two-version.xml
-      adb pull /sdcard/hamapp-two-version.xml "$out/ui.xml"
-      if python3 scripts/check_android_emulator_ui.py "$out/ui.xml"; then
-        break
-      fi
-      if [ "$attempt" -eq 3 ]; then
-        echo "ACTUAL_UPGRADED_UI_VALIDATION_FAILED" >&2
+    # Android 35/Google APIs can leave the keyguard or a transient system
+    # overlay in front of the freshly upgraded Activity. A failed accessibility
+    # snapshot is NOT evidence that the native app passed. Restart the SAME
+    # installed v2 process and require both original and scrolled snapshots.
+    # This is the strict already-accepted hosted UI handshake, not a bypass.
+    adb shell input keyevent 224 || true
+    adb shell wm dismiss-keyguard || true
+    accepted=0
+    for attempt in 1 2 3 4 5; do
+      adb shell am force-stop ir.hamapp.store || true
+      adb shell am start -W -n ir.hamapp.store/.MainActivity | tee "$out/activity.txt"
+      grep -q 'Status: ok' "$out/activity.txt"
+      sleep 2
+      adb shell uiautomator dump /sdcard/hamapp-two-version.xml || true
+      adb pull /sdcard/hamapp-two-version.xml "$out/ui.xml" || true
+
+      # Owner-approved app cards are inside a nested ScrollView and may be
+      # below the initial viewport. Do NOT relax the disabled-install guard.
+      dimensions=$(adb shell wm size | grep -Eo '[0-9]+x[0-9]+' | tail -1)
+      width=${dimensions%x*}
+      height=${dimensions#*x}
+      if [[ -z "$width" || -z "$height" || "$width" == "$height" ]]; then
+        echo "ANDROID_DISPLAY_DIMENSIONS_INVALID" >&2
         exit 1
       fi
-      sleep 2
+      x=$((width / 2))
+      y1=$((height * 86 / 100))
+      y2=$((height * 52 / 100))
+      adb shell input swipe "$x" "$y1" "$x" "$y2" 380
+      adb shell input swipe "$x" "$y1" "$x" "$y2" 380
+      sleep 1
+      adb shell uiautomator dump /sdcard/hamapp-two-version-scrolled.xml || true
+      adb pull /sdcard/hamapp-two-version-scrolled.xml "$out/scrolled.xml" || true
+      if python3 scripts/check_android_emulator_ui.py "$out/ui.xml" "$out/scrolled.xml"; then
+        accepted=1
+        break
+      fi
+      echo "ANDROID_UPGRADED_UI_CAPTURE_RETRY=${attempt}/5" >&2
     done
+    if [[ "$accepted" -ne 1 ]]; then
+      echo "ACTUAL_UPGRADED_UI_VALIDATION_FAILED" >&2
+      exit 1
+    fi
     adb exec-out screencap -p > "$out/after-update.png"
     test -s "$out/after-update.png"
     python3 - <<'PY'
