@@ -4,6 +4,7 @@ No production credentials, real user installs or publisher identities are
 invented. Disposable OpenSSL localhost certificate is strictly a CI fixture.
 """
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -71,6 +72,7 @@ class PrivateServiceOperationalTests(unittest.TestCase):
         thread.start()
         try:
             context = ssl.create_default_context(cafile=str(self.private / "tls-cert.pem"))
+            context.minimum_version = ssl.TLSVersion.TLSv1_2
             with socket.create_connection(("127.0.0.1", server.server_port), timeout=8) as sock:
                 with context.wrap_socket(sock, server_hostname="localhost") as verified:
                     digest = hashlib.sha256(verified.getpeercert(binary_form=True)).hexdigest()
@@ -84,6 +86,21 @@ class PrivateServiceOperationalTests(unittest.TestCase):
             thread.join(timeout=8)
         operator.change(self.private, "revoke", self.publisher)
         self.assertEqual(operator.check(self.private)["publisher_token_slots"], 0)
+
+    def test_private_cli_never_logs_supplied_token(self):
+        secret = b"V" * 64
+        cmd = [sys.executable, str(ROOT / "scripts/hamapp_operator.py"),
+               "init", "--root", str(self.private), "--publisher", self.publisher,
+               "--dev-local-cert", "--token-stdin"]
+        result = subprocess.run(cmd, input=secret, capture_output=True, timeout=40)
+        self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", errors="replace"))
+        self.assertNotIn(secret, result.stdout)
+        self.assertNotIn(secret, result.stderr)
+        self.assertEqual(json.loads((self.private / "credentials.json").read_text("utf-8"))
+                         ["publishers"][0]["token_sha256"], hashlib.sha256(secret).hexdigest())
+        denied = subprocess.run(cmd, input=secret, capture_output=True, timeout=40)
+        self.assertNotEqual(denied.returncode, 0)
+        self.assertNotIn(secret, denied.stdout + denied.stderr)
 
     def test_duplicate_service_provision_refused_without_overwrite(self):
         operator.bootstrap(self.private, self.publisher,
@@ -112,6 +129,13 @@ class PrivateServiceOperationalTests(unittest.TestCase):
         import struct
         valid = struct.pack("!II", len(self.cert), len(self.key)) + self.cert + self.key
         self.assertEqual(operator.load_pem_stdin(io.BytesIO(valid)), (self.cert, self.key))
+        token = b"A" * 64
+        self.assertEqual(operator.load_pem_stdin(io.BytesIO(valid + token), with_token=True),
+                         (self.cert, self.key, token.decode("ascii")))
+        with self.assertRaises(operator.OperatorError):
+            operator.load_pem_stdin(io.BytesIO(valid + token + b"x"), with_token=True)
+        with self.assertRaises(operator.OperatorError):
+            operator.read_token_stdin(io.BytesIO(token + b"x"))
         for broken in (b"", valid[:-1], valid + b"x", b"\x00" * 8):
             with self.assertRaises(operator.OperatorError):
                 operator.load_pem_stdin(io.BytesIO(broken))
