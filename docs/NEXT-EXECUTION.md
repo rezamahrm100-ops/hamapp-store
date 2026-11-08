@@ -1,5 +1,10 @@
 # HamApp — next integrated execution contract
 
+## IN-PROGRESS VERIFIED-SOURCE ANDROID BATCH — 2026-11-08
+
+Branch `feature/fdroid-multirepo-offline-catalogue-20261108` addresses the next actionable F-Droid gap with multiple independently signed sources, explicit pin continuity, an origin+fingerprint bound offline index cache and read-only offline browsing. It uses official F-Droid signature verification and Android's installer, not a duplicate engine. The hosted emulator workflow now runs actual Android instrumentation for repository lifecycle and negative trust cases. **PENDING hosted CI, CodeQL, emulator and PR acceptance; do not mark PASS until checks are green.** Full upstream database/diffs, verified mirrors and background update queue remain further engineering tasks, as does full trusted publisher promotion. See docs/ANDROID-SIGNED-MULTIREPO-2026-11-08.md.
+
+
 ## CURRENT POST-MERGE MISSION — 2026-11-08, MAIN SHA `a88b25279444282ed4033314fe078c417e44ee31`
 
 PR #94 https://github.com/rezamahrm100-ops/hamapp-store/pull/94 MERGED; its previously
