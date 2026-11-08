@@ -29,6 +29,8 @@ dependencies {
     // Apache-2.0 official F-Droid index and signed repository entry verifier.
     implementation 'org.fdroid:index:0.2.0'
     implementation 'org.fdroid:core:0.0.1'
+    // Official AndroidX durable network-constrained worker; no parallel updater.
+    implementation 'androidx.work:work-runtime:2.12.0'
     androidTestImplementation 'androidx.test:core:1.7.0'
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
     androidTestImplementation 'androidx.test:runner:1.7.0'
