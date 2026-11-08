@@ -67,6 +67,9 @@ public final class SignedRepositoryLifecycleTest {
             assertEquals(A, sources.get(0).url);
             assertEquals(PIN_B, sources.get(1).fingerprint);
             assertTrue(UserRepoSettings.configured(activity));
+            assertTrue(UserRepoSettings.isRegistered(activity, A, PIN_A));
+            assertTrue(UserRepoSettings.isRegistered(activity, B, PIN_B));
+            assertFalse(UserRepoSettings.isRegistered(activity, A, PIN_B));
             assertFalse(prefs.getString("signed_repositories_v2", "").contains("PRIVATE KEY"));
             // An in-place signer change is never interpreted as a safe update.
             try {
@@ -76,6 +79,7 @@ public final class SignedRepositoryLifecycleTest {
                 assertEquals(2, UserRepoSettings.saved(activity).size());
             }
             UserRepoSettings.removeForUser(activity, sources.get(0));
+            assertFalse(UserRepoSettings.isRegistered(activity, A, PIN_A));
             assertEquals(1, UserRepoSettings.saved(activity).size());
             assertEquals(B, UserRepoSettings.saved(activity).get(0).url);
             try {
