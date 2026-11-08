@@ -57,8 +57,12 @@ def init(publisher, cert=None, key=None, *, runner=subprocess.run):
     # The caller owns the high-entropy secret; Docker never prints or logs it.
     token = secrets.token_urlsafe(48)
     prefix = command_prefix()
-    build = runner(prefix + ["build", "publisher-intake"],
-                   cwd=PROJECT, timeout=900, capture_output=True, check=False)
+    # Build both trusted backend engines from one source snapshot. The
+    # optional reviewer is NOT started and cannot access any owner keys until
+    # the owner explicitly configures the private bind and runs the profile.
+    build = runner(prefix + ["--profile", "owner-review", "build",
+                             "publisher-intake", "owner-review"],
+                   cwd=PROJECT, timeout=1800, capture_output=True, check=False)
     if build.returncode:
         raise ProvisionError("private Docker service could not be built; inspect Docker Desktop")
     args = prefix + ["run", "--rm", "--no-deps", "-T", "publisher-intake",

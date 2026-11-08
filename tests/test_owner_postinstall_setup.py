@@ -24,6 +24,17 @@ class OwnerSetupTests(unittest.TestCase):
             "server_cert_sha256": "c" * 64
         }
 
+    def test_windows_installer_builds_both_engines_but_starts_only_intake(self):
+        setup = (ROOT / "scripts/hamapp_service_windows_setup.py").read_text("utf-8")
+        self.assertIn('"--profile", "owner-review", "build"', setup)
+        self.assertIn('"publisher-intake", "owner-review"', setup)
+        self.assertIn('"up", "-d", "--no-build", "publisher-intake"', setup)
+        self.assertNotIn('"up", "-d", "--no-build", "owner-review"', setup)
+        compose = (ROOT / "deployment/compose.yaml").read_text("utf-8")
+        self.assertIn('profiles: ["owner-review"]', compose)
+        self.assertIn('create_host_path: false', compose)
+        self.assertIn("GH_CONFIG_DIR: /owner/gh", compose)
+
     def test_strict_https_and_pin_only(self):
         self.assertEqual(conn.validate_profile(self.details)["publisher"], "sample-publisher")
         for field, value in (

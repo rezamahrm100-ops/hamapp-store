@@ -36,5 +36,34 @@ services:
       timeout: 6s
       start_period: 20s
       retries: 3
+  # Opt-in only: never launched by ordinary 'docker compose up -d'.
+  # Shares the SAME private quarantine volume; holds no network listener.
+  # Explicit owner bind provides signing workspace/config, never baked in.
+  owner-review:
+    profiles: ["owner-review"]
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.owner-review
+    image: hamapp-private-owner-review:2026-11-08
+    restart: "no"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    user: "10001:10001"
+    environment:
+      GH_CONFIG_DIR: /owner/gh
+    pids_limit: 192
+    mem_limit: 4096m
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    volumes:
+      - hamapp_private:/data
+      - type: bind
+        source: ${HAMAPP_OWNER_REVIEW_DIR:-/nonexistent-hamapp-owner-review}
+        target: /owner
+        bind:
+          create_host_path: false
 volumes:
   hamapp_private:
