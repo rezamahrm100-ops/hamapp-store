@@ -1,5 +1,67 @@
 # HamApp — engineering state and evidence ledger
 
+## VERIFIED ONE-PASS ENGINE INTEGRATION — 2026-11-08 (MAIN)
+
+The latest accepted **source** is trusted main
+`a88b25279444282ed4033314fe078c417e44ee31`, from merged PR #94
+https://github.com/rezamahrm100-ops/hamapp-store/pull/94.
+Previous "PENDING CI" text below is HISTORICAL only.
+
+Security remediation merged: private caller-generated 64-character tokens
+passed via length-bounded stdin (no backend/launcher cleartext token stdout),
+Windows DPAPI protection, private token lifecycle, owner-only 0600 atomic
+test-file creation and explicit TLS 1.2+ client verification. Final PR check
+Github Advanced Security CodeQL: SUCCESS, "No new alerts in code changed by
+this pull request"; Python SARIF diagnostic result count 0.
+PR checks (same reviewed head `9d3aba49ed21fa4905fcc3da3d744e82d2a4422c`):
+CI https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495118138 SUCCESS;
+CodeQL https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495118228 SUCCESS;
+Android emulator https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495118164 SUCCESS;
+Windows hosted installer and Authenticode fixtures https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495118130 SUCCESS;
+owner-ready APK/EXE/service ZIP https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495118158 SUCCESS;
+supply-chain scan https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495118140 SUCCESS.
+
+Trusted-main acceptance runs on **exact** `a88b25279444282ed4033314fe078c417e44ee31`:
+| Validation | Run | Actual verdict |
+| --- | --- | --- |
+| Hosted CI Linux + Windows | https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368406 | PASS |
+| CodeQL Python + JS | https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368477 | PASS |
+| Hosted source supply chain | https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368484 | PASS |
+| Android 35 emulator UI smoke | https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368672 | PASS |
+| Hosted Windows exe and isolated installer lifecycle, test signing | https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368558 | PASS |
+| Owner installable native previews + private service | https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368603 | PASS |
+| Owner Windows trusted-main QA, read-only | https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368511 | PASS |
+| Owner runner read-only registration | https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368642 | PASS |
+| Reproducible evidence | https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368581 | PASS |
+| Public static website (not distributable approved binaries) | https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368471 | PASS |
+
+Real artifacts from main run `42495368603`, not synthetic names:
+- `HamApp-Android-Owner-Test-APK`, artifact ID `13622769289`.
+- `HamApp-Windows-Owner-Test-EXE-Setup`, artifact ID `13622993413`.
+- `HamApp-Private-Service-Ready-To-Configure`, artifact ID `13623396198`.
+All three were unexpired at inspection; these are preview/reconfiguration
+outputs and not production-signed product releases.
+
+ENGINEERING VERDICT = **PARTIAL**. WinGet official advanced families and
+exact-ID package actions are integrated; Android uses official F-Droid signed
+index verifier plus Android PackageInstaller, **not the complete full F-Droid
+client** (offline multi-source store, mirror/download manager and automated
+background policies absent). Private Docker TLS intake handles quarantine
+and tokens, **not** full identity verification, publication, moderation,
+audited public promotion or payment. No approved stable production signers,
+private signing-key backups, signed live F-Droid index, independently verified
+product assets, approved production web origins or owner physical-device
+two-version production install/update acceptance. Production deployment and
+real account setup NOT_RUN. No fake PASS from green preview checks.
+
+Next engineering batch: unify the remaining F-Droid lifecycle and trusted
+publisher review/promotion pipeline without duplicating OSS engines; then
+perform real source-to-signed-repository, authenticated submission and
+version/install/update/revocation tests using isolated signed fixtures.
+External owner-only signer/keys/device consent remain genuine gates.
+See docs/NEXT-EXECUTION.md.
+
+
 ## 2026-11-08 ENGINE-WIDE INTEGRATION WORK (PENDING CI)
 
 A new one-PR batch adds one reusable WinGet full-family typed command adapter

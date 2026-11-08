@@ -1,5 +1,35 @@
 # HamApp — next integrated execution contract
 
+## CURRENT POST-MERGE MISSION — 2026-11-08, MAIN SHA `a88b25279444282ed4033314fe078c417e44ee31`
+
+PR #94 https://github.com/rezamahrm100-ops/hamapp-store/pull/94 MERGED; its previously
+listed WinGet command families, local Docker publisher service packaging, no-code
+Windows DPAPI setup, private-stdin nonlogging token lifecycle and independent
+Android index/installer path are ACCEPTED engineering work. All 10 main
+workflow runs passed, including hosted Android emulator, owner-safe Windows
+QA, CodeQL, source scan, reproducible evidence, Pages and triple-artifact
+builder. See ENGINEERING-STATE.md for exact run IDs and artifact IDs.
+
+Do not redo completed work. Next scope is one integrated **functional**
+batch, not separate one-feature integrations: (1) close remaining Android
+upstream F-Droid client lifecycle feature gaps with maintained open-source
+primitives (multi-signed-repo persistent catalogue, mirror/download behaviour,
+offline trust continuity and controlled background updates), preserving system
+install consent; (2) finish reviewed private publisher lifecycle bridging
+actual independently approved source/signature, offline signed-index
+generation, audit/atomic promotion, revocation, and frontend release state;
+(3) preserve Windows exact-ID lifecycle + official WinGet, and run end-to-end
+tests for cross-platform rollback, version upgrades and failure recovery;
+(4) ship clear owner-only onboarding for actual signing/device acceptance.
+Avoid unrelated helper engines or a parallel store backend.
+
+Owner/external gates: no real production signatures/keystores, independent
+publisher identities, public HTTPS origins or approved software releases may
+be fabricated. Physical-device install/UAC and production signing remain
+NOT_RUN. No payment marketplace is proven. Until the engine gaps are closed,
+final engineering verdict is **PARTIAL**.
+
+
 ## NEXT CANONICAL ENGINE-LEVEL BATCH (2026-11-08)
 
 Unify official upstream WinGet through one typed advanced command-family

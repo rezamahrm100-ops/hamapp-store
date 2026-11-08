@@ -1,5 +1,24 @@
 # HamApp — stable entry point for the next execution
 
+## VERIFIED MAIN CHECKPOINT — 2026-11-08
+
+PR #94 is **MERGED**, main SHA `a88b25279444282ed4033314fe078c417e44ee31`, with all 10 trusted-main workflow
+runs successful (see docs/ENGINEERING-STATE.md for immutable run links). There
+is NO need to repeat the WinGet surface, Docker kit, DPAPI connection,
+secret-safe token handoff, security cleanup or APK/EXE builds without a new
+defect. The latest native outputs are CI owner-test artifacts, NOT production
+signed releases or installation on the owner's physical devices.
+
+Next integrated execution: close actual remaining Android F-Droid engine
+feature gaps (multiple trusted repositories, persistent verified cache,
+background updates/download resilience) using official components; integrate
+publisher source-provenance, independent trust/review, signed index and
+transactional promotion into a coherent fail-closed service where owner
+credentials are available. Do not count preview UX, fake keys or test
+emulators as complete commercial distribution. Maintain owner-only/offline
+signer and physical-device acceptance boundaries. Verdict remains PARTIAL.
+
+
 ## ACTIVE MISSION OVERRIDE — ONE RUN, FULL TECHNICAL CLOSURE
 
 **Mandatory from 2026-11-02:** The next run is **not** another isolated defect fix or a status report. The primary target is to implement, integrate, test, fix and merge **all technically actionable remaining work across HamApp** in one coordinated execution, to the maximum actually possible. Read the detailed binding contract **[docs/ONE-RUN-TECHNICAL-CLOSURE.md](docs/ONE-RUN-TECHNICAL-CLOSURE.md)** alongside AGENTS.md. This instruction has priority over older entries that suggest stopping after a single feature or one small PR.

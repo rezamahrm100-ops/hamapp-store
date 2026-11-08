@@ -1,5 +1,44 @@
 # HamApp — canonical agent handoff
 
+## 2026-11-08 VERIFIED INTEGRATION — PR #94 MERGED / MAIN ACCEPTANCE
+
+PR #94 (https://github.com/rezamahrm100-ops/hamapp-store/pull/94) was squash-merged into trusted main at immutable SHA `a88b25279444282ed4033314fe078c417e44ee31`.
+The reusable WinGet command-family adapter, existing exact-ID package lifecycle,
+single local Docker TLS publisher quarantine, private-stdin token management, Windows
+DPAPI profile, and Android F-Droid signed-index plus Android PackageInstaller remain
+integrated. The producer token is never printed by private backend or Windows setup,
+and token test files are created atomically with owner-only mode 0600. Exact-PR
+security check: SUCCESS, zero NEW CodeQL alerts. Full PR workflows passed.
+
+Verified trusted-main runs:
+- CI: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368406 — SUCCESS
+- CodeQL: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368477 — SUCCESS
+- Android emulator: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368672 — SUCCESS
+- Windows hosted native lifecycle/attestation: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368558 — SUCCESS
+- Android APK, Windows EXE installer, private Docker service ZIP: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368603 — SUCCESS
+- Owner Windows QA (trusted main, read-only): https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368511 — SUCCESS
+- Owner runner read-only handshake: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368642 — SUCCESS
+- Source supply-chain scan: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368484 — SUCCESS
+- Reproducible evidence: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368581 — SUCCESS
+- Storefront Pages: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42495368471 — SUCCESS
+
+ENGINEERING END-STATE: PARTIAL, not product-wide PASS. Android's embedded index
+library and PackageInstaller are NOT the full F-Droid client (missing comprehensive
+multi-repository offline lifecycle, mirrors/download policy and background updates).
+Private intake is quarantine-only, not full verified publisher onboarding,
+review/promotion and public commercial distribution. No approved production signer,
+stable offline F-Droid repo key, verified publisher/product mapping, production
+signed binaries, or owner physical-device install/update acceptance exists.
+No paid marketplace functionality is certified. No real credentials were used
+and nothing was installed on the owner's physical devices.
+
+Next: complete the remaining full-engine integration and real publisher
+review/promotion engineering through maintained upstream primitives as possible;
+keep external owner-only identity, offline signing and physical-device gates
+explicit. Read docs/ENGINEERING-STATE.md and docs/NEXT-EXECUTION.md before new
+work; do not repeat the accepted PR #94 batch or its already successful builds.
+
+
 ## 2026-11-08 ENGINE-WIDE INTEGRATION STATUS
 
 Source adds one typed Microsoft WinGet command-family adapter inside HamApp,
