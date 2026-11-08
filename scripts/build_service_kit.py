@@ -17,6 +17,8 @@ FILE_LIST = (
     "README.md",
     ".dockerignore",
     "deployment/Dockerfile",
+    "deployment/Dockerfile.owner-review",
+    "deployment/owner-review-entrypoint.sh",
     "deployment/compose.yaml",
     "deployment/README_FA.md",
     "deployment/HamApp-Service-Setup.cmd",
