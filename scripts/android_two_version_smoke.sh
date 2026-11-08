@@ -82,6 +82,8 @@ PY
       adb shell am start -W -n ir.hamapp.store/.MainActivity | tee "$out/activity.txt"
       grep -q 'Status: ok' "$out/activity.txt"
       sleep 2
+      # Never reuse a previous failed UI snapshot on a retry.
+      rm -f "$out/ui.xml" "$out/scrolled.xml"
       adb shell uiautomator dump /sdcard/hamapp-two-version.xml || true
       adb pull /sdcard/hamapp-two-version.xml "$out/ui.xml" || true
 

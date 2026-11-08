@@ -64,6 +64,7 @@ jobs:
           path: |
             dist/android-two-version/report.json
             dist/android-two-version/ui.xml
+            dist/android-two-version/scrolled.xml
             dist/android-two-version/activity.txt
             dist/android-two-version/after-update.png
           if-no-files-found: warn
