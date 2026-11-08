@@ -8,6 +8,16 @@ class AndroidVersionSmokePolicyTests(unittest.TestCase):
         self.assertEqual(text.count("versionCode 1"),1)
         self.assertEqual(text.count("versionName '0.1.0-preview'"),1)
 
+    def test_post_upgrade_ui_restarts_and_checks_both_current_snapshots(self):
+        text=(ROOT/"scripts/android_two_version_smoke.sh").read_text()
+        self.assertIn("adb shell wm dismiss-keyguard",text)
+        self.assertIn("adb shell am force-stop ir.hamapp.store",text)
+        self.assertIn('rm -f "$out/ui.xml" "$out/scrolled.xml"',text)
+        self.assertIn('check_android_emulator_ui.py "$out/ui.xml" "$out/scrolled.xml"',text)
+        self.assertIn('if [[ "$accepted" -ne 1 ]]',text)
+        self.assertIn("ACTUAL_UPGRADED_UI_VALIDATION_FAILED",text)
+        self.assertNotIn("ACTUAL_UPGRADED_UI_VALIDATION_SKIPPED",text)
+
     def test_real_upgrade_and_default_downgrade_guards_present(self):
         text=(ROOT/"scripts/android_two_version_smoke.sh").read_text()
         self.assertIn("adb install -r",text)
