@@ -6,6 +6,7 @@ All publisher identifiers are UNVERIFIED CLAIMS until separate owner review.
 Never changes GitHub trust metadata, executes submitted packages, or publishes.
 """
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -264,22 +265,52 @@ def load_for_preflight(root, submission_id):
         raise QuarantineError("untrusted local publisher metadata changed after staging")
     return candidate, artifact, receipt
 
+@contextmanager
+def review_lock(root, submission_id):
+    """Synchronize event transitions and a long-running cryptographic review.
+
+    Operator-only 0600 lock lives in owner-private quarantine; no lock/key is
+    created in the repository or sent to a hosted runner. Nonblocking flock
+    explicitly refuses simultaneous review/reject/hold operations.
+    """
+    folder, _ = load(root, submission_id)
+    if os.name != "posix":
+        raise QuarantineError("owner review locks require POSIX permissions")
+    import fcntl
+    target = folder / "review.lock"
+    flags = os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0)
+    fd = os.open(target, flags, 0o600)
+    try:
+        meta = os.fstat(fd)
+        if (not stat.S_ISREG(meta.st_mode) or meta.st_uid != os.geteuid()
+                or stat.S_IMODE(meta.st_mode) != 0o600):
+            raise QuarantineError("review lock requires owner-only regular file")
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise QuarantineError("private release review in progress; state unchanged") from exc
+        yield folder
+    finally:
+        os.close(fd)
+
+
 def transition(root, submission_id, event):
     if event not in EVENTS:
         raise QuarantineError("no private intake command can approve/publish")
-    folder, receipt = load(root, submission_id)
-    current, previous, count = verify_events(folder)
-    if current == "rejected":
-        raise QuarantineError("rejected submissions cannot be reopened")
-    if count >= MAX_EVENTS:
-        raise QuarantineError("private event ledger full")
-    _event(folder, count + 1, event, previous)
-    return {
-        "submission_id": receipt["submission_id"],
-        "status": "rejected" if event == "reject" else "held" if event == "hold" else "review_requested",
-        "owner_release_approved": False,
-        "public_distribution_authorized": False
-    }
+    with review_lock(root, submission_id) as folder:
+        _, receipt = load(root, submission_id)
+        current, previous, count = verify_events(folder)
+        if current == "rejected":
+            raise QuarantineError("rejected submissions cannot be reopened")
+        if count >= MAX_EVENTS:
+            raise QuarantineError("private event ledger full")
+        _event(folder, count + 1, event, previous)
+        return {
+            "submission_id": receipt["submission_id"],
+            "status": "rejected" if event == "reject" else "held" if event == "hold" else "review_requested",
+            "owner_release_approved": False,
+            "public_distribution_authorized": False
+        }
 
 def main():
     p = argparse.ArgumentParser(description="Owner-local private intake; never publish/approve")
