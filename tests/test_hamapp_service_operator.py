@@ -71,8 +71,13 @@ class PrivateServiceOperationalTests(unittest.TestCase):
                                   kwargs={"poll_interval": 0.1}, daemon=True)
         thread.start()
         try:
-            context = ssl.create_default_context(cafile=str(self.private / "tls-cert.pem"))
+            # Use a TLS-client-only protocol instead of relying on a
+            # generic protocol fallback; enforce both peer trust and hostname.
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             context.minimum_version = ssl.TLSVersion.TLSv1_2
+            context.verify_mode = ssl.CERT_REQUIRED
+            context.check_hostname = True
+            context.load_verify_locations(cafile=str(self.private / "tls-cert.pem"))
             with socket.create_connection(("127.0.0.1", server.server_port), timeout=8) as sock:
                 with context.wrap_socket(sock, server_hostname="localhost") as verified:
                     digest = hashlib.sha256(verified.getpeercert(binary_form=True)).hexdigest()
