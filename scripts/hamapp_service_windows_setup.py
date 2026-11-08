@@ -147,10 +147,9 @@ def main():
         print("HAMAPP_LOCAL_QUARANTINE_SERVICE_REACHABLE=" +
               ("YES" if result["service_started"] else "NOT_VERIFIED"))
         print("HAMAPP_WINDOWS_ACCOUNT_CONFIGURED_WITH_DPAPI=YES")
-        print("PUBLISHER:", result["publisher"])
-        print("TLS_SERVER_LEAF_SHA256:", result["tls_sha256"])
-        print("SERVER_ORIGIN:", result["origin"])
-        print("PUBLIC_CA_FILE:", result["trusted_ca_pem"])
+        # Publisher IDs, chosen file paths and connection coordinates are
+        # persisted in the private Windows profile, not console history.
+        print("HAMAPP_LOCAL_TLS_PIN_AND_ACCOUNT_SETTINGS_SAVED=YES")
         print("Publisher token generated locally and stored in the Windows DPAPI profile, not logged.")
         print("Not a production publisher approval or public release.")
     except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
