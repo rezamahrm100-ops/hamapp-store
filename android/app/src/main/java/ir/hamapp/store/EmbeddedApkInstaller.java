@@ -172,6 +172,13 @@ public final class EmbeddedApkInstaller {
 
     public static void request(Activity activity, InternalFdroidStore.Source source,
             InternalFdroidStore.App app) {
+        if (source.personal && !UserRepoSettings.isRegistered(
+                activity, source.url, source.fingerprint)) {
+            new AlertDialog.Builder(activity).setTitle("اعتماد به مخزن حذف شده")
+                    .setMessage("برای نصب باید مخزن امضاشده همچنان در تنظیمات ثبت باشد.")
+                    .setPositiveButton("بستن", null).show();
+            return;
+        }
         if (!ACTIVE.compareAndSet(false, true)) {
             new AlertDialog.Builder(activity).setMessage("عملیات نصب قبلی هنوز فعال است.")
                     .setPositiveButton("باشه", null).show();
@@ -214,6 +221,9 @@ public final class EmbeddedApkInstaller {
             try {
                 file = verifiedApk(activity, source, app, cancelled);
                 if (cancelled.get()) throw new IOException("cancelled");
+                if (source.personal && !UserRepoSettings.isRegistered(
+                        activity, source.url, source.fingerprint))
+                    throw new IOException("personal repository trust was removed");
                 commit(activity, file, app);
             } catch (Exception ex) {
                 error = "بسته دریافت یا اعتبارسنجی/نصب نشد؛ هَماپ هیچ بستهٔ تأییدنشده‌ای نصب نمی‌کند.";
