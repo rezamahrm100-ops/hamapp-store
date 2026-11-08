@@ -1,5 +1,20 @@
 # HamApp — canonical agent handoff
 
+## VERIFIED NATIVE ANDROID ENGINE BATCH — PR #95 MERGED (2026-11-08)
+
+Main source SHA `4250f4b78cc8bf882aef197f8731c322154564c5`. PR #95 10/10 hosted checks successful,
+including actual Android 35 instrumentation (4/4 tests), signed official
+F-Droid v1/v2 client integration test, native APK/Windows/backend build,
+CodeQL no new alerts, ClamAV and Windows regressions.
+Current Android native F-Droid integration includes separately pinned
+six-repo management, anti-replay private cache, offline **read-only**
+catalogue and enforced trust revocation before install. This is NOT
+whole F-Droid client feature parity, production signed application
+distribution or actual owner device acceptance. The older "PENDING"
+entry below is a historical snapshot. Complete evidence:
+docs/ENGINEERING-STATE.md; next gap: docs/NEXT-EXECUTION.md.
+
+
 ## 2026-11-08 NEXT NATIVE ANDROID ENGINE TRANCHE (PENDING VALIDATION)
 
 A reviewable branch adds multi-source independently pinned F-Droid subscriptions, origin-bound atomic index cache, read-only offline browsing, and real Android emulator instrumentation (not fake unit mocks). Source changes are **not accepted** until all hosted CI, native APK lint, CodeQL and actual emulator instrumentation tests pass. Offline browse NEVER installs apps; production signers, publisher registration and full F-Droid client parity remain absent. Read docs/ANDROID-SIGNED-MULTIREPO-2026-11-08.md before further modifications. Trusted self-hosted Windows runner remains main-only.

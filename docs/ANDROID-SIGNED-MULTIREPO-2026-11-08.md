@@ -1,5 +1,22 @@
 # HamApp — signed multi-repository and offline read-only catalogue (2026-11-08)
 
+## ACCEPTED IMPLEMENTATION — PR #95
+
+PR https://github.com/rezamahrm100-ops/hamapp-store/pull/95 merged at source SHA
+`4250f4b78cc8bf882aef197f8731c322154564c5`, with all ten review-head workflows SUCCESS.
+Hosted native Android 35 emulator completed four instrumented state/trust
+tests and strictly disabled unapproved app installs; exact run
+https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497086808. Android preview package, private service,
+CodeQL, ClamAV and source checks passed on PR. Post-merge main run links
+and actual artifact IDs are in docs/ENGINEERING-STATE.md. The old
+"PENDING" acceptance language below was written before these checks.
+
+Do not claim full F-Droid client parity or product release: offline
+catalogue is read-only; background update/mirrors/delta databases and
+publisher production signing, owner account activation and real-device
+acceptance remain separate gaps.
+
+
 ## Scope and upstream reuse
 
 The Android application continues to use the upstream Apache-2.0 F-Droid

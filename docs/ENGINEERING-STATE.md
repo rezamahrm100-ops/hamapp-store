@@ -1,5 +1,67 @@
 # HamApp — engineering state and evidence ledger
 
+## 2026-11-08 ACCEPTED PR #95: multi-pinned repositories and verified offline read-only catalogue
+
+Merged PR: https://github.com/rezamahrm100-ops/hamapp-store/pull/95 ; exact reviewed head `2a9cef78a9042e990b4a067caeafe72467fa510b`;
+exact merged **source SHA** `4250f4b78cc8bf882aef197f8731c322154564c5`. All **10 PR-head workflows succeeded**;
+the GitHub Advanced Security CodeQL check reported **"No new alerts in code
+changed by this pull request"**. Native emulator run
+https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497086808 **PASS**, including four Android 35 instrumented
+tests; log shows "Starting 4 tests", "Finished 4 tests", then
+`NATIVE_SIGNED_REPOSITORY_LIFECYCLE_INSTRUMENTED_PASS`.
+Real test workflows: Android two-version install/upgrade
+https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497086648 PASS, F-Droid official-client signed-repo v1/v2
+https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497086685 PASS, owner-preview APK/EXE/service
+https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497086655 PASS, CI https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497086712
+PASS, CodeQL https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497086657 PASS, ClamAV
+https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497086679 PASS, supply chain
+https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497086677 PASS.
+
+**Implementation accepted in source:** one native Android UI managing six separately
+HTTPS+fingerprint-pinned personal F-Droid repos; no in-place publisher key
+substitution; safe legacy single-repo migration; independent cryptographic
+index JAR verification and per-origin/per-signer SHA256+size+signed-timestamp
+private cache; blocked signed index rollback/equivocation; atomic index
+replacement; strictly read-only offline catalogue; revocation-of-repo-trust
+checks before and after APK download; OS-confirmed installation online only.
+
+**Main post-merge workflow evidence on source SHA `4250f4b78cc8bf882aef197f8731c322154564c5`**:
+- CI https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757335
+- CodeQL https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757301
+- Owner Windows QA https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757282
+- Runner read-only handshake https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757344
+- Hosted supply chain https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757332
+- Static website (not app release) https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757297
+- Reproducible evidence https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757410
+- Native three-artifact build https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757288
+- Native Android emulator with instrumented tests https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757312
+- F-Droid isolated signing https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757308
+- Actual signed-v1/v2 official F-Droid client https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757323
+- Two-version Android app upgrade https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757277
+- Official client intent https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757331
+- ClamAV https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757279
+- Android preview https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757336
+These links are immutable run identifiers. **Check live GitHub conclusion for
+each**; an in-progress link is not evidence of terminal success.
+
+Main owner test artifacts from run https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757288:
+- `HamApp-Android-Owner-Test-APK`, ID `13623967256`;
+- `HamApp-Windows-Owner-Test-EXE-Setup`, ID `13624202618`;
+- `HamApp-Private-Service-Ready-To-Configure`, ID `13623942201`.
+These are unsigned/debug, ephemeral artifacts; NOT production signed releases.
+
+**Verdict: ENGINEERING PARTIAL, NOT PRODUCTION RELEASE.** Full upstream
+F-Droid database/delta index, download mirror/resume, automatic background
+update policies and complete OS installer lifecycle feature parity are not
+integrated. Private publisher backend is quarantine-only; independently
+verified publisher identity, legal policy, source-to-signed binary attestations
+for real applications, malware review, atomic catalog promotion, moderated
+multi-publisher web portal and payments remain unaccepted or unfinished.
+Stable offline owner repo signing key/backup, Authenticode certificate and
+physical-device two-version owner acceptance are **NOT_RUN**.
+This pass adds no real accounts, signing keys or deployment to owner devices.
+
+
 ## 2026-11-08 ANDROID MULTI-REPO + OFFLINE ACCEPTANCE PENDING
 
 Engineering branch `feature/fdroid-multirepo-offline-catalogue-20261108` extends the existing embedded signed-index engine: up to six pinned personal repos, no silent signer replacement, safe migration of one-repo settings, per-identity atomic verified-index cache, and offline read-only browse with all APK install actions disabled. Actual Android instrumentation added to hosted emulator smoke to test registration, migration, malformed identities and offline fail-closed behavior. This is a candidate implementation **not yet proven on GitHub Actions**. The previous merged PR #94 and its exact 10 successful workflows remain accepted unchanged; this is a new separate review batch, not a retroactive modification of earlier acceptance. Full F-Droid downloader/database/background update parity and publisher promotion remain outstanding. See docs/ANDROID-SIGNED-MULTIREPO-2026-11-08.md.

@@ -1,5 +1,31 @@
 # HamApp — next integrated execution contract
 
+## 2026-11-08 POST-PR95 ACTUAL NEXT ENGINEERING SCOPE
+
+PR #95 is merged to trusted main source SHA `4250f4b78cc8bf882aef197f8731c322154564c5`, with 10/10
+reviewed PR-hosted checks successful. The old "pending PR #95" sections below
+are historical; use this paragraph and docs/ENGINEERING-STATE.md as the
+active handoff. Do not reconstruct this already accepted Android six-repository
+cache/consent/security batch or repeat green builds without a real new defect.
+
+The next **cohesive** engineering package must close the remaining full-client
+F-Droid operations using maintained upstream components, not one-by-one
+reimplementations: durable signed multi-repo database/index delta and rollback
+continuity, real verified download-manager/mirror/resumption behavior,
+owner-configured scheduled checks and explicit OS user consent for updates,
+plus comprehensive device-level negative acceptance. Parallel workstream:
+finish publisher quarantine->private exact-byte review->independently verified
+producer/signature/malware gate->Git PR-audited atomic release promotion/
+revocation, with no public download until real external approvals exist.
+Keep existing WinGet advanced command families and local private backend
+single-source-of-truth; avoid duplicate services or rewriting the package manager.
+
+Owner/real-world external gates remain: actual signing key custody and
+backups, independently approved repo/publisher signing identities, real
+approved product releases, physical device install/update, live TLS origins.
+No production release or payments may be claimed. Verdict remains PARTIAL.
+
+
 ## IN-PROGRESS VERIFIED-SOURCE ANDROID BATCH — 2026-11-08
 
 Branch `feature/fdroid-multirepo-offline-catalogue-20261108` addresses the next actionable F-Droid gap with multiple independently signed sources, explicit pin continuity, an origin+fingerprint bound offline index cache and read-only offline browsing. It uses official F-Droid signature verification and Android's installer, not a duplicate engine. The hosted emulator workflow now runs actual Android instrumentation for repository lifecycle and negative trust cases. **PENDING hosted CI, CodeQL, emulator and PR acceptance; do not mark PASS until checks are green.** Full upstream database/diffs, verified mirrors and background update queue remain further engineering tasks, as does full trusted publisher promotion. See docs/ANDROID-SIGNED-MULTIREPO-2026-11-08.md.
