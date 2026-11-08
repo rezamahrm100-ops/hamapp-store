@@ -31,6 +31,8 @@ FILE_LIST = (
     "docs/OWNER-NO-CODE-CONNECTIONS-2026-11-08.md",
     "docs/REMOTE-PUBLISHER-TLS-QUARANTINE.md",
     "docs/FDROID-KEY-CUSTODY.md",
+    "docs/OWNER-PRIVATE-REVIEW-INTEGRATION-2026-11-08.md",
+    "docs/OWNER-REVIEW-DOCKER-TOOLCHAIN-2026-11-08.md",
     "catalog/trusted_signers.json",
     "catalog/release_history.json",
     "catalog/android_repository.json",
