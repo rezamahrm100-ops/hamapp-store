@@ -54,7 +54,7 @@ public final class UserRepoSettings {
 
     private UserRepoSettings() {}
 
-    private static SharedPreferences storage(Activity activity) {
+    private static SharedPreferences storage(Context activity) {
         return activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
@@ -62,7 +62,7 @@ public final class UserRepoSettings {
      * Corrupt or ambiguous stored trust data fails closed: the store will not
      * use that source until the user explicitly repairs their settings.
      */
-    public static List<Repository> saved(Activity activity) {
+    public static List<Repository> saved(Context activity) {
         SharedPreferences preferences = storage(activity);
         String raw = preferences.getString(LIST, null);
         if (raw == null) {
@@ -131,15 +131,19 @@ public final class UserRepoSettings {
     }
 
     static void removeForUser(Activity activity, Repository selected) {
-        List<Repository> items = new ArrayList<>(saved(activity));
-        boolean removed = items.removeIf(item -> item.url.equals(selected.url)
-                && item.fingerprint.equals(selected.fingerprint));
-        if (!removed) throw new IllegalArgumentException("repository not registered");
-        persist(activity, items);
-        InternalFdroidStore.dropCache(activity, selected.url, selected.fingerprint);
+        // Coordinate with the in-flight index verifier so an intentionally
+        // deleted trust root cannot be recreated by its background worker.
+        synchronized (InternalFdroidStore.class) {
+            List<Repository> items = new ArrayList<>(saved(activity));
+            boolean removed = items.removeIf(item -> item.url.equals(selected.url)
+                    && item.fingerprint.equals(selected.fingerprint));
+            if (!removed) throw new IllegalArgumentException("repository not registered");
+            persist(activity, items);
+            InternalFdroidStore.dropCache(activity, selected.url, selected.fingerprint);
+        }
     }
 
-    public static boolean isRegistered(Activity activity, String url, String fingerprint) {
+    public static boolean isRegistered(Context activity, String url, String fingerprint) {
         try {
             for (Repository item : saved(activity)) {
                 if (item.url.equals(url) && item.fingerprint.equalsIgnoreCase(fingerprint))
@@ -151,7 +155,7 @@ public final class UserRepoSettings {
         return false;
     }
 
-    public static boolean configured(Activity activity) {
+    public static boolean configured(Context activity) {
         try {
             return !saved(activity).isEmpty();
         } catch (IllegalStateException corrupted) {
