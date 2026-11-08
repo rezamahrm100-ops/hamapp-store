@@ -31,7 +31,11 @@ RUN chmod 0755 /opt/hamapp/owner-review-entrypoint.sh \
     && test -x /usr/bin/aapt \
     && test -x /usr/bin/clamscan \
     && command -v gh \
-    && gh attestation verify --help >/dev/null
+    && gh attestation verify --help >/dev/null \
+    && printf '%s\n' '#!/bin/sh' \
+         'exec /usr/bin/clamscan --database=/owner/clamav-database "$@"' \
+         > /usr/local/bin/clamscan \
+    && chmod 0755 /usr/local/bin/clamscan
 USER 10001:10001
 ENTRYPOINT ["/opt/hamapp/owner-review-entrypoint.sh"]
 CMD ["--help"]
