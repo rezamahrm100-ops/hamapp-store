@@ -1,5 +1,18 @@
 # HamApp — canonical agent handoff
 
+## TRUSTED MAIN — PR #96 POST-UPGRADE QA REPAIR ACCEPTED
+
+PR #96 merged as `5ccace2230d6776d5bccab5026f558df9634a9bc`. Android 35 debug upgrade
+UI evidence now includes fresh top/scrolled accessibility trees on
+each restart, with unchanged mandatory disabled unapproved install
+checks. All five hosted PR workflows successful including emulator,
+CodeQL no new alerts and supply chain. A previous source-main run
+42497757277 had failed its UI snapshot; the failure is documented,
+not erased. See docs/ENGINEERING-STATE.md for exact URLs and
+live main acceptance; remaining F-Droid full engine and publisher
+release requirements still PARTIAL.
+
+
 ## VERIFIED NATIVE ANDROID ENGINE BATCH — PR #95 MERGED (2026-11-08)
 
 Main source SHA `4250f4b78cc8bf882aef197f8731c322154564c5`. PR #95 10/10 hosted checks successful,

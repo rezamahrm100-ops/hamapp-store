@@ -1,5 +1,27 @@
 # HamApp — next integrated execution contract
 
+## PR #96 VERIFIED FIX AND REMAINING WORK (2026-11-08)
+
+Source merge `5ccace2230d6776d5bccab5026f558df9634a9bc` brings the strict upgraded-Android v2
+UI restart/dual-snapshot handshake, accepted on all five PR #96 hosted
+checks including true Android 35 emulator (run 42498258673). An older
+main run (42497757277) failed on Android system-overlay UI dump; that
+failure was NOT rewritten as success. Source SHA main checks after
+the merge are identified in ENGINEERING-STATE.md and require live validation.
+
+**Do not repeat** accepted PR #94 WinGet/private Docker batch, PR #95
+six signed repos/offline read-only cache or PR #96 UI acceptance repair.
+Focus the next SINGLE cohesive technical batch on remaining F-Droid
+full-client capabilities (index database/delta, safe mirrors/verified
+downloads/resume, controlled background update and rollback continuity)
+and the full private publisher reviewed release promotion/revocation
+workflow, using maintained upstream components and existing service,
+without parallel/duplicated package managers. Real production
+signing keys, approved developer identity/product, public HTTPS origin
+and owner physical-device consent remain separate external gates.
+No fabricated production installation or publication PASS.
+
+
 ## 2026-11-08 POST-PR95 ACTUAL NEXT ENGINEERING SCOPE
 
 PR #95 is merged to trusted main source SHA `4250f4b78cc8bf882aef197f8731c322154564c5`, with 10/10

@@ -1,5 +1,56 @@
 # HamApp — engineering state and evidence ledger
 
+## 2026-11-08 PR #96 ACCEPTED — STRICT V2 EMULATOR UI RECOVERY
+
+The PR #95 merged source `4250f4b78cc8bf882aef197f8731c322154564c5`
+passed its actual signed F-Droid integration and native instrumented repo tests,
+but post-merge Android debug upgrade run
+https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42497757277
+failed at `ValueError: HamApp title not rendered on emulator` after
+the OS-level v1->v2 and bad-signer/downgrade protections had passed.
+Do **not** mark that old run PASS or hide the regression.
+
+PR #96 https://github.com/rezamahrm100-ops/hamapp-store/pull/96 was created to fix that
+verified failure, reviewed exact head SHA `9b3132fb0fb3602069c45263d9162c848e30d137`, and squash
+merged as **trusted main source SHA `5ccace2230d6776d5bccab5026f558df9634a9bc`**. The test now
+dismisses Android 35 keyguard/overlay, relaunches the actually-installed
+v2 activity for a maximum of five attempts, deletes stale UI dumps before
+each attempt, captures both top and scrolled views and requires the original
+STRICT `check_android_emulator_ui.py` title, public source availability,
+unapproved-app disabled-install assertions. It still fails if no attempt passes.
+No signature, downgrade, corruption, user confirmation or producer trust checks
+were removed or bypassed. The second snapshot is archived for diagnosis.
+
+All five reviewed PR-head workflows were SUCCESS:
+- Actual v1->v2 Android emulator/negative guard/strict UI acceptance:
+  https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42498258673
+- Real disposable F-Droid signed-index drill:
+  https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42498258679
+- Hosted Linux/Windows CI: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42498258667
+- CodeQL (no new security alerts):
+  https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42498258653
+- Hosted supply chain: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42498258656
+
+New trusted-main validation was automatically triggered at `5ccace2230d6776d5bccab5026f558df9634a9bc`:
+- Android v1->v2 strict emulator run
+  https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42498533013
+- Hosted CI https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42498533172
+- CodeQL https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42498532947
+- Owner read-only Windows QA https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42498533101
+- Owner runner handshake https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42498532986
+- Supply chain https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42498532966
+- Reproducible evidence https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42498532953
+- Static website https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42498532972
+
+Run URLs are immutable identities, NOT claims that ongoing jobs succeeded;
+inspect actual conclusion before claiming all main checks PASS.
+Engineering verdict remains **PARTIAL**, because complete upstream F-Droid
+download/database/update/mirror functionality, production signing,
+publisher review/promotion and physical owner-device acceptance are unfinished.
+No production publishing, device installation, real accounts or secrets
+were used in this repair.
+
+
 ## 2026-11-08 ACCEPTED PR #95: multi-pinned repositories and verified offline read-only catalogue
 
 Merged PR: https://github.com/rezamahrm100-ops/hamapp-store/pull/95 ; exact reviewed head `2a9cef78a9042e990b4a067caeafe72467fa510b`;
