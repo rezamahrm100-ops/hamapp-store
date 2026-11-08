@@ -75,8 +75,14 @@ public final class SignedRepositoryRefresh extends Worker {
         // from app installation, system boot or merely connecting a repo.
         if (!settings(context).edit().putBoolean(ENABLED, value).commit())
             throw new IllegalStateException("periodic refresh preference could not be stored");
-        if (value) schedule(context);
-        else {
+        if (value) {
+            try {
+                schedule(context);
+            } catch (RuntimeException failure) {
+                settings(context).edit().putBoolean(ENABLED, false).commit();
+                throw failure;
+            }
+        } else {
             WorkManager.getInstance(context).cancelUniqueWork(UNIQUE_PERIODIC);
             WorkManager.getInstance(context).cancelUniqueWork(UNIQUE_MANUAL);
         }
