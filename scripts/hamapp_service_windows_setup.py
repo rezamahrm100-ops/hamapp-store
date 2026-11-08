@@ -7,6 +7,7 @@ private signing keys on command line, in the repository or in build logs.
 import hashlib
 from pathlib import Path
 import re
+import secrets
 import shutil
 import ssl
 import struct
@@ -51,6 +52,8 @@ def init(publisher, cert=None, key=None, *, runner=subprocess.run):
     if (cert is None) != (key is None):
         raise ProvisionError("a custom certificate requires its matching private key")
     packet = envelope(cert, key) if cert is not None else None
+    # The caller owns the high-entropy secret; Docker never prints or logs it.
+    token = secrets.token_urlsafe(48)
     prefix = command_prefix()
     build = runner(prefix + ["build", "publisher-intake"],
                    cwd=PROJECT, timeout=900, capture_output=True, check=False)
@@ -58,14 +61,11 @@ def init(publisher, cert=None, key=None, *, runner=subprocess.run):
         raise ProvisionError("private Docker service could not be built; inspect Docker Desktop")
     args = prefix + ["run", "--rm", "--no-deps", "-T", "publisher-intake",
                      "init", "--root", "/data/service", "--publisher", publisher]
-    if packet is None:
-        args.append("--dev-local-cert")
-        applied = runner(args, cwd=PROJECT, timeout=120,
-                         capture_output=True, check=False)
-    else:
-        args.append("--import-stdin")
-        applied = runner(args, input=packet, cwd=PROJECT, timeout=120,
-                         capture_output=True, check=False)
+    args.append("--dev-local-cert" if packet is None else "--import-stdin")
+    args.append("--token-stdin")
+    applied = runner(args, input=(packet or b"") + token.encode("ascii"),
+                     cwd=PROJECT, timeout=120,
+                     capture_output=True, check=False)
     if applied.returncode:
         # Private backend rejects re-initializing a preexisting identity and
         # never overwrites its previous credential registry/cert/key.
@@ -75,13 +75,12 @@ def init(publisher, cert=None, key=None, *, runner=subprocess.run):
     if started.returncode:
         raise ProvisionError("service identity provisioned; Docker service did not start")
     lines = applied.stdout.decode("utf-8", errors="replace").splitlines()
-    # No private cert or token is persisted by this launcher; the one-time
-    # token is returned only on the user's terminal once.
-    token = next((line.removeprefix("ONE_TIME_PUBLISHER_TOKEN: ").strip()
-                  for line in lines if line.startswith("ONE_TIME_PUBLISHER_TOKEN: ")), None)
+    # Reject accidental reintroduction of credential logging by the backend.
+    if any("ONE_TIME_PUBLISHER_TOKEN" in line or token in line for line in lines):
+        raise ProvisionError("private backend emitted forbidden secret material")
     pin = next((line.removeprefix("TLS_LEAF_SHA256: ").strip()
                 for line in lines if line.startswith("TLS_LEAF_SHA256: ")), None)
-    if not token or not pin or not re.fullmatch("[a-f0-9]{64}", pin):
+    if not pin or not re.fullmatch("[a-f0-9]{64}", pin):
         raise ProvisionError("service setup returned no valid private identity receipt")
     exported = runner(prefix + [
         "run", "--rm", "--no-deps", "-T", "publisher-intake",
@@ -117,7 +116,7 @@ def init(publisher, cert=None, key=None, *, runner=subprocess.run):
         except (OSError, ValueError, ssl.SSLError):
             pass
         time.sleep(1)
-    return {"publisher": publisher, "tls_sha256": pin, "one_time_token": token,
+    return {"publisher": publisher, "tls_sha256": pin,
             "origin": details["origin"], "trusted_ca_pem": str(target),
             "service_started": ready, "secure_windows_profile_saved": True,
             "public_release_authorized": False}
@@ -150,8 +149,7 @@ def main():
         print("TLS_SERVER_LEAF_SHA256:", result["tls_sha256"])
         print("SERVER_ORIGIN:", result["origin"])
         print("PUBLIC_CA_FILE:", result["trusted_ca_pem"])
-        print("ONE_TIME_PUBLISHER_TOKEN:", result["one_time_token"])
-        print("Publisher token was also saved securely in HamApp's local Windows DPAPI profile.")
+        print("Publisher token generated locally and stored in the Windows DPAPI profile, not logged.")
         print("Not a production publisher approval or public release.")
     except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
         print("HAMAPP_LOCAL_SERVICE_SETUP_FAILED:", type(exc).__name__, file=sys.stderr)
