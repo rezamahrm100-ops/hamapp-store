@@ -14,7 +14,7 @@ def check_ui(path):
     # Distinguish approved-repository install handoff (must be disabled when
     # no owner-approved release) from public F-Droid app launch (must work).
     fdroid = [n for n in nodes if n.attrib.get("text", "") == "مدیریت در هَماپ"]
-    public = [n for n in nodes if n.attrib.get("text", "") == "فروشگاه عمومی داخل هَماپ"]
+    public = [n for n in nodes if n.attrib.get("text", "") == "برنامه‌های عمومی"]
     if not fdroid:
         raise ValueError("HamApp owner install button not rendered")
     if any(n.attrib.get("enabled") != "false" for n in fdroid):

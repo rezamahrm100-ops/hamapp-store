@@ -72,9 +72,21 @@ PY
     adb shell am force-stop ir.hamapp.store || true
     adb shell am start -W -n ir.hamapp.store/.MainActivity | tee "$out/activity.txt"
     grep -q 'Status: ok' "$out/activity.txt"
-    adb shell uiautomator dump /sdcard/hamapp-two-version.xml
-    adb pull /sdcard/hamapp-two-version.xml "$out/ui.xml"
-    python3 scripts/check_android_emulator_ui.py "$out/ui.xml"
+    # Newer emulators may briefly display a system overlay immediately after
+    # the first activity start. Keep the fail-closed UI assertions unchanged,
+    # retry only the accessibility capture, and never skip final validation.
+    for attempt in 1 2 3; do
+      adb shell uiautomator dump /sdcard/hamapp-two-version.xml
+      adb pull /sdcard/hamapp-two-version.xml "$out/ui.xml"
+      if python3 scripts/check_android_emulator_ui.py "$out/ui.xml"; then
+        break
+      fi
+      if [ "$attempt" -eq 3 ]; then
+        echo "ACTUAL_UPGRADED_UI_VALIDATION_FAILED" >&2
+        exit 1
+      fi
+      sleep 2
+    done
     adb exec-out screencap -p > "$out/after-update.png"
     test -s "$out/after-update.png"
     python3 - <<'PY'

@@ -138,18 +138,44 @@ public final class MainActivity extends Activity {
                 "فهرست امضاشدهٔ F-Droid داخل هَماپ | مستقل از ناشران اختصاصی",
                 12, muted, false);
         main.addView(upstreamLabel, margin(0, 7));
-        MaterialButton explore = actionButton("فروشگاه عمومی داخل هَماپ", true);
+        // Two compact native action rows keep the approved-app cards visible on
+        // small Android screens, while all store and account actions remain in
+        // HamApp instead of jumping to external package-manager applications.
+        MaterialButton explore = actionButton("برنامه‌های عمومی", true);
         explore.setContentDescription(
                 "فهرست امضاشده و نصب با تأیید اندروید، در خود هَماپ");
         explore.setOnClickListener(view -> InternalFdroidStore.openPublic(this, ""));
-        main.addView(explore, margin(0, 14));
-        // Signed index and native OS installer remain inside the HamApp process.
-        MaterialButton searchPublic = actionButton("جست‌وجوی عمومی در F-Droid", false);
+
+        MaterialButton personalRepo = actionButton("تنظیم مخزن شخصی", false);
+        personalRepo.setContentDescription(
+                "تنظیم نشانی HTTPS و اثر انگشت SHA-256 مخزن شخصی، بدون تغییر کد");
+        personalRepo.setOnClickListener(view -> UserRepoSettings.show(this));
+
+        LinearLayout storeRow = new LinearLayout(this);
+        storeRow.setOrientation(LinearLayout.HORIZONTAL);
+        storeRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        storeRow.addView(explore, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        storeRow.addView(personalRepo, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        main.addView(storeRow, margin(0, 8));
+
+        MaterialButton searchPublic = actionButton("جست‌وجوی F-Droid", false);
         searchPublic.setContentDescription("جست‌وجو و نصب برنامه‌های عمومی درون هَماپ");
         searchPublic.setOnClickListener(view ->
                 InternalFdroidStore.openPublic(this, query == null ? "" : query.getText().toString()));
-        main.addView(searchPublic, margin(0, 13));
 
+        MaterialButton openPersonal = actionButton("برنامه‌های مخزن شخصی", false);
+        openPersonal.setOnClickListener(view -> UserRepoSettings.openSaved(this, ""));
+
+        LinearLayout browseRow = new LinearLayout(this);
+        browseRow.setOrientation(LinearLayout.HORIZONTAL);
+        browseRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        browseRow.addView(searchPublic, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        browseRow.addView(openPersonal, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        main.addView(browseRow, margin(0, 8));
 
         query = new TextInputEditText(this);
         query.setTextColor(white);

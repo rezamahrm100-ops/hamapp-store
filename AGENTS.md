@@ -1,5 +1,21 @@
 # HamApp — canonical agent handoff
 
+## OWNER NO-CODE POST-INSTALL CONNECTIONS — 2026-11-08
+
+A unified PR adds in-app setup on both native clients. Android: optional user
+provided signed-F-Droid repo URL+out-of-band signer fingerprint stored in
+private app preferences and verified before catalogue use, without promoting
+it to the approved HamApp owner publisher registry. Windows: native settings
+for optional private HTTPS publisher intake (endpoint, publisher ID, trusted
+CA, independently pinned server cert, Windows DPAPI encrypted per-user token),
+a read-only TLS handshake and explicit quarantine-only binary submission.
+General WinGet browsing remains usable without accounts. No source code edits
+or secrets in public GitHub are required for these client configuration actions.
+Private signing keys and permanent production identities are NOT accepted by
+public clients and remain an owner-controlled release/signing task. See
+`docs/OWNER-NO-CODE-CONNECTIONS-2026-11-08.md`.
+
+
 ## CURRENT NATIVE ENGINE IMPLEMENTATION (2026-11-08, PR #92)
 
 Android client source now embeds official Apache-2.0 F-Droid index verification

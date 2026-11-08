@@ -77,6 +77,12 @@ public final class InternalFdroidStore {
                 throw new IllegalArgumentException("unapproved HamApp repository");
             return new Source(url, fingerprint, "مخزن امضاشدهٔ هَماپ");
         }
+
+        static Source personal(String url, String fingerprint) {
+            if (!RepoPolicy.isAllowed(url, fingerprint))
+                throw new IllegalArgumentException("invalid personal repository");
+            return new Source(url, fingerprint, "مخزن شخصی (مستقل از تأیید ناشر هَماپ)");
+        }
     }
 
     public static final class App {
@@ -552,4 +558,26 @@ public final class InternalFdroidStore {
                     .setPositiveButton("بستن", null).show();
         }
     }
+    public static void openSubscribed(Activity activity, String url,
+            String fingerprint, String search) {
+        try {
+            String query = search == null ? "" : search.trim();
+            if (query.length() > 80 || query.indexOf('\n') >= 0 || query.indexOf('\r') >= 0)
+                throw new IllegalArgumentException("invalid query");
+            Source source = Source.personal(url, fingerprint);
+            new AlertDialog.Builder(activity)
+                    .setTitle("اتصال به مخزن شخصی")
+                    .setMessage("اثر انگشت ارائه‌شده توسط شما برای بررسی رمزنگاری‌شدهٔ مخزن " +
+                            "استفاده می‌شود. هَماپ اعتبار مستقل ناشر شخصی را تأیید نکرده است. " +
+                            "فهرست فقط پس از بررسی امضای مطابق اثرانگشت بارگذاری می‌شود.")
+                    .setNegativeButton("لغو", null)
+                    .setPositiveButton("بررسی و نمایش", (d, which) -> begin(activity, source, query))
+                    .show();
+        } catch (IllegalArgumentException ex) {
+            new AlertDialog.Builder(activity).setTitle("مخزن شخصی نامعتبر")
+                    .setMessage("نشانی و اثر انگشت را در تنظیمات اصلاح کنید.")
+                    .setPositiveButton("بستن", null).show();
+        }
+    }
+
 }
