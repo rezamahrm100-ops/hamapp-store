@@ -9,6 +9,8 @@ import secrets
 import subprocess
 import sys
 from hamapp_service_windows_setup import command_prefix, ProvisionError, PROJECT
+if str(PROJECT) not in sys.path:
+    sys.path.insert(0, str(PROJECT))
 from windows_client import publisher_connection as connection
 
 ALLOWED = frozenset({"add", "rotate", "revoke"})
