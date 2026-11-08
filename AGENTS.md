@@ -1,5 +1,23 @@
 # HamApp — canonical agent handoff
 
+## VERIFIED PR #98 AND PR #99 SOURCE-INTEGRATION CHECKPOINT — 2026-11-08
+
+Trusted main source SHA `a7d2cd46064a900051f3171985c60a831513bc20`. PR #98 integrated the real
+quarantined private publisher review with the already existing native
+signer, source attestations, antivirus and signed-index F-Droid staging.
+PR #99 packaged a rootless optional owner-only Docker reviewer, same
+named quarantine volume and one-source service kit; the main TLS
+intake keeps the only listener and starts by default. Its Docker
+reviewer builds alongside the intake image but does not start
+automatically, so production owner signing keys are not embedded or
+uploaded. PR #98 3/3 hosted checks and PR #99 4/4 hosted workflows
+succeeded, including actual OCI review tool command validation.
+Source commits and exact hosted/post-merge workflow IDs:
+docs/ENGINEERING-STATE.md. Actual public publishing, approved signer,
+owner GitHub ruleset, physical-device QA and full F-Droid parity remain
+NOT VERIFIED / PARTIAL. Do not repeat these integrated batches.
+
+
 ## TRUSTED MAIN PR #97 MERGED — ENGINEERING INCREMENT ACCEPTED
 
 Reviewed source SHA `6c774d63f6014d6268b40083b8bd28f98f927504`, PR #97 11/11 hosted

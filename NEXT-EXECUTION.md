@@ -1,5 +1,46 @@
 # HamApp — stable entry point for the next execution
 
+## 2026-11-08 POST-PR #98/#99 OWNER-PUBLISHER ENGINEERING STATUS
+
+Latest accepted source SHA `a7d2cd46064a900051f3171985c60a831513bc20`. PR #98 integrates private
+quarantine submission/event locking with the **existing** actual developer
+signer/GitHub source attestation/aapt/ClamAV/upstream F-Droid signed-index
+and private 0600 audit path. PR #99 ships the missing real review toolchain
+as an optional separate rootless Compose profile in the SAME owner kit,
+and updates Windows one-click provisioning to build both images while
+starting ONLY the quarantine service. All 3 PR98 and 4 PR99 reviewed-head
+hosted workflows succeeded. Exact IDs and the post-merge runs are in
+docs/ENGINEERING-STATE.md.
+
+DO NOT repeat PR #94–#99 accepted work or count separate upstream
+features as integrated merely because their packages are present.
+Remaining technically actionable single-batch mission:
+1. Use maintained upstream F-Droid data/download libraries for full
+   verified persistent multi-repo SQL/index-delta ingestion, trusted
+   mirror selection, bounded resume and explicit user-consent update
+   management in HamApp's native Android UI. Verify real two-version
+   signatures/download failure modes on an isolated emulator.
+2. Complete owner-reviewed GitHub transactional promotion/revocation
+   of **genuinely signed and independently approved** binaries and their
+   release history, while retaining the already implemented two-file
+   review-only revoke plan and private signer quarantine. Do NOT
+   auto-promote by passing boolean claims, public CI alone or an
+   unauthenticated upload.
+3. Finish owner-selectable post-install real account and signing
+   setup plumbing while retaining private signing-key custody and
+   keeping all unrelated Docker/Windows applications untouched.
+4. Maintain source QA/CodeQL, exact-main artifacts and audited owner
+   workflows. A GitHub main-branch required-checks ruleset is a
+   genuine admin-side security blocker (Issue #31): verify through
+   read API; do not claim enforcement without proof.
+
+Real production signer/key + backups, independent approved developer
+ID, real signed live index/origin, release decision and physical-device
+install/update remain external gates; do not invent or publish
+them. Engineering verdict remains PARTIAL, not a complete commercial
+store or entire F-Droid client.
+
+
 ## POST-PR97 INTEGRATED ENGINEERING MISSION — 2026-11-08
 
 PR #97 merged from reviewed head `95e7fb42a0785b9daa710170dafa4e25d7aa254c`

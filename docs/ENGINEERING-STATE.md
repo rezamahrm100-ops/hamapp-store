@@ -1,5 +1,80 @@
 # HamApp — engineering state and evidence ledger
 
+## 2026-11-08 SOURCE ACCEPTANCE — PR #98 + PR #99: UNIFIED PRIVATE PUBLISHER RESEARCH / SIGNING LAYER
+
+The accepted trusted-`main` source at this checkpoint is `a7d2cd46064a900051f3171985c60a831513bc20`
+(from merged [PR #99](https://github.com/rezamahrm100-ops/hamapp-store/pull/99)).
+Earlier [PR #98](https://github.com/rezamahrm100-ops/hamapp-store/pull/98) was squash-merged
+at `c79ac98979ec7bdc4da813570e922b9a5a18def0`.
+
+**PR #98:** One private release-review pipeline:
+`owner_verified_release_pipeline.py` consumes a real owner-only
+`review_requested` quarantine ID, not an arbitrary publisher assertion.
+It takes an exclusive advisory lock shared with hold/reject transitions,
+runs the existing pinned publisher identity/history checks and
+`fdroid_bridge.stage` (real APK signature + aapt + gh verified producer
+provenance + archive + fresh ClamAV + upstream F-Droid signed index), then
+re-hashes exact source bytes, re-verifies quarantine events and writes a
+private owner-only 0700/0600 audit receipt. If a post-stage audit fails,
+owner signer workspace is fail-closed/locked.
+**No publication, approval, GitHub catalogue commit or owner device install.**
+PR head `042e32b37f50f9121c66910646d7b654831c44d0`:
+- Hosted CI Linux+Windows https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42517111617 SUCCESS,
+  including synthetic conflict/replay/tamper cases.
+- CodeQL https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42517111605 SUCCESS, no new changed-code alerts.
+- Source security https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42517111587 SUCCESS.
+Mocked unit signatures were not production evidence.
+
+**PR #99:** Optional rootless one-shot `owner-review` Docker Compose
+profile, built from the same checkout as the existing live TLS
+`publisher-intake`. Upstream Debian fdroidserver, Android apksigner/aapt,
+ClamAV/freshclam, GitHub CLI; owner-local separate signing workspace bind,
+same private quarantine named volume, non-root UID 10001, read-only root,
+no published listener, explicit `--profile owner-review` only.
+Fixed 0600/private ClamAV DB path + persistent owner-private GH_CONFIG_DIR.
+One-click Windows setup builds **both** images but starts only
+`publisher-intake`; new owner profile is opt-in and cannot silently
+sign, review or publish. Same no-secret owner kit ZIP includes both
+Docker definitions, exact owner review scripts/docs and the existing
+Windows/Android configuration assets.
+Reviewed PR head `49c164797752ab53390cc5abe05f7b0e4e82a4d4`:
+- Hosted Linux/Windows CI https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42518337286 SUCCESS.
+- CodeQL https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42518337507 SUCCESS, no new changed-code alerts.
+- Source supply chain https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42518337398 SUCCESS.
+- Real hosted Docker review-image toolchain + default TLS intake and
+  native Android/Windows preview builder https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42518337364 SUCCESS.
+  The two OCI images were built and the tool commands were located in
+  a real isolated container. The real private publisher key/AV scan of
+  approved production binaries was NOT exercised.
+A previous intermediate PR run `42517997684` failed due owner bind
+UID mismatch; this was fixed by restricted UID 10001 ownership only on
+an ephemeral hosted test folder; it was not bypassed via chmod 777.
+
+**Post-merge main validation** on exact source SHA `a7d2cd46064a900051f3171985c60a831513bc20`:
+- https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42518597264 triple owner preview (includes both Docker images).
+- https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42518597279 CI.
+- https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42518597228 CodeQL.
+- https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42518597266 source security.
+- https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42518597269 owner Windows trusted-main QA.
+- https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42518597282 read-only owner runner handshake.
+- https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42518597244 reproducible build evidence.
+- https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42518597229 static storefront.
+Their immutable run identities are recorded here. **Inspect actual run
+conclusions** before marking main PASS; pending runs do not count as green.
+
+**PRODUCTION VERDICT: PARTIAL.** Nothing has been installed on the owner
+device or publicly released; the registry of independently approved
+publishers and signed APK/Authenticode identities remains empty; production
+signer key custody/backups, live independently pinned F-Droid repo/HTTPS
+origin, published/approved binaries, protected GitHub reviewer
+enforcement, physical device acceptance and downstream release promotion
+are NOT VERIFIED. A real approved signer cannot be inferred from a CI
+image or synthetic test key. Issue #31 remains open (branch ruleset
+creation unavailable with current connector). The complete native
+F-Droid database/delta, mirrors/resume, full background update lifecycle
+and approved app distribution also remain incomplete.
+
+
 ## 2026-11-08 ACCEPTED PR #97 — OFFICIAL ANDROIDX WORKMANAGER SIGNED REPOSITORY REFRESH
 
 **Source merge SHA:** `6c774d63f6014d6268b40083b8bd28f98f927504` (trusted `main`) from
