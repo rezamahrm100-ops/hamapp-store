@@ -110,10 +110,19 @@ jobs:
           # Real OCI-level integration, using disposable hosted-CI-only data.
           # No production accounts or private signing keys are used.
           trap 'docker compose -f deployment/compose.yaml -p hamapp-private-ci down --volumes --remove-orphans >/dev/null 2>&1 || true' EXIT
+          # CI makes its own disposable credential in a mode-0600 runner file;
+          # no token is ever emitted to stdout, Docker logs, or GitHub summaries.
+          python3 - <<'PY'
+          import os, pathlib, secrets
+          target = pathlib.Path(os.environ["RUNNER_TEMP"]) / "hamapp-ci-private-first-token.txt"
+          fd = os.open(target, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+          with os.fdopen(fd, "wb") as handle:
+              handle.write(secrets.token_urlsafe(48).encode("ascii"))
+          PY
           docker compose -f deployment/compose.yaml -p hamapp-private-ci run \
             --rm --no-deps -T publisher-intake init \
             --root /data/service --publisher ci-publisher --dev-local-cert \
-            > "$RUNNER_TEMP/hamapp-ci-private-first-token.txt"
+            --token-stdin < "$RUNNER_TEMP/hamapp-ci-private-first-token.txt"
           docker compose -f deployment/compose.yaml -p hamapp-private-ci up \
             -d --no-build publisher-intake >/dev/null
           docker compose -f deployment/compose.yaml -p hamapp-private-ci run \
@@ -124,13 +133,12 @@ jobs:
           python3 - <<'PY'
           import base64, hashlib, http.client, json, os, pathlib, ssl, time
           tmp = pathlib.Path(os.environ["RUNNER_TEMP"])
-          token_lines = (tmp / "hamapp-ci-private-first-token.txt").read_text("utf-8").splitlines()
-          secret = [x.removeprefix("ONE_TIME_PUBLISHER_TOKEN: ").strip()
-                    for x in token_lines if x.startswith("ONE_TIME_PUBLISHER_TOKEN: ")]
-          assert len(secret) == 1 and len(secret[0]) >= 64
+          secret = (tmp / "hamapp-ci-private-first-token.txt").read_text("ascii")
+          assert len(secret) == 64
           ca = (tmp / "hamapp-ci-private-ca.pem").read_text("ascii")
           pin = hashlib.sha256(ssl.PEM_cert_to_DER_cert(ca)).hexdigest()
           context = ssl.create_default_context(cafile=str(tmp / "hamapp-ci-private-ca.pem"))
+          context.minimum_version = ssl.TLSVersion.TLSv1_2
           def send(method, data=b"", token=None, candidate=None):
               connection = http.client.HTTPSConnection(
                   "localhost", 8766, context=context, timeout=10)
@@ -174,7 +182,7 @@ jobs:
           }
           rejected, _ = send("POST", artifact, "x" * 64, candidate)
           assert rejected == 401
-          admitted, reply = send("POST", artifact, secret[0], candidate)
+          admitted, reply = send("POST", artifact, secret, candidate)
           assert admitted == 202 and reply["status"] == "quarantined"
           assert reply["owner_review_approved"] is False
           assert reply["public_distribution_authorized"] is False
