@@ -52,6 +52,8 @@ services:
     security_opt:
       - no-new-privileges:true
     user: "10001:10001"
+    environment:
+      GH_CONFIG_DIR: /owner/gh
     pids_limit: 192
     mem_limit: 4096m
     tmpfs:
