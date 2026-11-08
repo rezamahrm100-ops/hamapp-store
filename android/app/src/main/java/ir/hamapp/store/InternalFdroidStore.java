@@ -271,7 +271,7 @@ public final class InternalFdroidStore {
         return new File(activity.getFilesDir(), "fdroid-" + key + ".json");
     }
 
-    private static SharedPreferences cacheReceipts(Activity activity) {
+    private static SharedPreferences cacheReceipts(Context activity) {
         return activity.getSharedPreferences(VERIFIED_CACHE_PREFS, Context.MODE_PRIVATE);
     }
 
