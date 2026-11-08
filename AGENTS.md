@@ -1,5 +1,19 @@
 # HamApp — canonical agent handoff
 
+## TRUSTED MAIN PR #97 MERGED — ENGINEERING INCREMENT ACCEPTED
+
+Reviewed source SHA `6c774d63f6014d6268b40083b8bd28f98f927504`, PR #97 11/11 hosted
+checks successful, including real Android emulator WorkManager
+opt-in/cancel integration (5 tests), signed-repo client upgrade,
+Windows/package service build, CodeQL and exact APK manifest review.
+The new Android background lifecycle verifies signed catalogue bytes
+using the same F-Droid index engine; **it never installs/updates APKs
+in the background**. Production signing, full F-Droid client feature
+parity, publisher publication and owner physical-device QA remain
+incomplete. See docs/ENGINEERING-STATE.md and
+docs/NEXT-EXECUTION.md for exact evidence and current tasks.
+
+
 ## TRUSTED MAIN — PR #96 POST-UPGRADE QA REPAIR ACCEPTED
 
 PR #96 merged as `5ccace2230d6776d5bccab5026f558df9634a9bc`. Android 35 debug upgrade

@@ -1,5 +1,30 @@
 # HamApp — next integrated execution contract
 
+## POST-PR97 INTEGRATED ENGINEERING MISSION — 2026-11-08
+
+PR #97 merged from reviewed head `95e7fb42a0785b9daa710170dafa4e25d7aa254c`
+to immutable main source SHA `6c774d63f6014d6268b40083b8bd28f98f927504`; all 11 hosted PR
+workflows succeeded, with five actual Android 35 instrumentation tests.
+The Android client now schedules opt-in WorkManager verification of signed
+personal catalogue metadata in the background, using the existing F-Droid
+verifier, no automatic installer and no parallel engine. The older
+"PENDING PR97" state is historical. Exact PR and main-run links are in
+docs/ENGINEERING-STATE.md. Do not repeat the three previous integrated
+batches: PR #94 native WinGet/service/DPAPI, PR #95 six independently pinned
+sources and offline read-only cache, PR #96 strict upgraded Android UI QA, or
+PR #97 signed WorkManager catalogue refresh.
+
+NEXT **ONE COHESIVE BATCH**: reuse maintained upstream F-Droid repo
+database/delta and full resilient APK download/mirror/update lifecycle
+with explicit user-install approval; unify with reviewed publisher
+quarantine->cryptographic/antivirus/permission provenance->protected
+atomic source+metadata promotion/revocation, using current GitHub/owner
+service rather than parallel subsystems. Actual signed index/approved
+publisher identities, live TLS origin, protected branch owner review
+and physical owner device are external gates; do not assert PASS based
+on debug/mock runs. Overall production verdict remains PARTIAL.
+
+
 ## PR #96 VERIFIED FIX AND REMAINING WORK (2026-11-08)
 
 Source merge `5ccace2230d6776d5bccab5026f558df9634a9bc` brings the strict upgraded-Android v2

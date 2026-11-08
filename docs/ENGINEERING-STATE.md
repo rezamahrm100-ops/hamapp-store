@@ -1,5 +1,80 @@
 # HamApp — engineering state and evidence ledger
 
+## 2026-11-08 ACCEPTED PR #97 — OFFICIAL ANDROIDX WORKMANAGER SIGNED REPOSITORY REFRESH
+
+**Source merge SHA:** `6c774d63f6014d6268b40083b8bd28f98f927504` (trusted `main`) from
+[PR #97](https://github.com/rezamahrm100-ops/hamapp-store/pull/97),
+reviewed PR head `95e7fb42a0785b9daa710170dafa4e25d7aa254c`.
+All **11/11 PR-head hosted workflow runs SUCCESS**, including real Android 35
+instrumented verification. CodeQL: **No new alerts in code changed by this PR**.
+Exact PR-head evidence:
+- Native Android emulator **5/5 instrumentation tests PASS**, opt-in/out
+  durable WorkManager unique periodic work and F-Droid signer trust:
+  https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42499887461
+- Native Android APK/manifest `aapt` exact permission policy, lint, archive:
+  https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42499887428
+- Android+Windows+private Docker ZIP build:
+  https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42499887447
+- Real two-version Android upgrade/downgrade/signer guard:
+  https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42499887433
+- Official F-Droid signed-repository live fixture install/update:
+  https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42499887500
+- Official F-Droid client checks: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42499887492
+- ClamAV binary scan: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42499887458
+- Windows installed EXE lifecycle and trusted test signer:
+  https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42499887425
+- CI: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42499887452
+- CodeQL: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42499887449
+- Supply chain: https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42499887440
+
+**What changed:** pinned Google stable `androidx.work:work-runtime:2.12.0`.
+An opt-in RTL in-app control for daily/mannual signed catalogue verification,
+not silent updates; a 24-hour unique periodic WorkManager task with unmetered
+connection/battery-not-low constraints, owner explicit manual check, cancellation
+and private success status. It reads the existing six independently pinned
+F-Droid subscriptions, reuses the **same** upstream `entry.jar`
+certificate check, exact SHA256/index size and signed timestamp anti-rollback
+receipt and atomic private cache as foreground. Trust removal is serialized
+with active verification. No new package installer, APK downloads, background
+installation, unmanaged publisher identity or real account credentials.
+The real merged Android manifest required exactly four additional AndroidX
+permissions (ACCESS_NETWORK_STATE, WAKE_LOCK, RECEIVE_BOOT_COMPLETED,
+FOREGROUND_SERVICE); these were observed via aapt and added to a bounded
+allowlist only after the gate first failed.
+
+**Post-merge trusted-main verification** on immutable source SHA
+`6c774d63f6014d6268b40083b8bd28f98f927504` was automatically triggered:
+- Main 3-artifact build https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527150
+- Native Android instrumented emulator https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527118
+- Real signed-source client https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527129
+- Isolated signed-index https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527123
+- Two-version Android https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527157
+- Native Android preview https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527151
+- Windows owner QA https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527155
+- Read-only owner runner https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527191
+- Source supply chain https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527164
+- CI https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527187
+- CodeQL https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527153
+- ClamAV https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527198
+- Native Windows EXE lifecycle https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527197
+- Official F-Droid https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527163
+- Reproducible evidence https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527193
+- Static storefront https://github.com/rezamahrm100-ops/hamapp-store/actions/runs/42500527135
+These links record the runs, **not claims of success while in progress**;
+check GitHub's terminal conclusion before marking main accepted.
+
+ENGINEERING VERDICT STILL **PARTIAL**:
+WorkManager now checks and retains signed *catalogue metadata*; it
+**does not** supply full upstream F-Droid repo SQL/delta synchronization,
+mirror selection, resumable APK transfers, installed-app update notifications,
+background APK upgrades, complete repo moderation/release manager or all
+upstream features. Real developer signing certificates, independently approved
+publisher identities, live signed repo/origin, protected release promotion,
+physical-owner-device install/upgrade and payment are NOT_VERIFIED/NOT_RUN.
+No production installation, deployment or signing keys were used.
+See docs/ANDROID-SIGNED-BACKGROUND-2026-11-08.md.
+
+
 ## 2026-11-08 PR #96 ACCEPTED — STRICT V2 EMULATOR UI RECOVERY
 
 The PR #95 merged source `4250f4b78cc8bf882aef197f8731c322154564c5`
