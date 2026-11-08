@@ -2,6 +2,8 @@ package ir.hamapp.store;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.JsonReader;
 import android.util.JsonToken;
 import android.widget.ProgressBar;
@@ -21,6 +23,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,6 +58,7 @@ public final class InternalFdroidStore {
     private static final int MAX_DISPLAY = 48;
     private static final int MAX_PACKAGES = 16000;
     private static final int MAX_FIELD = 250;
+    private static final String VERIFIED_CACHE_PREFS = "fdroid_verified_indices_v1";
 
     private InternalFdroidStore() {}
 
@@ -61,27 +66,29 @@ public final class InternalFdroidStore {
         final String url;
         final String fingerprint;
         final String description;
+        final boolean personal;
 
-        private Source(String url, String fingerprint, String description) {
+        private Source(String url, String fingerprint, String description, boolean personal) {
             this.url = url;
             this.fingerprint = fingerprint.toLowerCase(Locale.ROOT);
             this.description = description;
+            this.personal = personal;
         }
 
         static Source official() {
-            return new Source(FDROID_BASE, FDROID_INDEX_FINGERPRINT, "F-Droid رسمی");
+            return new Source(FDROID_BASE, FDROID_INDEX_FINGERPRINT, "F-Droid رسمی", false);
         }
 
         static Source owner(String url, String fingerprint) {
             if (!RepoPolicy.isAllowed(url, fingerprint))
                 throw new IllegalArgumentException("unapproved HamApp repository");
-            return new Source(url, fingerprint, "مخزن امضاشدهٔ هَماپ");
+            return new Source(url, fingerprint, "مخزن امضاشدهٔ هَماپ", false);
         }
 
         static Source personal(String url, String fingerprint) {
             if (!RepoPolicy.isAllowed(url, fingerprint))
                 throw new IllegalArgumentException("invalid personal repository");
-            return new Source(url, fingerprint, "مخزن شخصی (مستقل از تأیید ناشر هَماپ)");
+            return new Source(url, fingerprint, "مخزن شخصی (مستقل از تأیید ناشر هَماپ)", true);
         }
     }
 
@@ -247,30 +254,109 @@ public final class InternalFdroidStore {
         return entry;
     }
 
+    // Fingerprint is part of the namespace: changing a publisher's signing
+    // identity cannot silently reuse cached catalogues from another source.
+    private static void requireStillTrusted(Activity activity, Source source) throws IOException {
+        if (source.personal && !UserRepoSettings.isRegistered(
+                activity, source.url, source.fingerprint))
+            throw new IOException("personal source trust was removed or altered");
+    }
+
+    private static String cacheKey(Source source) throws Exception {
+        return digest((source.url + "\n" + source.fingerprint)
+                .getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static File cacheFile(Activity activity, String key) {
+        return new File(activity.getFilesDir(), "fdroid-" + key + ".json");
+    }
+
+    private static SharedPreferences cacheReceipts(Activity activity) {
+        return activity.getSharedPreferences(VERIFIED_CACHE_PREFS, Context.MODE_PRIVATE);
+    }
+
+    private static void rememberVerified(Activity activity, String key,
+            long size, String digest, long timestamp) throws IOException {
+        // The trust receipt is written only AFTER entry.jar signature and
+        // exact index bytes were cryptographically verified online.
+        if (!cacheReceipts(activity).edit()
+                .putString(key + "-sha256", digest.toLowerCase(Locale.ROOT))
+                .putLong(key + "-bytes", size)
+                .putLong(key + "-timestamp", timestamp).commit())
+            throw new IOException("verified cache receipt could not be committed");
+    }
+
     private static File verifiedIndex(Activity activity, Source source) throws Exception {
-        String fileKey = digest((source.url + source.fingerprint).getBytes(StandardCharsets.UTF_8))
-                .substring(0, 16);
-        File existing = new File(activity.getFilesDir(), "fdroid-" + fileKey + ".json");
+        requireStillTrusted(activity, source);
+        String key = cacheKey(source);
+        File existing = cacheFile(activity, key);
         File signedJar = File.createTempFile("fdroid-entry-", ".jar", activity.getCacheDir());
         try {
             Entry entry = signedEntry(source, signedJar);
             long size = entry.getIndex().getSize();
             String expected = entry.getIndex().getSha256();
+            long timestamp = entry.getTimestamp();
+            if (timestamp <= 0) throw new IOException("signed index timestamp invalid");
+            long previous = cacheReceipts(activity).getLong(key + "-timestamp", 0L);
+            String lastDigest = cacheReceipts(activity).getString(key + "-sha256", "");
+            if (previous > timestamp || (previous == timestamp &&
+                    !lastDigest.isEmpty() && !lastDigest.equalsIgnoreCase(expected)))
+                throw new IOException("signed repository index rollback/equivocation blocked");
+            requireStillTrusted(activity, source);
             if (existing.isFile() && existing.length() == size &&
-                    shaFile(existing).equalsIgnoreCase(expected)) return existing;
+                    shaFile(existing).equalsIgnoreCase(expected)) {
+                rememberVerified(activity, key, size, expected, timestamp);
+                return existing;
+            }
             File incoming = File.createTempFile("fdroid-index-", ".json", activity.getFilesDir());
             try {
                 downloadExact(source, "index-v2.json", incoming, size, expected, MAX_INDEX_BYTES);
-                if (!incoming.renameTo(existing)) {
-                    if (!existing.delete() || !incoming.renameTo(existing))
-                        throw new IOException("cannot atomically store verified index");
-                }
+                requireStillTrusted(activity, source);
+                // Both paths are on the same private file system. If atomic
+                // replace cannot be provided, keep the old valid index intact.
+                Files.move(incoming.toPath(), existing.toPath(),
+                        StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
+                rememberVerified(activity, key, size, expected, timestamp);
             } finally {
                 incoming.delete();
             }
             return existing;
         } finally {
             signedJar.delete();
+        }
+    }
+
+    /** Offline browsing is read-only and ONLY available after online JAR
+     *  signature and index SHA verification were recorded for this exact pin.
+     *  No offline-stale index may ever authorize a PackageInstaller session.
+     */
+    private static File verifiedOfflineIndex(Activity activity, Source source) throws Exception {
+        String key = cacheKey(source);
+        requireStillTrusted(activity, source);
+        SharedPreferences receipts = cacheReceipts(activity);
+        String expected = receipts.getString(key + "-sha256", "");
+        long bytes = receipts.getLong(key + "-bytes", -1L);
+        long timestamp = receipts.getLong(key + "-timestamp", 0L);
+        File file = cacheFile(activity, key);
+        if (!validHash(expected) || timestamp <= 0 || bytes <= 0 || bytes > MAX_INDEX_BYTES
+                || !file.isFile() || file.length() != bytes ||
+                !shaFile(file).equalsIgnoreCase(expected))
+            throw new IOException("no locally verified signed index for the pinned source");
+        return file;
+    }
+
+    public static void dropCache(Activity activity, String url, String fingerprint) {
+        if (!RepoPolicy.isAllowed(url, fingerprint)) return;
+        try {
+            String key = cacheKey(Source.personal(url, fingerprint));
+            // Removing subscription removes its offline trust receipt first.
+            cacheReceipts(activity).edit().remove(key + "-sha256")
+                    .remove(key + "-bytes").remove(key + "-timestamp").commit();
+            cacheFile(activity, key).delete();
+        } catch (Exception ignored) {
+            // Fail closed: without a matching subscription, cached metadata
+            // cannot be displayed as an approved source or used for install.
         }
     }
 
@@ -462,7 +548,7 @@ public final class InternalFdroidStore {
         return found;
     }
 
-    private static void details(Activity activity, Source source, App app) {
+    private static void details(Activity activity, Source source, App app, boolean offline) {
         String message = "منبع: " + source.description + "\n" +
                 "شناسه: " + app.id + "\n" +
                 "نسخه: " + app.version + " (" + app.code + ")\n" +
@@ -471,16 +557,18 @@ public final class InternalFdroidStore {
                 "فهرست مخزن به‌صورت رمزنگاری‌شده اعتبارسنجی شده است؛ " +
                 "فایل APK و امضای ناشر آن نیز قبل از درخواست نصب بررسی می‌شوند. " +
                 "نصب یا ارتقا فقط با تأیید خود شما و اندروید انجام می‌شود.";
-        new AlertDialog.Builder(activity)
+        AlertDialog.Builder dialog = new AlertDialog.Builder(activity)
                 .setTitle(app.title)
-                .setMessage(message)
-                .setNegativeButton("بستن", null)
-                .setPositiveButton("نصب / به‌روزرسانی در هَماپ", (dialog, which) ->
-                        EmbeddedApkInstaller.request(activity, source, app))
-                .show();
+                .setMessage(message + (offline
+                        ? "\n\nحالت آفلاین: فقط مرور نسخهٔ تأییدشده؛ نصب غیرفعال است."
+                        : ""))
+                .setNegativeButton("بستن", null);
+        if (!offline) dialog.setPositiveButton("نصب / به‌روزرسانی در هَماپ",
+                (d, w) -> EmbeddedApkInstaller.request(activity, source, app));
+        dialog.show();
     }
 
-    private static void list(Activity activity, Source source, List<App> apps) {
+    private static void list(Activity activity, Source source, List<App> apps, boolean offline) {
         if (apps.isEmpty()) {
             new AlertDialog.Builder(activity).setTitle("نتیجه‌ای یافت نشد")
                     .setMessage("در فهرست امضاشده برنامهٔ سازگار با این جست‌وجو پیدا نشد.")
@@ -491,25 +579,37 @@ public final class InternalFdroidStore {
         for (int i = 0; i < apps.size(); i++)
             labels[i] = apps.get(i).title + " — " + apps.get(i).id;
         new AlertDialog.Builder(activity)
-                .setTitle(source.description + " | برنامه‌های سازگار")
-                .setItems(labels, (dialog, index) -> details(activity, source, apps.get(index)))
+                .setTitle(source.description + (offline ? " | فهرست آفلاین (فقط مشاهده)" : " | برنامه‌های سازگار"))
+                .setItems(labels, (dialog, index) -> details(activity, source, apps.get(index), offline))
                 .setNegativeButton("بستن", null).show();
     }
 
     private static void begin(Activity activity, Source source, String query) {
+        browse(activity, source, query, false);
+    }
+
+    private static void browseOffline(Activity activity, Source source, String query) {
+        browse(activity, source, query, true);
+    }
+
+    private static void browse(Activity activity, Source source, String query, boolean offline) {
         ProgressBar bar = new ProgressBar(activity);
         bar.setPadding(36, 24, 36, 24);
         AlertDialog progress = new AlertDialog.Builder(activity)
-                .setTitle("اعتبارسنجی و بارگذاری مخزن امضاشده")
+                .setTitle(offline ? "بررسی نسخهٔ آفلاین تأییدشده" : "اعتبارسنجی مخزن امضاشده")
                 .setView(bar).setCancelable(false).create();
         progress.show();
         new Thread(() -> {
             List<App> matched = null;
             String error = null;
             try {
-                matched = matching(verifiedIndex(activity, source), query);
+                File verified = offline
+                        ? verifiedOfflineIndex(activity, source) : verifiedIndex(activity, source);
+                matched = matching(verified, query);
             } catch (Exception ex) {
-                error = "مخزن قابل دریافت یا امضای آن قابل تأیید نبود؛ هیچ بسته‌ای قابل نصب نیست.";
+                error = offline
+                        ? "فهرست آفلاینِ معتبر موجود نیست. ابتدا مخزن را آنلاین با امضای معتبر بارگذاری کنید."
+                        : "مخزن قابل دریافت یا امضای آن قابل تأیید نبود؛ هیچ بسته‌ای قابل نصب نیست.";
             }
             final List<App> results = matched;
             final String problem = error;
@@ -519,7 +619,7 @@ public final class InternalFdroidStore {
                 if (problem != null) {
                     new AlertDialog.Builder(activity).setTitle("مخزن تأیید نشد")
                             .setMessage(problem).setPositiveButton("بستن", null).show();
-                } else list(activity, source, results);
+                } else list(activity, source, results, offline);
             });
         }, "hamapp-signed-fdroid-index").start();
     }
@@ -538,6 +638,8 @@ public final class InternalFdroidStore {
                         "در صورت ادامه، اتصال اینترنت و فضای ذخیره‌سازی مصرف می‌شود. " +
                         "نصب هر برنامه جداگانه تأیید خواهد شد.")
                 .setNegativeButton("لغو", null)
+                .setNeutralButton("مرور آفلاین (بدون نصب)", (d, w) ->
+                        browseOffline(activity, Source.official(), query))
                 .setPositiveButton("بارگذاری در هَماپ", (d, w) ->
                         begin(activity, Source.official(), query)).show();
     }
@@ -550,6 +652,8 @@ public final class InternalFdroidStore {
                     .setTitle("مخزن اختصاصی هَماپ")
                     .setMessage("فهرست مخزن اختصاصی فقط پس از بررسی امضای ثبت‌شده باز خواهد شد. ادامه؟")
                     .setNegativeButton("لغو", null)
+                    .setNeutralButton("مرور آفلاین (بدون نصب)", (d, w) ->
+                            browseOffline(activity, source, ""))
                     .setPositiveButton("ادامه", (d, w) -> begin(activity, source, ""))
                     .show();
         } catch (Exception ex) {
@@ -571,6 +675,8 @@ public final class InternalFdroidStore {
                             "استفاده می‌شود. هَماپ اعتبار مستقل ناشر شخصی را تأیید نکرده است. " +
                             "فهرست فقط پس از بررسی امضای مطابق اثرانگشت بارگذاری می‌شود.")
                     .setNegativeButton("لغو", null)
+                    .setNeutralButton("مرور آفلاین (بدون نصب)", (d, which) ->
+                            browseOffline(activity, source, query))
                     .setPositiveButton("بررسی و نمایش", (d, which) -> begin(activity, source, query))
                     .show();
         } catch (IllegalArgumentException ex) {

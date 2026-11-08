@@ -146,9 +146,9 @@ public final class MainActivity extends Activity {
                 "فهرست امضاشده و نصب با تأیید اندروید، در خود هَماپ");
         explore.setOnClickListener(view -> InternalFdroidStore.openPublic(this, ""));
 
-        MaterialButton personalRepo = actionButton("تنظیم مخزن شخصی", false);
+        MaterialButton personalRepo = actionButton("مدیریت مخزن‌ها", false);
         personalRepo.setContentDescription(
-                "تنظیم نشانی HTTPS و اثر انگشت SHA-256 مخزن شخصی، بدون تغییر کد");
+                "افزودن، حذف و بررسی امضا برای چند مخزن مستقل، بدون تغییر کد");
         personalRepo.setOnClickListener(view -> UserRepoSettings.show(this));
 
         LinearLayout storeRow = new LinearLayout(this);
@@ -165,7 +165,7 @@ public final class MainActivity extends Activity {
         searchPublic.setOnClickListener(view ->
                 InternalFdroidStore.openPublic(this, query == null ? "" : query.getText().toString()));
 
-        MaterialButton openPersonal = actionButton("برنامه‌های مخزن شخصی", false);
+        MaterialButton openPersonal = actionButton("برنامه‌های مخزن‌ها", false);
         openPersonal.setOnClickListener(view -> UserRepoSettings.openSaved(this, ""));
 
         LinearLayout browseRow = new LinearLayout(this);

@@ -55,3 +55,9 @@ if [[ "$accepted" -ne 1 ]]; then
   exit 1
 fi
 echo "NATIVE_ANDROID_PREVIEW_LAUNCHED; UNAPPROVED_INSTALL_ACTION_DISABLED"
+# Exercise actual Android private preferences and pinned multiple-source trust
+# transitions on the already-running ephemeral device, not only source text.
+gradle --no-daemon -p android :app:connectedDebugAndroidTest
+mkdir -p dist/android-emulator/instrumentation
+cp -R android/app/build/outputs/androidTest-results/connected/. dist/android-emulator/instrumentation/
+echo "NATIVE_SIGNED_REPOSITORY_LIFECYCLE_INSTRUMENTED_PASS"

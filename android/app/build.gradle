@@ -10,6 +10,7 @@ android {
         targetSdk 35
         versionCode 1
         versionName '0.1.0-preview'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     buildTypes {
         release { minifyEnabled false }
@@ -28,4 +29,7 @@ dependencies {
     // Apache-2.0 official F-Droid index and signed repository entry verifier.
     implementation 'org.fdroid:index:0.2.0'
     implementation 'org.fdroid:core:0.0.1'
+    androidTestImplementation 'androidx.test:core:1.7.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.3.0'
+    androidTestImplementation 'androidx.test:runner:1.7.0'
 }

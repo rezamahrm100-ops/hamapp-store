@@ -1,5 +1,10 @@
 # HamApp Android native client — preview and F-Droid handoff
 
+## CURRENT NATIVE IMPLEMENTATION — 2026-11-08 (supersedes historical companion handoff below)
+
+HamApp now embeds the official Apache-2.0 F-Droid signed-index library and uses Android PackageInstaller directly. No external F-Droid companion is required. User-managed **multiple independently pinned signed repositories** and offline read-only verified-index browsing are implemented in `UserRepoSettings.java` and `InternalFdroidStore.java`, with real Android emulator instrumentation required before acceptance. See [ANDROID-SIGNED-MULTIREPO-2026-11-08.md](ANDROID-SIGNED-MULTIREPO-2026-11-08.md). The older companion references below describe historical implementations only. Production signing, full F-Droid background/download/database feature parity and real owner-device QA remain unverified.
+
+
 This is a **native Java Android application** (not a WebView wrapper). It displays an offline, RTL Persian catalogue and delegates installation/update to the existing GPL-3.0 F-Droid Android client. This deliberately reuses upstream installer infrastructure without copying, modifying or redistributing F-Droid source at this point. Upstream client: https://gitlab.com/fdroid/fdroidclient (GPL-3.0-or-later). Official subscription procedure: https://f-droid.org/docs/Setup_an_F-Droid_App_Repo/
 
 ## Build system
