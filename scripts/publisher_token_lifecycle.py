@@ -43,8 +43,8 @@ def _secure_owner_lock(path):
     return path
 
 
-def change_registry(path, action, publisher):
-    """Linearizable private mutation; return one new token ONLY for add/rotate."""
+def change_registry(path, action, publisher, *, token=None):
+    """Linearizable mutation; optional caller-held secret avoids log disclosure."""
     if os.name != "posix" or action not in ("add", "rotate", "revoke"):
         raise CredentialOperationError("owner-controlled POSIX lifecycle action required")
     publisher = validate_publisher(publisher)
@@ -77,7 +77,9 @@ def change_registry(path, action, publisher):
                     raise CredentialOperationError("publisher is not enrolled")
             secret = None
             if action in ("add", "rotate"):
-                secret = secrets.token_urlsafe(48)
+                secret = token if token is not None else secrets.token_urlsafe(48)
+                if not isinstance(secret, str) or not __import__("re").fullmatch(r"[A-Za-z0-9_-]{64}", secret):
+                    raise CredentialOperationError("invalid externally supplied publisher token")
                 digest = hashlib.sha256(secret.encode("ascii")).hexdigest()
                 if digest in observed.values():
                     raise CredentialOperationError("unexpected duplicate token digest")
