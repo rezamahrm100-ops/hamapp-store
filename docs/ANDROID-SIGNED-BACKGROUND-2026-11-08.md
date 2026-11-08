@@ -30,6 +30,20 @@ The owner decides from a native RTL settings button:
 - Never claims that a background run executed at an exact wall-clock time:
   WorkManager scheduling is delayed by system power/network policy.
 
+## Actual merged-manifest permission review
+
+Hosted build inspection with official Android `aapt` found precisely four
+additional AndroidX WorkManager system permissions beyond the previously
+reviewed APK: `ACCESS_NETWORK_STATE` (unmetered constraint),
+`WAKE_LOCK` (bounded work execution), `RECEIVE_BOOT_COMPLETED`
+(durable work rescheduling after reboot) and `FOREGROUND_SERVICE`
+(merged AndroidX worker infrastructure; this feature does not request
+foreground work or an install privilege). The exact policy allowlist
+`catalog/android_preview_permission_policy.json` was updated only after
+the verifier rejected those four named additions. The built APK must still
+pass the existing independent `android_permission_review.py` aapt audit.
+No package query-all, silent-install or privileged account permissions.
+
 ## Acceptance
 
 PR acceptance requires all hosted Linux/Windows CI, CodeQL, source security scan,
