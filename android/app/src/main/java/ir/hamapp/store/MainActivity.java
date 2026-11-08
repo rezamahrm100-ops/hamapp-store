@@ -65,6 +65,7 @@ public final class MainActivity extends Activity {
             repo = null;
             showError(ex.getMessage());
         }
+        SignedRepositoryRefresh.reconcile(this);
         construct();
     }
 
@@ -176,6 +177,11 @@ public final class MainActivity extends Activity {
         browseRow.addView(openPersonal, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         main.addView(browseRow, margin(0, 8));
+
+        MaterialButton periodic = actionButton("بررسی دوره‌ای مخزن‌ها", false);
+        periodic.setContentDescription("مدیریت بررسی روزانهٔ امضای مخزن‌ها؛ بدون نصب خودکار");
+        periodic.setOnClickListener(view -> SignedRepositoryRefresh.openSettings(this));
+        main.addView(periodic, margin(0, 8));
 
         query = new TextInputEditText(this);
         query.setTextColor(white);
