@@ -59,8 +59,8 @@ def _pem(name, raw, *, private=False):
         raise OperatorError("binary input is not a TLS PEM")
     return raw
 
-def load_pem_stdin(input_stream):
-    """Read two length-prefixed secret files; bounded, never print or write temp."""
+def load_pem_stdin(input_stream, *, with_token=False):
+    """Read bounded PEM envelope and optional appended 64-byte secret from stdin."""
     header = input_stream.read(8)
     if len(header) != 8:
         raise OperatorError("cert/key stdin envelope missing")
@@ -69,9 +69,23 @@ def load_pem_stdin(input_stream):
         raise OperatorError("TLS PEM envelope lengths rejected")
     cert = input_stream.read(cert_size)
     key = input_stream.read(key_size)
-    if len(cert) != cert_size or len(key) != key_size or input_stream.read(1):
+    tail = input_stream.read(65 if with_token else 1)
+    if len(cert) != cert_size or len(key) != key_size or (not with_token and tail):
         raise OperatorError("incomplete/oversized secret envelope")
-    return _pem("cert", cert), _pem("key", key, private=True)
+    pair = (_pem("cert", cert), _pem("key", key, private=True))
+    if with_token:
+        return (*pair, validate_stdin_token(tail))
+    return pair
+
+def validate_stdin_token(raw):
+    """Accept only an unlogged high-entropy token, never a URL or a line."""
+    if (not isinstance(raw, bytes) or len(raw) != 64 or
+            not all(c in b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_" for c in raw)):
+        raise OperatorError("publisher token stdin must be exactly 64 URL-safe bytes")
+    return raw.decode("ascii")
+
+def read_token_stdin(stream):
+    return validate_stdin_token(stream.read(65))
 
 def read_pem_files(cert, key):
     public, secret = Path(cert), Path(key)
@@ -111,7 +125,7 @@ def local_development_certificate():
             raise OperatorError("local-only TLS identity could not be generated")
         return certificate.read_bytes(), key.read_bytes()
 
-def bootstrap(root, publisher, *, public_cert, private_key, local_development=False):
+def bootstrap(root, publisher, *, public_cert, private_key, local_development=False, first_token=None):
     """Provision first durable private service. Return one-time token once."""
     if not isinstance(publisher, str):
         raise OperatorError("publisher must be a string")
@@ -134,7 +148,7 @@ def bootstrap(root, publisher, *, public_cert, private_key, local_development=Fa
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.load_cert_chain(str(path / "tls-cert.pem"), str(path / "tls-key.pem"))
         # The first token is displayed once. Only its hash is saved.
-        token = gateway.provision(path / "credentials.json", publisher)
+        token = gateway.provision(path / "credentials.json", publisher, token=first_token)
         config = {"schema_version": 1, "service": "hamapp-private-quarantine",
                   "port_default": 8766, "local_development_only": bool(local_development),
                   "tls_leaf_sha256": pin}
@@ -196,10 +210,10 @@ def serve(root, *, host="127.0.0.1", port=8766, allow_public=False):
     finally:
         server.server_close()
 
-def change(root, action, publisher):
+def change(root, action, publisher, *, token=None):
     check(root)
     path = private_root(root, created=True)
-    return tokens.change_registry(path / "credentials.json", action, publisher)
+    return tokens.change_registry(path / "credentials.json", action, publisher, token=token)
 
 def main(argv=None):
     p = argparse.ArgumentParser(description="HamApp one-backend private owner service")
@@ -212,6 +226,7 @@ def main(argv=None):
     choice.add_argument("--dev-local-cert", action="store_true")
     choice.add_argument("--tls-cert", type=Path)
     init.add_argument("--tls-key", type=Path)
+    init.add_argument("--token-stdin", action="store_true", required=False)
     probe = commands.add_parser("status")
     probe.add_argument("--root", required=True, type=Path)
     export = commands.add_parser("export-ca")
@@ -225,28 +240,33 @@ def main(argv=None):
         sub = commands.add_parser(name)
         sub.add_argument("--root", required=True, type=Path)
         sub.add_argument("--publisher", required=True)
+        sub.add_argument("--token-stdin", action="store_true")
     opts = p.parse_args(argv)
     try:
         if opts.command == "init":
+            if not opts.token_stdin:
+                raise OperatorError("init requires caller-owned token on private stdin")
             if opts.dev_local_cert:
                 if opts.tls_key is not None:
                     raise OperatorError("local TLS mode has no imported key")
                 cert, key = local_development_certificate()
+                first_token = read_token_stdin(sys.stdin.buffer)
             elif opts.import_stdin:
                 if opts.tls_key is not None:
                     raise OperatorError("stdin import cannot specify an extra TLS key path")
-                cert, key = load_pem_stdin(sys.stdin.buffer)
+                cert, key, first_token = load_pem_stdin(sys.stdin.buffer, with_token=True)
             else:
                 if opts.tls_key is None:
                     raise OperatorError("TLS private key path missing")
                 cert, key = read_pem_files(opts.tls_cert, opts.tls_key)
+                first_token = read_token_stdin(sys.stdin.buffer)
             result = bootstrap(opts.root, opts.publisher,
                                public_cert=cert, private_key=key,
-                               local_development=opts.dev_local_cert)
+                               local_development=opts.dev_local_cert,
+                               first_token=first_token)
             print("HAMAPP_PRIVATE_SERVICE_READY; NO_PUBLIC_RELEASE")
             print("PUBLISHER:", result["publisher"])
             print("TLS_LEAF_SHA256:", result["tls_leaf_sha256"])
-            print("ONE_TIME_PUBLISHER_TOKEN:", result["one_time_token"])
         elif opts.command == "status":
             print(json.dumps(check(opts.root), sort_keys=True))
         elif opts.command == "export-ca":
@@ -257,10 +277,11 @@ def main(argv=None):
             serve(opts.root, host=opts.host, port=opts.port,
                   allow_public=opts.allow_public_bind)
         else:
-            result = change(opts.root, opts.command, opts.publisher)
+            if opts.command in ("add", "rotate") and not opts.token_stdin:
+                raise OperatorError("token change requires caller-owned secret on stdin")
+            token = read_token_stdin(sys.stdin.buffer) if opts.command in ("add", "rotate") else None
+            change(opts.root, opts.command, opts.publisher, token=token)
             print("HAMAPP_PRIVATE_TOKEN_" + opts.command.upper() + "_SUCCESS")
-            if result["one_time_secret"]:
-                print("ONE_TIME_PUBLISHER_TOKEN:", result["one_time_secret"])
         return 0
     except (OSError, ValueError, TypeError, ssl.SSLError) as ex:
         # Errors must not disclose certificate/key contents or token.
