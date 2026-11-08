@@ -110,6 +110,8 @@ jobs:
           test "$(docker compose -f deployment/compose.yaml -p hamapp-private-ci config --services)" = "publisher-intake"
           mkdir -p "$RUNNER_TEMP/hamapp-owner-review-toolchain"
           chmod 0700 "$RUNNER_TEMP/hamapp-owner-review-toolchain"
+          # Hosted runner only: mount owned by the image's exact unprivileged UID.
+          sudo chown 10001:10001 "$RUNNER_TEMP/hamapp-owner-review-toolchain"
           HAMAPP_OWNER_REVIEW_DIR="$RUNNER_TEMP/hamapp-owner-review-toolchain" \
             docker compose -f deployment/compose.yaml -p hamapp-private-ci \
               --profile owner-review build owner-review
