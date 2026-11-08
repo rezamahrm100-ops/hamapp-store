@@ -9,12 +9,6 @@ test -w /owner/clamav-database || { echo "OWNER_CLAMAV_DATABASE_NOT_WRITABLE" >&
 # Must fail closed if network/ClamAV DB freshness cannot be established.
 freshclam --quiet --datadir=/owner/clamav-database >/dev/null \
   || { echo "OWNER_ANTIVIRUS_DATABASE_UPDATE_FAILED" >&2; exit 20; }
-# The existing antivirus scanner expects an executable name without flags;
-# a private wrapper binds the exact non-public signature database location.
-mkdir -p /tmp/hamapp-tools
-printf '%s\n' '#!/bin/sh' \
-  'exec /usr/bin/clamscan --database=/owner/clamav-database "$@"' \
-  > /tmp/hamapp-tools/clamscan
-chmod 0700 /tmp/hamapp-tools/clamscan
-export PATH="/tmp/hamapp-tools:$PATH"
+# The image's fixed /usr/local/bin/clamscan wrapper binds the owner-only DB;
+# no scripts are executed out of a writable /tmp filesystem.
 exec python3 -B /opt/hamapp/scripts/owner_verified_release_pipeline.py "$@"
