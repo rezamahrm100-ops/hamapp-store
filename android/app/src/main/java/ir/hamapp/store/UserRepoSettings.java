@@ -139,6 +139,18 @@ public final class UserRepoSettings {
         InternalFdroidStore.dropCache(activity, selected.url, selected.fingerprint);
     }
 
+    public static boolean isRegistered(Activity activity, String url, String fingerprint) {
+        try {
+            for (Repository item : saved(activity)) {
+                if (item.url.equals(url) && item.fingerprint.equalsIgnoreCase(fingerprint))
+                    return true;
+            }
+        } catch (IllegalStateException ignored) {
+            // Invalid private trust state cannot approve an installation.
+        }
+        return false;
+    }
+
     public static boolean configured(Activity activity) {
         try {
             return !saved(activity).isEmpty();
