@@ -1,5 +1,10 @@
 # HamApp — canonical agent handoff
 
+## 2026-11-08 NEXT NATIVE ANDROID ENGINE TRANCHE (PENDING VALIDATION)
+
+A reviewable branch adds multi-source independently pinned F-Droid subscriptions, origin-bound atomic index cache, read-only offline browsing, and real Android emulator instrumentation (not fake unit mocks). Source changes are **not accepted** until all hosted CI, native APK lint, CodeQL and actual emulator instrumentation tests pass. Offline browse NEVER installs apps; production signers, publisher registration and full F-Droid client parity remain absent. Read docs/ANDROID-SIGNED-MULTIREPO-2026-11-08.md before further modifications. Trusted self-hosted Windows runner remains main-only.
+
+
 ## 2026-11-08 VERIFIED INTEGRATION — PR #94 MERGED / MAIN ACCEPTANCE
 
 PR #94 (https://github.com/rezamahrm100-ops/hamapp-store/pull/94) was squash-merged into trusted main at immutable SHA `a88b25279444282ed4033314fe078c417e44ee31`.
