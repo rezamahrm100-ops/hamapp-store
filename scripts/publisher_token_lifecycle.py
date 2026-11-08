@@ -12,6 +12,7 @@ except ImportError:
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import secrets
 import stat
@@ -78,7 +79,7 @@ def change_registry(path, action, publisher, *, token=None):
             secret = None
             if action in ("add", "rotate"):
                 secret = token if token is not None else secrets.token_urlsafe(48)
-                if not isinstance(secret, str) or not __import__("re").fullmatch(r"[A-Za-z0-9_-]{64}", secret):
+                if not isinstance(secret, str) or not re.fullmatch(r"[A-Za-z0-9_-]{64}", secret):
                     raise CredentialOperationError("invalid externally supplied publisher token")
                 digest = hashlib.sha256(secret.encode("ascii")).hexdigest()
                 if digest in observed.values():
