@@ -11,6 +11,9 @@ import android.content.SharedPreferences;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,6 +22,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Ephemeral Android 35 instrumentation: real Android private preferences,
@@ -124,13 +128,37 @@ public final class SignedRepositoryLifecycleTest {
         });
     }
 
+    @Test public void ownerOptInCreatesAndCancelsRealPeriodicWorker() throws Exception {
+        Context app = ApplicationProvider.getApplicationContext();
+        try (ActivityScenario<MainActivity> scenario =
+                     ActivityScenario.launch(MainActivity.class)) {
+            scenario.onActivity(activity -> {
+                SignedRepositoryRefresh.configure(activity, false);
+                assertFalse(SignedRepositoryRefresh.enabled(activity));
+                SignedRepositoryRefresh.configure(activity, true);
+                assertTrue(SignedRepositoryRefresh.enabled(activity));
+            });
+            List<WorkInfo> scheduled = WorkManager.getInstance(app)
+                    .getWorkInfosForUniqueWork("hamapp-signed-repositories-daily-v1")
+                    .get(20, TimeUnit.SECONDS);
+            assertFalse("native periodic worker not persisted by WorkManager",
+                    scheduled.isEmpty());
+            scenario.onActivity(activity -> {
+                SignedRepositoryRefresh.configure(activity, false);
+                assertFalse(SignedRepositoryRefresh.enabled(activity));
+            });
+        } finally {
+            SignedRepositoryRefresh.configure(app, false);
+        }
+    }
+
     @Test public void offlineIndexWithNoVerifiedReceiptNeverOpens() {
         run((activity, prefs) -> {
             UserRepoSettings.addForUser(activity, A, PIN_A);
             assertTrue(UserRepoSettings.isRegistered(activity, A, PIN_A));
             try {
                 Method read = InternalFdroidStore.class.getDeclaredMethod(
-                        "verifiedOfflineIndex", Activity.class,
+                        "verifiedOfflineIndex", Context.class,
                         InternalFdroidStore.Source.class);
                 read.setAccessible(true);
                 read.invoke(null, activity, InternalFdroidStore.Source.personal(A, PIN_A));

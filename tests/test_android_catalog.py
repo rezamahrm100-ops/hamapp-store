@@ -84,6 +84,24 @@ class RepoTests(unittest.TestCase):
         self.assertIn("android.permission.REQUEST_INSTALL_PACKAGES", policy["allowed_permissions"])
         self.assertIn("android:exported=\"true\"", manifest)
 
+    def test_opt_in_background_reuses_crypto_and_never_installs(self):
+        java = ROOT / "android/app/src/main/java/ir/hamapp/store"
+        worker = (java / "SignedRepositoryRefresh.java").read_text("utf-8")
+        engine = (java / "InternalFdroidStore.java").read_text("utf-8")
+        activity = (java / "MainActivity.java").read_text("utf-8")
+        gradle = (ROOT / "android/app/build.gradle").read_text("utf-8")
+        self.assertIn("androidx.work:work-runtime:2.12.0", gradle)
+        self.assertIn("ExistingPeriodicWorkPolicy.UPDATE", worker)
+        self.assertIn("NetworkType.UNMETERED", worker)
+        self.assertIn("setRequiresBatteryNotLow(true)", worker)
+        self.assertIn("putBoolean(ENABLED, value)", worker)
+        self.assertIn("InternalFdroidStore.refreshSubscribed", worker)
+        self.assertIn("SignedRepositoryRefresh.openSettings(this)", activity)
+        self.assertIn("signedEntry(source, signedJar)", engine)
+        self.assertIn("synchronized boolean refreshSubscribed", engine)
+        self.assertNotIn("PackageInstaller", worker)
+        self.assertNotIn("EmbeddedApkInstaller", worker)
+
     def test_native_store_uses_upstream_signed_index_and_os_installer(self):
         java = ROOT / "android/app/src/main/java/ir/hamapp/store"
         main = (java / "MainActivity.java").read_text("utf-8")

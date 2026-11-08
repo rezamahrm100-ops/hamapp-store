@@ -256,7 +256,7 @@ public final class InternalFdroidStore {
 
     // Fingerprint is part of the namespace: changing a publisher's signing
     // identity cannot silently reuse cached catalogues from another source.
-    private static void requireStillTrusted(Activity activity, Source source) throws IOException {
+    private static void requireStillTrusted(Context activity, Source source) throws IOException {
         if (source.personal && !UserRepoSettings.isRegistered(
                 activity, source.url, source.fingerprint))
             throw new IOException("personal source trust was removed or altered");
@@ -267,15 +267,15 @@ public final class InternalFdroidStore {
                 .getBytes(StandardCharsets.UTF_8));
     }
 
-    private static File cacheFile(Activity activity, String key) {
+    private static File cacheFile(Context activity, String key) {
         return new File(activity.getFilesDir(), "fdroid-" + key + ".json");
     }
 
-    private static SharedPreferences cacheReceipts(Activity activity) {
+    private static SharedPreferences cacheReceipts(Context activity) {
         return activity.getSharedPreferences(VERIFIED_CACHE_PREFS, Context.MODE_PRIVATE);
     }
 
-    private static void rememberVerified(Activity activity, String key,
+    private static void rememberVerified(Context activity, String key,
             long size, String digest, long timestamp) throws IOException {
         // The trust receipt is written only AFTER entry.jar signature and
         // exact index bytes were cryptographically verified online.
@@ -286,7 +286,7 @@ public final class InternalFdroidStore {
             throw new IOException("verified cache receipt could not be committed");
     }
 
-    private static File verifiedIndex(Activity activity, Source source) throws Exception {
+    private static synchronized File verifiedIndex(Context activity, Source source) throws Exception {
         requireStillTrusted(activity, source);
         String key = cacheKey(source);
         File existing = cacheFile(activity, key);
@@ -331,7 +331,7 @@ public final class InternalFdroidStore {
      *  signature and index SHA verification were recorded for this exact pin.
      *  No offline-stale index may ever authorize a PackageInstaller session.
      */
-    private static File verifiedOfflineIndex(Activity activity, Source source) throws Exception {
+    private static File verifiedOfflineIndex(Context activity, Source source) throws Exception {
         String key = cacheKey(source);
         requireStillTrusted(activity, source);
         SharedPreferences receipts = cacheReceipts(activity);
@@ -346,7 +346,7 @@ public final class InternalFdroidStore {
         return file;
     }
 
-    public static void dropCache(Activity activity, String url, String fingerprint) {
+    public static synchronized void dropCache(Context activity, String url, String fingerprint) {
         if (!RepoPolicy.isAllowed(url, fingerprint)) return;
         try {
             String key = cacheKey(Source.personal(url, fingerprint));
@@ -358,6 +358,23 @@ public final class InternalFdroidStore {
             // Fail closed: without a matching subscription, cached metadata
             // cannot be displayed as an approved source or used for install.
         }
+    }
+
+
+    /** Opt-in WorkManager path. Uses the SAME upstream signed entry JAR,
+     *  exact index digest, anti-rollback receipt and atomic cache as the UI.
+     *  Never selects APKs, opens an installer or grants publisher approval.
+     */
+    static synchronized boolean refreshSubscribed(Context context,
+            String url, String fingerprint) throws Exception {
+        Source source = Source.personal(url, fingerprint);
+        requireStillTrusted(context, source);
+        String key = cacheKey(source);
+        String previous = cacheReceipts(context).getString(key + "-sha256", "");
+        verifiedIndex(context, source);
+        String current = cacheReceipts(context).getString(key + "-sha256", "");
+        if (!validHash(current)) throw new IOException("missing verified cache receipt");
+        return !current.equalsIgnoreCase(previous);
     }
 
     private static String localized(JsonReader reader) throws IOException {
