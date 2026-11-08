@@ -139,7 +139,7 @@ class PrivateEndToEndReview(unittest.TestCase):
                          self.history, self.policy, "workflow", "tag",
                          "invalid-key", self.results / "bad", stage_fn=self.stub)
         self.assertFalse((self.results / "bad").exists())
-        with self.assertRaises(pipe.PrivatePipelineError):
+        with self.assertRaises(ValueError):
             self.run_pipeline(self.stub, output=ROOT / "catalog/unsafe-review")
         self.assertFalse((ROOT / "catalog/unsafe-review").exists())
 
