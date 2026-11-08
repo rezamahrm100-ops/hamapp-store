@@ -19,6 +19,7 @@ FILE_LIST = (
     "deployment/Dockerfile",
     "deployment/Dockerfile.owner-review",
     "deployment/owner-review-entrypoint.sh",
+    "deployment/owner-review-freshclam.conf",
     "deployment/compose.yaml",
     "deployment/README_FA.md",
     "deployment/HamApp-Service-Setup.cmd",
