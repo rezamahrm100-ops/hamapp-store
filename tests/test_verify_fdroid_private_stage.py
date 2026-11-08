@@ -72,7 +72,12 @@ class IndexV2Tests(unittest.TestCase):
         self.apk.unlink()
         external=self.root/"not-a-repo.apk"
         external.write_bytes(DATA)
-        self.apk.symlink_to(external)
+        try:
+            self.apk.symlink_to(external)
+        except OSError as exc:
+            if getattr(exc, "winerror", None) == 1314:
+                self.skipTest("Windows runner cannot create links; Linux CI verifies symlink rejection")
+            raise
         with self.assertRaises(verifier.PrivateIndexError):
             verifier.verify(self.root,FP,self.candidate,loader=self.loader)
 
@@ -94,7 +99,12 @@ class IndexV2Tests(unittest.TestCase):
         (self.repo/"index-v2.json").unlink()
         with self.assertRaises(verifier.PrivateIndexError):
             verifier.verify(self.root,FP,self.candidate,loader=self.loader)
-        (self.repo/"index-v2.json").symlink_to(self.jar)
+        try:
+            (self.repo/"index-v2.json").symlink_to(self.jar)
+        except OSError as exc:
+            if getattr(exc, "winerror", None) == 1314:
+                self.skipTest("Windows runner cannot create links; Linux CI verifies symlink rejection")
+            raise
         with self.assertRaises(verifier.PrivateIndexError):
             verifier.verify(self.root,FP,self.candidate,loader=self.loader)
 

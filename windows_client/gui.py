@@ -46,11 +46,15 @@ def main(build_label="preview-v1"):
     # Independent, opt-in source explorer. HamApp's own publisher-approved
     # catalogue below remains fail-closed until genuine releases are signed.
     from windows_client.winget_explorer_ui import open_explorer
+    from windows_client.owner_setup_ui import open_setup
     tools = tk.Frame(root, bg=bg)
     tools.pack(fill="x", padx=20, pady=(0, 7))
     ttk.Button(tools, text="کاوش و نصب نرم‌افزارهای عمومی از WinGet",
                style="HamApp.Primary.TButton",
                command=lambda: open_explorer(root)).pack(side="right")
+    ttk.Button(tools, text="حساب‌ها و اتصال‌ها",
+               style="HamApp.Secondary.TButton",
+               command=lambda: open_setup(root)).pack(side="right", padx=(8, 0))
     tk.Label(tools, text="منبع عمومی ثالث؛ مستقل از برنامه‌های تأییدشدهٔ هَماپ",
              bg=bg, fg=muted, font=("Segoe UI", 9)).pack(side="right", padx=12)
     pane = tk.PanedWindow(root, orient="horizontal", bg=bg, bd=0, sashwidth=7)

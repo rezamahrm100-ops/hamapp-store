@@ -81,7 +81,12 @@ class OwnerPreviewDeliveryTests(unittest.TestCase):
             original = root / "valid.zip"
             with zipfile.ZipFile(original, "w") as z:
                 z.writestr("AndroidManifest.xml", b"x" * 1500)
-            apk.symlink_to(original)
+            try:
+                apk.symlink_to(original)
+            except OSError as exc:
+                if getattr(exc, "winerror", None) == 1314:
+                    self.skipTest("Windows runner lacks symlink privilege; hosted POSIX covers link rejection")
+                raise
             with self.assertRaisesRegex(preview.DeliveryError, "linked"):
                 preview.inspect(root, "android", SHA)
 

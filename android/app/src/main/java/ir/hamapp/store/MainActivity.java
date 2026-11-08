@@ -150,6 +150,14 @@ public final class MainActivity extends Activity {
                 InternalFdroidStore.openPublic(this, query == null ? "" : query.getText().toString()));
         main.addView(searchPublic, margin(0, 13));
 
+        MaterialButton personalRepo = actionButton("افزودن یا تغییر مخزن شخصی", false);
+        personalRepo.setContentDescription("تنظیم نشانی HTTPS و اثر انگشت SHA-256 مخزن شخصی، بدون تغییر کد");
+        personalRepo.setOnClickListener(view -> UserRepoSettings.show(this));
+        main.addView(personalRepo, margin(0, 6));
+        MaterialButton openPersonal = actionButton("کاوش مخزن شخصی در هَماپ", false);
+        openPersonal.setOnClickListener(view -> UserRepoSettings.openSaved(this, ""));
+        main.addView(openPersonal, margin(0, 13));
+
 
         query = new TextInputEditText(this);
         query.setTextColor(white);
