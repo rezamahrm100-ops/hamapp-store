@@ -58,7 +58,7 @@ jobs:
           script: bash scripts/android_two_version_smoke.sh verify
       - name: Upload only safe upgrade acceptance report and UI
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hamapp-android-debug-two-version-upgrade-evidence
           path: |

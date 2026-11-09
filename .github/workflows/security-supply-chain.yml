@@ -54,7 +54,7 @@ jobs:
           print('SOURCE_SBOM_CYCLONEDX_GENERATED; PUBLIC_SOURCE_ONLY')
           PY
       - name: Upload short-lived PUBLIC source SBOM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hamapp-public-source-cyclonedx-sbom
           path: hamapp-source-sbom.cdx.json

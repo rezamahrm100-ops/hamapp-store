@@ -76,7 +76,7 @@ jobs:
           cp scripts/HamApp-Verify-Preview.cmd dist/owner-preview/android/
           python3 scripts/package_owner_preview.py --platform android --directory dist/owner-preview/android
       - name: Upload APK, SHA256 and Persian installation notes
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: HamApp-Android-Owner-Test-APK
           path: dist/owner-preview/android/
@@ -211,7 +211,7 @@ jobs:
           test -s dist/owner-preview/service/HamApp-Private-Service-Kit.zip
           sha256sum dist/owner-preview/service/HamApp-Private-Service-Kit.zip > dist/owner-preview/service/SHA256SUMS.txt
       - name: Upload backend self-configure kit (no signing keys or accounts)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: HamApp-Private-Service-Ready-To-Configure
           path: dist/owner-preview/service/
@@ -285,7 +285,7 @@ jobs:
           # negative-test exit code poison the succeeding PowerShell step.
           $global:LASTEXITCODE = 0
       - name: Upload portable EXE, per-user Setup, SHA256 and Persian notes
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: HamApp-Windows-Owner-Test-EXE-Setup
           path: dist/owner-preview/windows/

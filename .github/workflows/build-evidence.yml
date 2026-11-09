@@ -32,7 +32,7 @@ jobs:
       - name: Reproducible archive and evidence receipt
         run: python3 scripts/build_evidence.py --output dist/evidence
       - name: Save build evidence artifact for review
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hamapp-static-site-evidence
           path: dist/evidence/
