@@ -84,7 +84,7 @@ jobs:
           if (-not (Test-Path dist/HamApp-Windows-Preview.exe)) { throw "Preview EXE not produced" }
           Get-FileHash dist/HamApp-Windows-Preview.exe -Algorithm SHA256 | Format-List
       - name: Upload short-lived unsigned preview for owner QA only
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hamapp-windows-unsigned-preview
           path: dist/HamApp-Windows-Preview.exe
@@ -134,7 +134,7 @@ jobs:
             --receipt dist/windows-authenticode-evidence/receipt.json
           test -s dist/windows-authenticode-evidence/receipt.json
       - name: Upload only non-production cryptographic receipt; no test PFX or signed PE
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hamapp-real-disposable-portable-authenticode-evidence
           path: dist/windows-authenticode-evidence/receipt.json
@@ -179,7 +179,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path 'dist/windows-authenticode-evidence/receipt.json' -PathType Leaf)) { throw 'Actual native trust proof missing' }
       - name: Upload ONLY non-production OS verification receipt, never PFX or signed executables
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hamapp-native-windows-ephemeral-trust-evidence
           path: dist/windows-authenticode-evidence/receipt.json
@@ -234,7 +234,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path 'dist/windows-installer-evidence/receipt.json' -PathType Leaf)) { throw 'Missing actual native install receipt' }
       - name: Upload bounded SAFE install verification receipt, never unapproved installer EXEs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hamapp-real-hosted-nsis-install-qa
           path: dist/windows-installer-evidence/receipt.json
@@ -293,7 +293,7 @@ jobs:
           echo 'This does NOT verify Android/Authenticode production signing, F-Droid index or real installation.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Save short-lived verified provenance receipt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hamapp-windows-unsigned-provenance
           path: dist/native-evidence/receipt.json

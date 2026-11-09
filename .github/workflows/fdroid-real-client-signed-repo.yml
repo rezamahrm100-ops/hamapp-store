@@ -106,7 +106,7 @@ jobs:
           rm -rf "$RUNNER_TEMP/hamapp-fdroid-real-official-client-lab" "$RUNNER_TEMP/hamapp-official-fdroid" dist/android-two-version
       - name: Save isolated client screenshot/receipt only; no signing key, config or APK
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hamapp-real-fdroid-signed-repo-client-probe
           path: |

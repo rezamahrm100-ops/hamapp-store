@@ -94,21 +94,21 @@ jobs:
             --artifact android/app/build/outputs/apk/debug/app-debug.apk \
             --receipt dist/android-archive-evidence/receipt.json
       - name: Upload safe debug-only archive validation receipt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hamapp-android-debug-archive-safety-evidence
           path: dist/android-archive-evidence/receipt.json
           if-no-files-found: error
           retention-days: 5
       - name: Upload safe debug-only permission verification receipt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hamapp-android-debug-manifest-permission-evidence
           path: dist/android-permission-evidence/receipt.json
           if-no-files-found: error
           retention-days: 5
       - name: Upload short-lived DEBUG APK; never production signing
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hamapp-android-debug-preview
           path: android/app/build/outputs/apk/debug/app-debug.apk
@@ -166,7 +166,7 @@ jobs:
           echo 'This does NOT verify Android/Authenticode production signing, F-Droid index or real installation.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Save short-lived verified provenance receipt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hamapp-android-debug-provenance
           path: dist/native-evidence/receipt.json
