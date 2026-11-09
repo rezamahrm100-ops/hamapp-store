@@ -60,7 +60,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Run full offline test suite
@@ -111,7 +111,7 @@ jobs:
         with:
           name: hamapp-windows-unsigned-preview
           path: dist/native-input
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Install real upstream PE Authenticode validator
@@ -162,7 +162,7 @@ jobs:
         with:
           name: hamapp-windows-unsigned-preview
           path: dist
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Install pinned public cryptography implementation for disposable signer only
@@ -212,7 +212,7 @@ jobs:
         run: |
           if (-not (Test-Path 'dist/HamApp-Windows-Preview.exe' -PathType Leaf)) { throw 'Missing genuine hosted Windows EXE' }
           Get-FileHash 'dist/HamApp-Windows-Preview.exe' -Algorithm SHA256 | Format-List
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Build two actually distinct native Windows GUI executable sources
